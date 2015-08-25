@@ -30,9 +30,7 @@ inline void up(int p)
     {
         p >>= 1;
         tree[p] =
-            tree[p<<1] + tree[p<<1^1];
-        if( p < n )
-            tree[p] += k[p]*lazy[p];
+            tree[p<<1] + tree[p<<1^1] + k[p]*lazy[p];
     }
 }
 
