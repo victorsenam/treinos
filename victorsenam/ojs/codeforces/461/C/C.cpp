@@ -4,41 +4,83 @@ using namespace std;
 
 const int N = 100007;
 
-struct seg {
-	int sum[4*N];
-	int esq[4*N], dir[4*N];
-	int lesq[4*N], ldir[4*N];
-	
-	void build (int r, int e, int d) {
-		esq[r] = e;
-		dir[r] = d;
-		lesq[r] = ldir[r] = -1;
+int n, q, t, a, b, ini, fim;
+bool fli;
 
-		if (e + 1 == d)
-			sum[r] = 1;
-		else {
-			build(2*r, e, (e+d)/2);
-			build(2*r+1, (e+d)/2, d);
-			sum[r] = sum[2*r] + sum[2*r+1];
-		}
+struct BIT {
+	int qtd[N];
+
+	int add (int i, int val) {
+		for (; i <= n; i += (i&-i))
+			qtd[i] += val;
 	}
-	
-	void refresh (int r) {
-		if (lesq[r] == -1)
-			return;
 
-		if (esq[r] + 1 == dir[r]) {
-			sum[r] += get(1, lesq[r], ldir[r]);
-			lesq[r] = ldir[r] = -1;
-			return;
-		}
+	int count (int i) {
+		int res = 0;
+		for (; i > 0; i -= (i&-i))
+			res += qtd[i];
+		return res;
+	}
 
-		refresh(2*r);
-		refresh(2*r+1);
+	int foldleft (int ini, int a) {
+		for (int i = 0; i < a; i++)
+			add(ini+a+i, count(ini+a-1-i) - count(ini+a-2-i));
+		return ini+a;
+	}
+
+	int foldright (int fim, int a) {
+		for (int i = 0; i < a; i++)
+			add(fim-a-i, count(ini-a+1+i) - count(ini-a+i));
+		return fim-a;
 	}
 };
-
-seg tree;
+BIT tree;
 
 int main () {
+	scanf("%d %d", &n, &q);
+	n++;
+	ini = 1;
+	fim = n-1;
+	fli = 0;
+
+	for (int i = 1; i <= n; i++)
+		tree.add(i, 1);
+	for (int i = 0; i < n; i++)
+		printf("%d ", tree.count(i+1) - tree.count(i));
+	printf("\n");
+	
+	for (int i = 0; i < q; i++) {
+		scanf("%d", &t);
+		if (t == 1) {
+			scanf("%d", &a);
+			if (a > (fim-ini+1)/2) {
+				a -= (fim-ini+1)/2;
+				fli = !fli;
+			}
+
+			if (fli)
+				fim = tree.foldright(fim, a);
+			else
+				ini = tree.foldleft(ini, a);
+		} else {
+			scanf("%d %d", &a, &b);
+
+			if (fli) {
+				a = fim - a;
+				b = fim - b;
+				swap(a,b);
+			} else {
+				a = ini + a - 1;
+				b = ini + b - 1;
+			}
+
+			printf("[%d, %d] %d\n", a, b, tree.count(b) - tree.count(a));
+		}
+
+		for (int i = 1; i <= n; i++) {
+			if (i < ini || i > fim) printf("x ");
+			else printf("%d ", tree.count(i) - tree.count(i-1));
+		}
+		printf("\n");
+	}
 }
