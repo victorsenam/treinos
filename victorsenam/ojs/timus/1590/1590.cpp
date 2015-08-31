@@ -1,50 +1,40 @@
-// WA :(
-
 #include <bits/stdc++.h>
 
 using namespace std;
 
 typedef unsigned long long int num;
 
-const num MOD = 1000000007llu;
-const num B = 263llu;
-const int N = 5007;
+const int S = 5007;
 
-int s[N];
-
-num rol;
-int res;
-num pot;
-char str[N];
+char str[S];
+int suf[S];
 int n;
-int qtd;
+int res;
+
+bool sufComp (int a, int b) {
+    return (strcmp(str+a, str+b) < 0);
+}
 
 int main () {
     scanf(" %s", str);
+    int n = strlen(str);
 
-    rol = 0;
-    res = 0;
-    n = strlen(str);
-    pot = 1llu;
+    for (int i = 0; str[i] != '\0'; i++)
+        suf[i] = i;
+    
+    res = n*(n+1)/2;
 
-    for (int k = 1; k <= n; k++) {
-        rol = 0;
-        pot = (pot*B)%MOD;
-        qtd = 0;
-        
-        for (int i = 0; i < k; i++)
-            rol = ((rol*B)%MOD + (str[i]))%MOD;
-        s[qtd++] = rol;
-        
-        for (int i = k; i < n; i++) {
-            rol = (rol*B + ((num)str[i]))%MOD;
-            rol = ((rol - (pot*str[i-k])%MOD) + MOD)%MOD;
-            s[qtd++] = rol;
-        }
+    sort(suf, suf+n, sufComp);
 
-        sort(s, s+qtd);
-        res += unique(s, s+qtd) - s;
+    for (int i = 0; i < n-1; i++) {
+        int j = 0;
+
+        while (*(str+suf[i]+j) == *(str+suf[i+1]+j))
+            j++;
+
+
+        res -= j;
     }
 
-    printf("%llu\n", res);
+    printf("%d\n", res);
 }
