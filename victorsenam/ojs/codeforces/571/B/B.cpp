@@ -17,14 +17,14 @@ num pd (int c, int f) {
         return 0;
 
     num & m = memo[c][f];
-    int i = c*((n+1)/k) + f*(n/k);
+    int i = c*((n+k-1)/k) + f*(n/k);
 
     if (m != -1)
         return m;
 
     m = 0;
     if (c < n%k)
-        m = max(m, a[i+(n+1)/k]-a[i+(n+1)/k-1] + pd(c+1, f));
+        m = max(m, a[i+(n+k-1)/k]-a[i+(n+k-1)/k-1] + pd(c+1, f));
     if (f < k-(n%k))
         m = max(m, a[i+n/k]-a[i+n/k-1] + pd(c, f+1));
 
@@ -44,6 +44,6 @@ int main () {
 
     if (k >= n)
         printf("%I64d\n", res);
-
-    printf("%I64d\n", res-pd(0,0));
+    else
+        printf("%I64d\n", res-pd(0,0));
 }
