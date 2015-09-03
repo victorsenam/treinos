@@ -1,49 +1,48 @@
+// WA
+
 #include <bits/stdc++.h>
 
-std::map<std::string, int> m;
-std::vector<std::string> v, s;
-int ord, t, n, ma, mw;
-char temp[81];
-std::string aux;
+using namespace std;
+
+const int N = 207;
+const int S = 87;
+
+int n, a, b, ss, t;
+char temp[S];
+string ori[N];
+string des[N];
+int ord[N];
+map<string, int> mp;
 
 int main () {
     scanf("%d", &t);
-
     while (t--) {
-        v.clear();
-        s.clear();
-        m.clear();
-
         scanf("%d", &n);
-        
-        for (int i = 0; i < n; i++) {
-            scanf(" %80[0-9a-zA-Z .]s", temp);
-            aux = temp;
-
-            v.push_back(aux);
-        }
 
         for (int i = 0; i < n; i++) {
-            scanf(" %80[0-9a-zA-Z .]s", temp);
-            aux = temp;
-
-            m.insert(make_pair(aux, i));
-            s.push_back(aux);
+            scanf(" %[a-zA-Z .]s", temp);
+            ori[n-i-1] = temp;
         }
-
-        ma = mw = -1;
         for (int i = 0; i < n; i++) {
-            ord = m.find(v[i])->second;
-
-            if (ord > ma) ma = ord;
-            else if (ord > mw) mw = ord;
-
- //           printf("%s %d %d %d\n", v[i].c_str(), ord, ma, mw);
+            scanf(" %[a-zA-Z .]s", temp);
+            des[n-i-1] = temp;
         }
 
-        for (int i = mw; i >= 0; i--) {
-            printf("%s\n", s[i].c_str());
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < n; j++) {
+                if (ori[i] == des[j]) {
+                    ord[i] = j;
+                    break;
+                }
+            }
         }
-        printf("\n");
+
+        while (42) {
+            for (int i = 1; i < n; i++) {
+                if (ord[i-1] > ord[i]) {
+                    printf("%s
+                }
+            }
+        }
     }
 }
