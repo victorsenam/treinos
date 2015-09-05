@@ -5,8 +5,6 @@ using namespace std;
 const int K = 28;
 const int N = 5007;
 
-typedef unsigned long long int num;
-
 int n, m, t;
 int turn;
 int memo[N][K];
@@ -28,23 +26,31 @@ int pd (int i, int j) {
 
     if (i < n) {
         int loc = pd(i+1, j);
-        if (sum[1][j][str[0][i]-'A'] == 0)
-            if (sum[0][i][str[0][i]-'A'] == 0)
+        int aux = str[0][i]-'A';
+
+        if (sum[0][i][aux] == 0)
+            if (sum[1][j][aux] == 0)
                 loc -= i+j;
-        if (sum[1][j][str[0][i]-'A'] == sum[1][m][str[0][i]-'A'])
-            if (sum[0][i+1][str[0][i]-'A'] == sum[0][n][str[0][i]-'A'])
-                loc += i+j;
+        if (sum[0][i+1][aux] == sum[0][n][aux])
+            if (sum[1][j][aux] == sum[1][m][aux]) {
+                loc = max(loc, loc+i+j);
+            }
+
         me = min(me, loc);
     }
     
     if (j < m) {
         int loc = pd(i, j+1);
-        if (sum[0][i][str[1][j]-'A'] == 0)
-            if (sum[1][j][str[1][j]-'A'] == 0)
+        int aux = str[1][j]-'A';
+
+        if (sum[1][j][aux] == 0)
+            if (sum[0][i][aux] == 0)
                 loc -= i+j;
-        if (sum[0][i][str[1][j]-'A'] == sum[0][n][str[1][j]-'A'])
-            if (sum[1][j+1][str[1][j]-'A'] == sum[1][m][str[1][j]-'A'])
-                loc += i+j;
+        if (sum[1][j+1][aux] == sum[1][m][aux])
+            if (sum[0][i][aux] == sum[0][n][aux]) {
+                loc = max(loc, loc+i+j);
+            }
+
         me = min(me, loc);
     }
 
@@ -69,7 +75,7 @@ int main () {
             sum[0][i+1][str[0][i]-'A']++;
         }
 
-        for (int j = 0; j < n; j++) {
+        for (int j = 0; j < m; j++) {
             for (int k = 0; k < 26; k++)
                 sum[1][j+1][k] = sum[1][j][k];
             sum[1][j+1][str[1][j]-'A']++;
