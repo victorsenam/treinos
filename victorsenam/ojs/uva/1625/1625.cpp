@@ -8,40 +8,46 @@ const int N = 5007;
 typedef unsigned long long int num;
 
 int n, m, t;
-num isOpen[2][N];
-int att[K];
-int tot[2][K];
-int memo[N][N];
-char str[2][N];
-int vis[N][N];
 int turn;
-
-void printanums (num v) {
-	printf("%llu: ", v);
-	while (v) {
-		printf("%d ", v%2);
-		v = (v>>1);
-	}
-	printf("\n");
-}
+int memo[N][K];
+int sum[2][N][K];
+int vis[N][K];
+char str[2][N];
 
 int pd (int i, int j) {
-    if (i == n && j == m)
+    if (i >= n && j >= m)
         return 0;
 
     int & me = memo[i][j];
 
     if (vis[i][j] == turn)
         return me;
+    vis[i][j] = turn;
     
     me = INT_MAX;
 
-    if (i < n)
-        me = min(me, pd(i+1, j));
-    if (j < m)
-        me = min(me, pd(i, j+1));
+    if (i < n) {
+        int loc = pd(i+1, j);
+        if (sum[1][j][str[0][i]-'A'] == 0)
+            if (sum[0][i][str[0][i]-'A'] == 0)
+                loc -= i+j;
+        if (sum[1][j][str[0][i]-'A'] == sum[1][m][str[0][i]-'A'])
+            if (sum[0][i+1][str[0][i]-'A'] == sum[0][n][str[0][i]-'A'])
+                loc += i+j;
+        me = min(me, loc);
+    }
+    
+    if (j < m) {
+        int loc = pd(i, j+1);
+        if (sum[0][i][str[1][j]-'A'] == 0)
+            if (sum[1][j][str[1][j]-'A'] == 0)
+                loc -= i+j;
+        if (sum[0][i][str[1][j]-'A'] == sum[0][n][str[1][j]-'A'])
+            if (sum[1][j+1][str[1][j]-'A'] == sum[1][m][str[1][j]-'A'])
+                loc += i+j;
+        me = min(me, loc);
+    }
 
-	me = max(me, me + __builtin_popcount(isOpen[0][i]|isOpen[1][j]));
     return me;
 }
 
@@ -55,41 +61,19 @@ int main () {
 
         turn++;
         for (int k = 0; k < 26; k++)
-            tot[0][k] = tot[1][k] = 0;
-		
-		for (int i = 0; i <= n; i++)
-			for (int j = 0; j <= m; j++)
-				memo[i][j] = -1;
+            sum[0][0][k] = sum[1][0][k] = 0;
 
-        for (int i = 0; i < n; i++)
-            tot[0][str[0][i]-'A']++;
-        for (int i = 0; i < m; i++)
-            tot[1][str[1][i]-'A']++;
+        for (int i = 0; i < n; i++) {
+            for (int k = 0; k < 26; k++)
+                sum[0][i+1][k] = sum[0][i][k];
+            sum[0][i+1][str[0][i]-'A']++;
+        }
 
-		for (int k = 0; k < 26; k++)
-			att[k] = 0;
-		for (int i = 0; i < n; i++) {
-			int aux = str[0][i] - 'A';
-			att[aux]++;
-
-			if (att[aux] > 0 && att[aux] < tot[0][aux])
-				isOpen[0][i] = (isOpen[0][i-1]|(1llu<<aux));
-			else
-				isOpen[0][i] = (isOpen[0][i-1]&(~(1llu<<aux)));
-		}
-
-		for (int k = 0; k < 26; k++)
-			att[k] = 0;
-		for (int j = 0; j < m; j++) {
-			int aux = str[1][j] - 'A';
-			att[aux]++;
-
-			if (att[aux] > 0 && att[aux] < tot[1][aux])
-				isOpen[1][j] = (isOpen[1][j-1]|(1llu<<aux));
-			else
-				isOpen[1][j] = (isOpen[1][j-1]&(~(1llu<<aux)));
-		}
-
+        for (int j = 0; j < n; j++) {
+            for (int k = 0; k < 26; k++)
+                sum[1][j+1][k] = sum[1][j][k];
+            sum[1][j+1][str[1][j]-'A']++;
+        }
         printf("%d\n", pd(0,0));
     }
 }
