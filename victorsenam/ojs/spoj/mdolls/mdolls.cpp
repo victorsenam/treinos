@@ -13,12 +13,12 @@ struct doll {
     }
 };
 
-int lis[N];
-int qtd[N];
 int n;
 doll v[N];
 int rs, ps;
 int t;
+multiset<int> s;
+multiset<int>::iterator it;
 
 int main () {
     scanf("%d", &t);
@@ -30,19 +30,19 @@ int main () {
         sort(v, v+n);
         
         rs = 0;
+        s.clear();
         for (int i = 0; i < n; i++) {
-            ps = lower_bound(lis, lis+rs, v[i].b) - lis;
-            if (ps == rs) {
-                qtd[ps] = 0;
+            it = s.lower_bound(v[i].b);
+            if (s.empty() || it == s.begin() || *s.begin() >= v[i].b) {
+                s.insert(v[i].b);
                 rs++;
-            }
-            qtd[ps]++;
-            lis[ps] = v[i].b;
+            } else {
+                it--;
+                s.erase(it);
+                s.insert(v[i].b);
+            }   
         }
-        int maxi = 0;
-        for (int i = 0; i < rs; i++) 
-            maxi = max(maxi, qtd[i]);
-        printf("%d\n", maxi);
+        printf("%d\n", rs);
     }
 }
 
