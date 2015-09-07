@@ -1,50 +1,44 @@
 #include <bits/stdc++.h>
 
 using namespace std;
-typedef long long int ll;
-typedef unsigned long long int ull;
-typedef int num;
-#ifndef ONLINE_JUDGE
-#define debug(...) fprintf(stderr, "%3d| ", __LINE__); fprintf(stderr, __VA_ARGS__); fprintf(stderr, "\n")
-#else
-#define debug(...) //
-#endif
 
-#define N 100
+const int N = 107;
+const int K = 100;
 
-int cost[N][N];
-int res[N+1];
+int sol[N][N];
+int res[N][N];
+int vis[N][N];
+int cor[N];
 int n;
-
-inline int getVal(int a) {
-    return (a+100)%100;
-}
+int turn;
 
 int pd (int i, int j) {
-    if (cost[i][j] != -1) return cost[i][j];
+    if (vis[i][j] == turn)
+        return res[i][j];
+    vis[i][j] = turn;
+
+    int & me = res[i][j];
+
+    if (i == j) {
+        me = 0;
+        sol[i][j] = cor[i];
+        return me;
+    }
     
-    int a = INT_MAX;
+    pd(i+1, j);
+    sol[i][j] = (sol[i+1][j] + cor[i])%K;
+    
+    me = INT_MAX;
     for (int k = i; k < j; k++)
-        a = min(pd(i, k) + pd(k+1, j) + getVal(res[k+1]-res[i])*getVal(res[j+1]-res[k+1]), a);
-    
-    cost[i][j] = a;
-    return a;
+        me = min(me, pd(i, k) + pd(k+1, j) + sol[i][k]*sol[k+1][j]);
+    return me;
 }
 
 int main () {
     while (scanf("%d", &n) != EOF) {
         for (int i = 0; i < n; i++)
-            for (int j = 0; j < n; j++)
-                cost[i][j] = -1;
-
-        res[0] = 0;
-        for (int i = 0; i < n; i++) {
-            scanf("%d", res+i+1);
-            res[i+1] += res[i];
-            res[i+1] %= 100;
-            cost[i][i] = 0;
-        }
-
+            scanf("%d", cor+i);
+        turn++;
         printf("%d\n", pd(0, n-1));
     }
 }
