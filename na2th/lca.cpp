@@ -6,45 +6,50 @@ typedef int edge;
 const int MV = 100000;
 const int ME = 2*MV;
 
-int head[MV], dpt[MV], tour[2*ME+2], pos[MV], ts;
+int head[MV];
 int to[ME], next[ME], es;
 int n;
 
-inline int cmp(int a, int b)
-{ return ( dpt[a] < dpt[b] ) ? a : b ;}
+int dpt[MV+1], seg[4*MV], pos[MV], ss;
 
-int dfs(node u, int d)
+inline node cmp(node u, node v)
+{ return ( dpt[u] < dpt[v] ) ? u : v ;}
+
+void dfs(node u, int d)
 {
     dpt[u] = d;
-    pos[u] = ts;
-    tour[ts++] = u;
+    pos[u] = ss;
+    seg[ss++] = u;
     for(edge e=head[u];e>=0;e=next[e])
         if( dpt[to[e]] == -1 )
         {
             dfs(to[e], dpt[u]+1);
-            tour[ts++] = u;
+            seg[ss++] = u;
         }
 }
 
-void build()
+void build(node root)
 {
     memset(dpt, -1, sizeof dpt);
-    ts = 2*n-1; dfs(0,0); dpt[n] = INT_MAX;
-    for(int i=2*n-2; i>=0;--i)
-        tour[i] = cmp(tour[i<<1], tour[i<<1|1]);
-}
+    ss = 2*n-1;
+    dfs(root,0);
+    dpt[n] = INT_MAX;
+    for(int i=2*n-2;i>0;--i)
+        seg[i] = cmp(seg[i<<1], seg[i<<1|1]);
+} // 5n - 4 operações
 
 node lca(node u, node v)
 {
+    node ans = n;
     int l = min(pos[u], pos[v]),
-        r = max(pos[u], pos[v])+1, ans = n;
+        r = max(pos[u], pos[v])+1;
     for(; l < r ; l>>=1, r>>=1)
     {
-        if(l&1) ans = cmp(ans, tour[l++]);
-        if(r&1) ans = cmp(ans, tour[--r]);
+        if(l&1) ans = cmp(ans, seg[l++]);
+        if(r&1) ans = cmp(ans, seg[--r]);
     }
     return ans;
-}
+} // 2 + lg(n) operações
 
 int main()
 {
@@ -56,7 +61,7 @@ int main()
         to[es] = --v; next[es] = head[--u]; head[u] = es++;
         to[es] = u; next[es] = head[v]; head[v] = es++;
     }
-    build();
+    build(0);
     node u, v;
     while( scanf("%d %d", &u, &v) != EOF )
     {
