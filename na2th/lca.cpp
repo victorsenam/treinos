@@ -29,8 +29,8 @@ int dfs(node u, int d)
 void build()
 {
     memset(dpt, -1, sizeof dpt);
-    ts = es+1; dfs(0,0); dpt[n] = INT_MAX;
-    for(int i=es+1; i>=0;--i)
+    ts = 2*n-1; dfs(0,0); dpt[n] = INT_MAX;
+    for(int i=2*n-2; i>=0;--i)
         tour[i] = cmp(tour[i<<1], tour[i<<1|1]);
 }
 
