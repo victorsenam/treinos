@@ -1,5 +1,6 @@
 #include <bits/stdc++.h>
 
+
 using namespace std;
 
 typedef unsigned long long int num;
@@ -55,7 +56,6 @@ int main () {
     while (lo < hi) {
         n = (hi+lo)/2;
         ans = ss();
-        //printf("%llu: %llu\n", n, ans);
         if (ans >= a)
             hi = n;
         else
@@ -68,7 +68,6 @@ int main () {
     ll res = ans;
     lo = 1ull;
 
-    //printf("[%llu, %llu] %lld\n", lo, hi, res);
     while (res) {
         if (res > 0)
             res -= countDig(lo++);
