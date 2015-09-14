@@ -3,8 +3,8 @@
 using namespace std;
 
 const int N = 8;
-const int mi[8] = {-1, 1, 2, 2, 1, -1, -2, -2};
-const int mj[8] = {-2, 2, 1, -1, -2, 2, 1, -1};
+const int mi[8] = {-2, -1, 1, 2, 2, 1, -1, -2};
+const int mj[8] = {1, 2, 2, 1, -1, -2, -2, -1};
 
 bool mat[N][N];
 int ti[N][N];
@@ -53,8 +53,10 @@ void printmat(int i, int j) {
 
 int main () { 
     scanf("%d", &n);
-
-    if (bt(0, 0, 1))
+    
+    if (n == 1)
+        printf("a1\n");
+    else if (bt(0, 0, 1))
         printmat(0, 0);
     else
         printf("IMPOSSIBLE\n");
