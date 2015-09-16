@@ -8,36 +8,41 @@ const int M = 10000;
 const string ender = "***END***";
 
 int n;
-string names[N];
-int lin[N];
+char names[N];
 string codes[N][M];
+int lin[N];
 char temp[S];
 
 int main () {
 	while (scanf("%d", &n) != EOF) {
-		int code = 0;
-			lin[0] = 0;
+        int code = 0;
 		bool ok = 0;
-		while (code <= n && scanf(" %[ -~]", temp)) {
-			if (strcmp(temp, ender.c_str())) {
-				lin[code++] = 0;
-				ok = 0;
-				continue;
-			}
-			if (!ok) {
-				names[code] = temp;
-				ok = 1;
-			}
-			int i, j;
-			j = 0;
-			for (i = 0; temp[i] != '\0'; i++) {
-				if (temp[i] != temp[i+1] || temp[i] != ' ')
-					temp[j++] = temp[i];
-			}
-			temp[j++] = ' ';
+        for (code = 0; code <= n; code++) {
+            lin[code] = 0;
+            scanf(" %[ -~]", names[code]);
+            printf("%s\n", names[code]);
+            while (scanf(" %[ -~]", temp)) {
+                printf("%s\n", temp);
+                if (strcmp(temp, ender.c_str()) == 0)
+                    break;
 
-			codes[code][lin[code]++] = temp;
+                int i, j;
+                j = 0;
+                for (i = 0; temp[i] != '\0'; i++)
+                    if (temp[i] != temp[i+1] || temp[i] != ' ')
+                        temp[j++] = temp[i];
+                temp[j++] = '\0';
+
+                codes[code][lin[code]++] = temp;
+            }
 		}
+
+        for (int i = 0; i <= n; i++) {
+            printf("* %s *\n", names[i]);
+            for (int j = 0; j < lin[i]; j++)
+                printf("%s\n", codes[i][j].c_str());
+            printf("===\n");
+        }
 
 		int maxi = 0;
 		int vmax = -1;
@@ -55,6 +60,6 @@ int main () {
 		if (maxi == 0)
 			printf("%d\n", 0);
 		else
-			printf("%s\n", names[vmax].c_str());
+			printf("%s\n", names[vmax]);
 	}
 }
