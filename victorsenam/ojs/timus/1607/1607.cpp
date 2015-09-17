@@ -10,7 +10,14 @@ int main () {
 
     while (pi < ti) {
         pi += pd;
+        if (pi >= ti) {
+            printf("%d\n", ti);
+            return 0;
+        }
         ti -= td;
+        if (pi >= ti) {
+            printf("%d\n", pi);
+            return 0;
+        }
     }
-    printf("%d\n", max(pi, ti));
 }
