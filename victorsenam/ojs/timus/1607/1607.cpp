@@ -7,8 +7,12 @@ int pd, td;
 
 int main () {
     scanf("%d %d %d %d", &pi, &pd, &ti, &td);
-
-    while (pi < ti) {
+    
+    if (pi >= ti) {
+        printf("%d\n", pi);
+        return 0;
+    }
+    while (42) {
         pi += pd;
         if (pi >= ti) {
             printf("%d\n", ti);
