@@ -26,9 +26,9 @@ void build()
             id[i] = i; sa[i] = i;
         }
         sort(sa,sa+n,lexLess);
-        for(int i=0;i<n;i++)
-            p[k][id[sa[i]]] = i && lexEq(sa[i],sa[i-1]) ?
-            p[k][id[sa[i-1]]]: i ;
+        p[k][id[sa[0]]] = 0;
+        for(int i=1;i<n;i++)
+            p[k][id[sa[i]]] = p[k][id[sa[i-1]]] + !lexEq(sa[i],sa[i-1]);
     }
     for(int i=0;i<n;i++)
         sa[p[19][i]] = i;
