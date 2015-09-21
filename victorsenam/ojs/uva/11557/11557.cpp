@@ -1,7 +1,4 @@
 // WA e TLE
-// Preprocessa os hashes de linhas
-// Coloca um separador diferente pra quebra de linhas ou fixa uma potencia de hash pra string
-
 #include <bits/stdc++.h>
 
 using namespace std;
@@ -10,21 +7,21 @@ typedef unsigned long long int num;
 
 const int N = 107;
 const int S = 257;
+const int P = 254;
 const int M = 10007;
 const string ender = "***END***";
 const num MOD = 1000000007llu;
 const num B = 307llu;
 
-int lins[N];
-string code[N][M];
+int lin[N];
+num code[N][M];
 char name[N][S];
 char temp[S];
 int n;
 int res[N];
 int ss;
 int maxi;
-num lia[M], lib[M];
-num pta[M], ptb[M];
+num pot[S];
 num kla[M], klb[M];
 
 inline num mod (num a) {
@@ -32,56 +29,32 @@ inline num mod (num a) {
 }
 
 bool solve (int c, int k) {
-    int qta, qtb;
+    int m;
+    num p = 1llu;
 
-    if (lins[c] < k)
+    m = min(lin[c], lin[n]) - k;
+    if (m <= 0)
         return 0;
-    if (lins[n] < k)
-        return 0;
 
-    for (int i = 0; i < lins[c]; i++) {
-        pta[i] = 1llu;
-        lia[i] = 0;
-        for (int j = 0; j < code[c][i].length(); j++) {
-            lia[i] = mod(lia[i] + mod(code[c][i][j]*pta[i]));
-            pta[i] = mod(pta[i]*B);
-        }
+    for (int i = 0; i < k; i++) {
+        kla[0] = mod(mod(kla[0]*pot[S]) + code[c][i]);
+        klb[0] = mod(mod(klb[0]*pot[S]) + code[n][i]);
+        if (i)
+            p = mod(p*pot[S]);
     }
 
-    for (int i = 0; i < lins[n]; i++) {
-        ptb[i] = 1llu;
-        lib[i] = 0;
-        for (int j = 0; j < code[n][i].length(); j++) {
-            lib[i] = mod(lib[i] + mod(code[n][i][j]*ptb[i]));
-            ptb[i] = mod(ptb[i]*B);
-        }
+    for (int i = 1; i < m; i++) {
+        kla[i] = mod(mod(mod(kla[i-1] - p*(kla[i-1]))*pot[S]) + kla[i+k]);
+        klb[i] = mod(mod(mod(klb[i-1] - p*(klb[i-1]))*pot[S]) + klb[i+k]);
     }
 
-    for (int i = 0; i < lins[c] - k; i++) {
-        num p = 1llu;
-        kla[i] = 0;
-        for (int j = 0; j < k; j++) {
-            kla[i] = mod(kla[i] + mod(p*lia[i+j]));
-            p = mod(p*pta[i+j]);
-        }
-    }
-
-    for (int i = 0; i < lins[n] - k; i++) {
-        num p = 1llu;
-        klb[i] = 0;
-        for (int j = 0; j < k; j++) {
-            klb[i] = mod(klb[i] + mod(p*lib[i+j]));
-            p = mod(p*ptb[i+j]);
-        }
-    }
-
-    sort(kla, kla+lins[c]-k);
-    sort(klb, klb+lins[n]-k);
+    sort(kla, kla+m);
+    sort(klb, klb+m);
 
     int ia, ib;
     ia = ib = 0;
 
-    while (ia < lins[c]-k && ib < lins[n]-k) {
+    while (ia < m && ib < m) {
         if (kla[ia] == klb[ib])
             return 1;
         else if (kla[ia] < klb[ib])
@@ -94,9 +67,13 @@ bool solve (int c, int k) {
 }
 
 int main () {
+    pot[0] = 1llu;
+    for (int i = 1; i <= S; i++)
+        pot[i] = mod(pot[i-1]*B);
+
     while (scanf("%d", &n) != EOF) {
         for (int i = 0; i <= n; i++) {
-            lins[i] = 0;
+            lin[i] = 0;
             if (i < n)
                 scanf(" %[ -~]", name[i]);
 
@@ -108,7 +85,11 @@ int main () {
                 temp[k++] = '\0';
                 if (k == 1)
                     continue;
-                code[i][lins[i]++] = temp;
+
+                code[i][lin[i]] = 0llu;
+                for (int j = 0; j < k; j++)
+                    code[i][lin[i]] = mod(code[i][lin[i]] + mod(pot[S-j-1]*temp[j]));
+                lin[i]++;
             }
         }
 
@@ -117,7 +98,7 @@ int main () {
 
         for (int i = 0; i < n; i++) {
             int lo = max(maxi-1, 0);
-            int hi = min(lins[i], lins[n]);
+            int hi = min(lin[i], lin[n]);
             int mid = (lo+hi+1)/2;
 
             while (lo < hi) {
