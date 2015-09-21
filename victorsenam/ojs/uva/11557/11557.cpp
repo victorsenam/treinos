@@ -1,3 +1,7 @@
+// WA e TLE
+// Preprocessa os hashes de linhas
+// Coloca um separador diferente pra quebra de linhas ou fixa uma potencia de hash pra string
+
 #include <bits/stdc++.h>
 
 using namespace std;
