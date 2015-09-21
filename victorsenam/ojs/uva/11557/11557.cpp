@@ -13,48 +13,58 @@ const string ender = "***END***";
 const num MOD = 1000000007llu;
 const num B = 307llu;
 
+inline num mod (num a) {
+    return (a%MOD + MOD)%MOD;
+}
+
 int lin[N];
-num code[N][M];
 char name[N][S];
 char temp[S];
 int n;
 int res[N];
 int ss;
 int maxi;
+num code[N][M];
 num pot[S];
 num kla[M], klb[M];
 
-inline num mod (num a) {
-    return (a%MOD + MOD)%MOD;
-}
-
 bool solve (int c, int k) {
-    int m;
     num p = 1llu;
 
-    m = min(lin[c], lin[n]) - k;
-    if (m <= 0)
+    if (lin[c] - k <= 0)
+        return 0;
+    if (lin[n] - k <= 0)
         return 0;
 
-    for (int i = 0; i < k; i++) {
+    kla[0] = code[c][0];
+    klb[0] = code[n][0];
+    for (int i = 1; i < k; i++) {
         kla[0] = mod(mod(kla[0]*pot[S]) + code[c][i]);
         klb[0] = mod(mod(klb[0]*pot[S]) + code[n][i]);
-        if (i)
-            p = mod(p*pot[S]);
+        p = mod(p*pot[S]);
     }
 
-    for (int i = 1; i < m; i++) {
-        kla[i] = mod(mod(mod(kla[i-1] - p*(kla[i-1]))*pot[S]) + kla[i+k]);
-        klb[i] = mod(mod(mod(klb[i-1] - p*(klb[i-1]))*pot[S]) + klb[i+k]);
-    }
+    for (int i = 1; i <= lin[c]-k; i++)
+        kla[i] = mod(mod(mod(kla[i-1] - mod(p*code[c][i-1]))*pot[S]) + code[c][i+k-1]);
+    for (int i = 1; i <= lin[n]-k; i++)
+        klb[i] = mod(mod(mod(klb[i-1] - mod(p*code[n][i-1]))*pot[S]) + code[n][i+k-1]);
 
-    sort(kla, kla+m);
-    sort(klb, klb+m);
+/*
+    printf("k = %d\n", k);
+    printf("%s\n", name[c]);
+    for (int i = 0; i <= lin[c]-k; i++)
+        printf("[%d,%d] -> %llu\n", i, i+k-1, kla[i]);
+    printf("%s\n", name[n]);
+    for (int i = 0; i <= lin[n]-k; i++)
+        printf("[%d,%d] -> %llu\n", i, i+k-1, klb[i]);
+*/
+
+    sort(kla, kla+lin[c]-k+1);
+    sort(klb, klb+lin[n]-k+1);
 
     int ia, ib;
     ia = ib = 0;
-
-    while (ia < m && ib < m) {
+    while (ia <= lin[c]-k && ib <= lin[n]-k) {
         if (kla[ia] == klb[ib])
             return 1;
         else if (kla[ia] < klb[ib])
@@ -76,6 +86,10 @@ int main () {
             lin[i] = 0;
             if (i < n)
                 scanf(" %[ -~]", name[i]);
+            else {
+                name[i][0] = 'M';
+                name[i][1] = '\0';
+            }
 
             while (scanf(" %[ -~]", temp) && strcmp(temp, ender.c_str())) {
                 int k = 0;
