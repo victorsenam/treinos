@@ -20,10 +20,12 @@ bool siz_cmp (const string & a, const string & b) {
 }
 
 bool solve (int w) {
-    printf("%s\n", wrd[w].c_str());
-    if (w == m)
+    if (w >= m)
         return 1;
-    for (int lo = lower_bound(dic, dic+n, wrd[w], siz_cmp) - dic; dic[lo].length() == wrd[w].length(); ++lo) {
+    for (int lo = 0; lo < n; ++lo) {
+        if (dic[lo].length() != wrd[w].length())
+            continue;
+
         int i = 0;
         for (i = 0; i < wrd[w].length(); i++) {
             if (mp[wrd[w][i]] == '*') {
@@ -35,7 +37,7 @@ bool solve (int w) {
                 break;
         }
 
-        if (i == n && solve(w+1))
+        if (i == wrd[w].length() && solve(w+1))
             return 1;
 
         for (int j = 0; j < i; j++) {
@@ -58,7 +60,7 @@ int main () {
 
     while (scanf(" %[ a-z]", inp) != EOF) {
         m = 0;
-        for (int i = 0; i && inp[i-1] != '\0'; i++)
+        for (int i = 0; !i || inp[i-1] != '\0'; i++)
             keep[i] = inp[i];
 
         tmp = strtok(inp, " \0");
