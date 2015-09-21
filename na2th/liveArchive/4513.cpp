@@ -4,79 +4,111 @@ typedef int num;
 const int MS = 40007;
 const int ML = 20;
 char s[MS];
-int n, m, ans, pos;
-int sa[MS], p[ML][MS], lcp[MS][ML], sam[MS][ML];
-int lo[MS], hi[MS], id[MS];
-bool lexLess(int a, int b)
-{ return lo[a]==lo[b]?hi[a]<hi[b]:lo[a]<lo[b]; }
-bool lexEq(int a,int b)
-{ return lo[a]==lo[b]&&hi[a]==hi[b]; }
+int sa[MS], lcp[MS], n, m, ans, aux, pos;
+int lo[MS], hi[MS], id[MS], p[ML][MS];
+bool lexLess(int i,int j)
+{ return lo[i]==lo[j]?hi[i]<hi[j]:lo[i]<lo[j]; }
+bool lexEq(int i, int j)
+{ return lo[i]==lo[j]&&hi[i]==hi[j]; }
 
-void build()
+void buildSA()
 {
     int k;
     for(int i=0;i<ML;i++)
         p[i][n] = -1;
-    for(int i=0;i<n;i++)
+    for(int i=0;i<MS;i++)
         p[0][i] = s[i];
     for(k=1;k<ML;k++)
     {
         for(int i=0;i<n;i++)
         {
             lo[i] = p[k-1][i];
-            hi[i] = p[k-1][min(i+(1<<(k-1)),n)];
+            hi[i] = p[k-1][min(n,i+(1<<(k-1)))];
             id[i] = i; sa[i] = i;
         }
         sort(sa, sa+n, lexLess);
         p[k][id[sa[0]]] = 0;
         for(int i=1;i<n;i++)
             p[k][id[sa[i]]] = p[k][id[sa[i-1]]] + !lexEq(sa[i],sa[i-1]);
-        if(p[k][id[sa[n-1]]] == n-1 ) break;
+        if( p[k][id[sa[n-1]]] == n-1 ) break;
     }
     for(int i=0;i<n;i++)
-        sa[p[k][i]] = sam[p[k][i]][0] = i;
+        sa[p[k][i]] = i;
+    lcp[n-1] = 0;
     for(int i=0;i<n-1;i++)
     {
-        lcp[i][0] = 0;
+        lcp[i] = 0;
         for(int j=k;j>=0;j--)
-            if( p[j][sa[i]+lcp[i][0]] == p[j][sa[i+1]+lcp[i][0]] )
+            if( p[j][ sa[i]+lcp[i] ] == p[j][ sa[i+1]+lcp[i] ] )
             {
-                lcp[i][0] += (1<<j);
-                if( max(sa[i],sa[i+1])+lcp[i][0] >= n ) break;
+                lcp[i] += (1<<j);
+                if( max(sa[i],sa[i+1])+lcp[i] > n ) break;
             }
     }
-    for(int j=1;j<ML;j++)
-        for(int i=0;i<n;i++)
-            if( i+(1<<(j-1)) < n )
-                sam[i][j] = max(sam[i][j-1],sam[i-(1<<(j-1))][j-1]);
-            else
-                sam[i][j] = INT_MIN;
+ }
 
-    for(int j=1;j<ML;j++)
-        for(int i=0;i<n-1;i++)
-            if( i + (1<<(j-1)) < n-1 )
-                lcp[i][j] = min(lcp[i][j-1],lcp[i+(1<<(j-1))][j-1]);
-            else
-                lcp[i][j] = INT_MAX;
+int lt[2*MS], st[2*MS];
+void buildT()
+{
+    for(int i=0;i<n;i++)
+    {
+        st[n+i] = sa[i];
+        lt[n+i] = lcp[i];
+    }
+    for(int i=n-1;i>0;i--)
+    {
+        st[i] = max(st[i<<1],st[i<<1|1]);
+        lt[i] = min(lt[i<<1],lt[i<<1|1]);
+    }
+}
+
+int lcpQuery(int l, int r)
+{
+    int ans = n;
+    for(l+=n,r+=n;l<r;l>>=1,r>>=1)
+    {
+        if(l&1) ans = min(ans,lt[l++]);
+        if(r&1) ans = min(ans,lt[--r]);
+    }
+    return ans;
+}
+
+int saQuery(int l, int r)
+{
+    int ans = 0;
+    for(l+=n,r+=n;l<r;l>>=1,r>>=1)
+    {
+        if(l&1) ans = max(ans, st[l++]);
+        if(r&1) ans = max(ans, st[--r]);
+    }
+    return ans;
 }
 
 int main()
 {
-    while( scanf("%d", &m) != EOF && m )
+    while( scanf("%d", &m) && m )
     {
         scanf("%s", s);
         n = strlen(s);
-        build();
-        int k = 31 - __builtin_clz(m);
-        ans = -1;
-        for(int i=0;i+m<n;i++)
-            if( min(lcp[i][k],lcp[i+m-(1<<k)][k]) >= ans )
+        buildSA();
+        buildT();
+        ans = 0;
+        pos = 0;
+        for(int i=0;i+m-1<n+1;i++)
+        {
+            if( (aux=lcpQuery(i,i+m-1)) >= ans )
             {
-                ans = min(lcp[i][k],lcp[i+m-(1<<k)][k]);
-                pos = max(sam[i+1][k],sam[i+1+m-(1<<k)][k]);
+                if( aux > ans )
+                    pos = saQuery(i,i+m);
+                else
+                    pos = max(pos, saQuery(i,i+m));
+                ans = max(ans, aux);
             }
-        if(ans > 0)
-            printf("%d %d\n", ans+1, pos-1);
+        }
+        if( ans != 0 && ans < n)
+            printf("%d %d\n", ans, pos);
+        else if( ans != 0 )
+            printf("%d %d\n", ans, 0);
         else
             printf("none\n");
     }
