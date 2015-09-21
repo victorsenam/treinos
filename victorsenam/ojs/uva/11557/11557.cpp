@@ -1,4 +1,4 @@
-// WA e TLE
+// WA forever
 #include <bits/stdc++.h>
 
 using namespace std;
@@ -17,6 +17,41 @@ inline num mod (num a) {
     return (a%MOD + MOD)%MOD;
 }
 
+struct has {
+    num co;
+    num se;
+
+    has (num co, num se) : co(co), se(se) {};
+    has (num al) : co(al), se(al) {};
+    has () : co(0llu), se(0llu) {};
+
+    has operator + (const has & b) const {
+        return has(mod(this->co+b.co), this->se+b.se);
+    }
+
+    has operator - (const has & b) const {
+        return has(mod(this->co-b.co), this->se-b.se);
+    }
+
+    has operator * (num b) const {
+        return has(mod(this->co*b), this->se*b);
+    }
+
+    has operator * (const has & b) const {
+        return has(mod(this->co*b.co), this->se*b.se);
+    }
+
+    bool operator < (const has & b) const {
+        if (this->co == b.co)
+            return this->se < b.se;
+        return this->co < b.co;
+    }
+
+    bool operator == (const has & b) const {
+        return ((this->co==b.co)&&(this->se==b.se));
+    }
+};
+
 int lin[N];
 char name[N][S];
 char temp[S];
@@ -24,12 +59,12 @@ int n;
 int res[N];
 int ss;
 int maxi;
-num code[N][M];
-num pot[S];
-num kla[M], klb[M];
+has pot[S];
+has code[N][M];
+has kla[M], klb[M];
 
 bool solve (int c, int k) {
-    num p = 1llu;
+    has p = has(1llu);
 
     if (lin[c] - k <= 0)
         return 0;
@@ -39,15 +74,15 @@ bool solve (int c, int k) {
     kla[0] = code[c][0];
     klb[0] = code[n][0];
     for (int i = 1; i < k; i++) {
-        kla[0] = mod(mod(kla[0]*pot[S]) + code[c][i]);
-        klb[0] = mod(mod(klb[0]*pot[S]) + code[n][i]);
-        p = mod(p*pot[S]);
+        kla[0] = kla[0]*pot[S] + code[c][i];
+        klb[0] = klb[0]*pot[S] + code[n][i];
+        p = pot[S]*p;
     }
 
     for (int i = 1; i <= lin[c]-k; i++)
-        kla[i] = mod(mod(mod(kla[i-1] - mod(p*code[c][i-1]))*pot[S]) + code[c][i+k-1]);
+        kla[i] = (kla[i-1] - p*code[c][i-1])*pot[S] + code[c][i+k-1];
     for (int i = 1; i <= lin[n]-k; i++)
-        klb[i] = mod(mod(mod(klb[i-1] - mod(p*code[n][i-1]))*pot[S]) + code[n][i+k-1]);
+        klb[i] = (klb[i-1] - p*code[n][i-1])*pot[S] + code[n][i+k-1];
 
 /*
     printf("k = %d\n", k);
@@ -77,9 +112,9 @@ bool solve (int c, int k) {
 }
 
 int main () {
-    pot[0] = 1llu;
+    pot[0] = has(1llu);
     for (int i = 1; i <= S; i++)
-        pot[i] = mod(pot[i-1]*B);
+        pot[i] = pot[i-1]*B;
 
     while (scanf("%d", &n) != EOF) {
         for (int i = 0; i <= n; i++) {
@@ -100,9 +135,9 @@ int main () {
                 if (k == 1)
                     continue;
 
-                code[i][lin[i]] = 0llu;
+                code[i][lin[i]] = has(0llu);
                 for (int j = 0; j < k; j++)
-                    code[i][lin[i]] = mod(code[i][lin[i]] + mod(pot[S-j-1]*temp[j]));
+                    code[i][lin[i]] = pot[S-j-1]*temp[j] + code[i][lin[i]];
                 lin[i]++;
             }
         }
