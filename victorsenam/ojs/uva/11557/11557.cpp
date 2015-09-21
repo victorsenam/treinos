@@ -24,7 +24,7 @@ num pta[M], ptb[M];
 num kla[M], klb[M];
 
 inline num mod (num a) {
-    return a;
+    return (a%MOD + MOD)%MOD;
 }
 
 bool solve (int c, int k) {
@@ -112,7 +112,7 @@ int main () {
         ss = 0;
 
         for (int i = 0; i < n; i++) {
-            int lo = 0;
+            int lo = max(maxi-1, 0);
             int hi = min(lins[i], lins[n]);
             int mid = (lo+hi+1)/2;
 
