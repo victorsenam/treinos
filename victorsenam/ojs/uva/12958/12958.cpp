@@ -1,10 +1,12 @@
+// É realmente muito difícil :(
+
 #include <bits/stdc++.h>
 
 using namespace std;
 
 typedef pair<int, int> pii;
 typedef vector<pii> vii;
-typedef bitset<100> num;
+typedef bitset<100> bts;
 
 const int N = 31;
 const int K = 12;
@@ -15,14 +17,19 @@ const int mj[4] = {1, -1, 0, 0};
 #define ss second
 
 set<vii> s[K];
+set<bts> curr;
 set<vii>::iterator it;
 vii aux, att;
 int t;
 int n, m, h;
 int k;
 
+bts tobm (vii pc) {
+    bts a;
+    return a;
+}
+
 int main () {
-    
     for (int i = 1; i <= 10; i++) {
         if (i == 1) {
             aux.push_back(make_pair(0, 0));
@@ -52,5 +59,15 @@ int main () {
                 }
             }
         }
+    }
+
+    scanf("%d", &t);
+
+    while (t--) {
+        scanf("%d %d %d %d", &n, &m, &h, &k);
+
+        curr.clear();
+        for (it = s[k].begin(); it != s[k].end(); it++)
+            curr.insert(tobm(*it));
     }
 }
