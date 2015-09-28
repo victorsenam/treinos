@@ -1,4 +1,3 @@
-// TLE
 #include <bits/stdc++.h>
 
 using namespace std;
@@ -7,88 +6,63 @@ const int N = 500;
 const int mi[8] = {0, 0, 1, -1, -1, -1, 1, 1};
 const int mj[8] = {1, -1, 0, 0, -1, 1, -1, 1};
 
-int n, m;
-int bts[N*N];
-int dis[N*N];
-int ini, obj;
-int a, b;
-char mat[N*N];
-queue<int> q;
+struct edge {
+    int i, j;
+    int b, d;
+    bool operator < (const edge & a) const {
+        if (b == a.b)
+            return d > a.d;
+        return b > a.b;
+    }
+};
 
-inline bool isVal(int i, int j)
-{ return (i >= 0 && i < n && j >= 0 && j < m); }
+int n, m;
+priority_queue<edge> pq;
+edge ini, fim;
+bool visi[N][N];
+char mat[N][N];
+
+inline bool isVal (edge & a) {
+    return (a.i >= 0 && a.i < n && a.j >= 0 && a.j < m);
+}
 
 int main () {
-    scanf("%d %d", &n, &m);
-
-    scanf("%d %d", &a, &b);
-    a--; b--;
-    ini = a*m+b;
-    scanf("%d %d", &a, &b);
-    a--; b--;
-    obj = a*m+b;
+    scanf("%d %d %d %d %d %d", &n, &m, &ini.i, &ini.j, &fim.i, &fim.j);
+    ini.i--; ini.j--; fim.i--; fim.j--;
+    ini.d = 1;
+    ini.b = 0;
+    fim.d = INT_MAX;
+    pq.push(ini);
 
     for (int i = 0; i < n; i++)
-        for (int j = 0; j < m; j++)
-            scanf(" %c", &mat[i*m+j]);
-    
-    for (int i = 0; i < n*m; i++)
-        bts[i] = dis[i] = INT_MAX;
-    bts[obj] = 0;
-    dis[ini] = 1;
+        scanf(" %s", mat[i]);
 
-    q.push(obj);
-    while (!q.empty()) {
-        int att = q.front();
-        q.pop();
+    while (!pq.empty()) {
+        edge att = pq.top();
+        pq.pop();
+        if (visi[att.i][att.j])
+            continue;
+        visi[att.i][att.j] = 1;
 
-        for (int k = 0; k < 8; k++) {
-            int ni = att/m + mi[k];
-            int nj = att%m + mj[k];
-            int nx = ni*m+nj;
-
-            if (!isVal(ni, nj) || mat[nx] == '0')
-                continue;
-            int aux = bts[att];
-            
-            if (mat[nx] != mat[att])
-                aux++;
-            
-            if (bts[nx] > aux) {
-                bts[nx] = aux;
-                q.push(nx);
-            }
-        }
-    }
-
-    q.push(ini);
-    while (!q.empty()) {
-        int att = q.front();
-        q.pop();
-
-        if (att == obj)
+        if (fim.i == att.i && fim.j == att.j) {
+            fim = att;
             break;
+        }
 
         for (int k = 0; k < 8; k++) {
-            int ni = att/m + mi[k];
-            int nj = att%m + mj[k];
-            int nx = ni*m+nj;
+            edge nx = att;
+            nx.i += mi[k]; nx.j += mj[k];
+            if (!isVal(nx) || mat[nx.i][nx.j] == '0')
+                continue;
+            nx.d = att.d + 1;
+            nx.b = att.b + (mat[att.i][att.j] != mat[nx.i][nx.j]);
 
-            if (!isVal(ni, nj) && mat[nx] != '0')
-                continue;
-            int aux = dis[att] + 1;
-            if (mat[att] != mat[nx] && bts[att] <= bts[nx])
-                continue;
-            
-            if (dis[nx] > aux) {
-                dis[nx] = aux;
-                q.push(nx);
-            }
+            pq.push(nx);
         }
     }
-    
-    if (max(dis[obj], bts[ini]) == INT_MAX)
+
+    if (fim.d == INT_MAX)
         printf("0 0\n");
     else
-        printf("%d %d\n", dis[obj], bts[ini]);
+        printf("%d %d\n", fim.d, fim.b);
 }
