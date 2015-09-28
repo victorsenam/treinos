@@ -7,84 +7,88 @@ const int N = 500;
 const int mi[8] = {0, 0, 1, -1, -1, -1, 1, 1};
 const int mj[8] = {1, -1, 0, 0, -1, 1, -1, 1};
 
-struct vert
-{
-    int st, bt;
-    int i, j;
-    bool operator < (const vert & a) const {
-        if (bt != a.bt)
-            return bt < a.bt;
-        if (st != a.st)
-            return st < a.st;
-        if (i != a.i)
-            return i < a.i;
-        return j < a.j;
-    }
-};
-
 int n, m;
-vert ini;
-int oi, oj;
-char mat[N][N];
-vert dist[N][N];
-set<vert> pq;
+int bts[N*N];
+int dis[N*N];
+int ini, obj;
+int a, b;
+char mat[N*N];
+queue<int> q;
 
-inline bool isVal (int i, int j)
+inline bool isVal(int i, int j)
 { return (i >= 0 && i < n && j >= 0 && j < m); }
 
-int main () 
-{
+int main () {
     scanf("%d %d", &n, &m);
-    scanf("%d %d", &ini.i, &ini.j);
-    scanf("%d %d", &oi, &oj);
-    ini.i--;
-    ini.j--;
-    oi--;
-    oj--;
 
-    for (int i = 0; i < n; i++) {
-        scanf("%s", mat[i]);
+    scanf("%d %d", &a, &b);
+    a--; b--;
+    ini = a*m+b;
+    scanf("%d %d", &a, &b);
+    a--; b--;
+    obj = a*m+b;
+
+    for (int i = 0; i < n; i++)
         for (int j = 0; j < m; j++)
-            dist[i][j].st = dist[i][j].bt = INT_MAX;
-    }
-
-    ini.bt = 0;
-    ini.st = 1;
-    dist[ini.i][ini.j] = ini;
-    pq.clear();
-    pq.insert(ini);
-
-    while (!pq.empty()) {
-        vert att = *(pq.begin());
-        pq.erase(pq.begin());
-
-        if (att.i == oi && att.j == oj)
-            break;
-        if (dist[att.i][att.j] < att)
-            continue;
+            scanf(" %c", &mat[i*m+j]);
     
+    for (int i = 0; i < n*m; i++)
+        bts[i] = dis[i] = INT_MAX;
+    bts[obj] = 0;
+    dis[ini] = 1;
+
+    q.push(obj);
+    while (!q.empty()) {
+        int att = q.front();
+        q.pop();
+
         for (int k = 0; k < 8; k++) {
-            vert nx = att;
-            nx.i += mi[k]; nx.j += mj[k];
-            if (!isVal(nx.i, nx.j) || mat[nx.i][nx.j] == '0')
+            int ni = att/m + mi[k];
+            int nj = att%m + mj[k];
+            int nx = ni*m+nj;
+
+            if (!isVal(ni, nj) || mat[nx] == '0')
                 continue;
+            int aux = bts[att];
             
-            nx.st++;
-            nx.bt += (mat[nx.i][nx.j] != mat[att.i][att.j]);
-
-            if (dist[nx.i][nx.j] < nx)
-                continue;
-
-            pq.erase(dist[nx.i][nx.j]);
-            pq.insert(nx);
-
-            dist[nx.i][nx.j] = nx;
-            pq.insert(nx);
+            if (mat[nx] != mat[att])
+                aux++;
+            
+            if (bts[nx] > aux) {
+                bts[nx] = aux;
+                q.push(nx);
+            }
         }
     }
 
-    if (dist[oi][oj].st == INT_MAX)
+    q.push(ini);
+    while (!q.empty()) {
+        int att = q.front();
+        q.pop();
+
+        if (att == obj)
+            break;
+
+        for (int k = 0; k < 8; k++) {
+            int ni = att/m + mi[k];
+            int nj = att%m + mj[k];
+            int nx = ni*m+nj;
+
+            if (!isVal(ni, nj) && mat[nx] != '0')
+                continue;
+            int aux = dis[att] + 1;
+            if (mat[att] != mat[nx] && bts[att] <= bts[nx])
+                continue;
+            
+            if (dis[nx] > aux) {
+                dis[nx] = aux;
+                q.push(nx);
+            }
+        }
+    }
+    
+    if (max(dis[obj], bts[ini]) == INT_MAX)
         printf("0 0\n");
-    else 
-        printf("%d %d\n", dist[oi][oj].st, dist[oi][oj].bt);
+    else
+        printf("%d %d\n", dis[obj], bts[ini]);
 }
