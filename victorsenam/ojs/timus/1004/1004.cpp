@@ -2,107 +2,106 @@
 
 using namespace std;
 
-const int N = 102;
+const int N = 101;
+const int M = N*N;
 
 struct vert {
-    int v, o, w, f, p, ff;
+    int v, w, p;
 
-    bool operator < (const vert & a) const {
-        return w > a.w;
-    }
+    bool operator < (const vert & a) const
+    { return w > a.w; }
 };
 
-struct edge {
-    int v, w, id;
-};
-
-int turn;
+int nx[M], hd[M], hg[M], to[M];
+int es;
 int n, m;
 int a, b, l;
-int from[N][N][N];
-int visi[N][N][N];
 int turn;
-int sol[N];
-int ss;
-vector<edge> adj[N];
-priority_queue<vert> pq;
+int visi[N];
+int from[N];
+int dist[N];
+int rw;
+int locw, locm;
+deque<int> res;
+
+void montaRes(vert aux) {
+    res.clear();
+    rw = dist[aux.p] + aux.w;
+    int at = aux.p;
+    while (from[at] != at) {
+        res.push_back(at);
+        at = from[at];
+    }
+    at = aux.v;
+    while (from[at] != at) {
+        res.push_front(at);
+        at = from[at];
+    }
+}
+
+void djs(int ini) {
+    priority_queue<vert> pq;
+    turn++;
+
+    vert att;
+    att.v = att.p = ini;
+    att.w = 0;
+    pq.push(att);
+
+    while (!pq.empty()) {
+        att = pq.top();
+        pq.pop();
+
+        if (visi[att.v] == turn) {
+            if (from[att.v] == att.p)
+                continue;
+            if (dist[att.p] + att.w < rw)
+                montaRes(att);
+            continue;
+        }
+
+        from[att.v] = att.p;
+        dist[att.v] = att.w;
+        visi[att.v] = turn;
+
+        for (int ed = hd[att.v]; ed != -1; ed = nx[ed]) {
+            vert aux = att;
+            aux.w += hg[ed];
+            aux.v = to[ed];
+            aux.p = att.v;
+
+            if (aux.v == aux.p)
+                continue;
+
+            pq.push(aux);
+        }
+    }
+}
 
 int main () {
     while (scanf("%d %d", &n, &m) != EOF && n != -1) {
+        es = 0;
         for (int i = 0; i < n; i++)
-            adj[i].clear();
-        turn++;
+            hd[i] = -1;
 
         for (int i = 0; i < m; i++) {
             scanf("%d %d %d", &a, &b, &l);
             a--; b--;
-            edge aux;
-            aux.id = i;
-            aux.w = l;
-            aux.v = b;
-            adj[a].push_back(aux);
-            aux.v = a;
-            adj[b].push_back(aux);
+            nx[es] = hd[a]; hg[es] = l; hd[a] = es; to[es++] = b;
+            nx[es] = hd[b]; hg[es] = l; hd[b] = es; to[es++] = a;
         }
 
-        while (!pq.empty())
-            pq.pop();
+        rw = INT_MAX;
+        for (int i = 0; i < n; i++)
+            djs(i);
 
-        for (int i = 0; i < n; i++) {
-            vert fs;
-            fs.v = fs.o = fs.f = fs.ff = i;
-            fs.w = 0;
-            fs.p = -1;
-            pq.push(fs);
-        }
-
-        vert res;
-        res.v = res.o = res.f = res.ff = res.p = -1;
-        res.w = INT_MAX;
-        while (!pq.empty()) {
-            vert att = pq.top();
-            pq.pop();
-
-            if (att.w > res.w)
-                continue;
-
-            if (visi[att.o][att.f][att.v] == turn)
-                continue;
-            from[att.o][att.f][att.v] = att.ff;
-            visi[att.o][att.f][att.v] = turn;
-
-            for (int i = 0; i < adj[att.v].size(); i++) {
-                if (adj[att.v][i].v == att.f)
-                    continue;
-
-                vert aux = att;
-                aux.w += adj[att.v][i].w;
-                aux.ff = att.f;
-                aux.f = att.v;
-                aux.v = adj[att.v][i].v;
-                aux.p = adj[att.v][i].id;
-                
-                if (aux.v == aux.o && aux.w < res.w)
-                    res = aux;
-                else
-                    pq.push(aux);
-            }
-        }
-
-        if (res.v == -1) {
+        if (rw == INT_MAX) {
             printf("No solution.\n");
             continue;
         }
-
-        printf("%d", res.v+1);
-        res.v = res.f;
-        res.f = res.ff;
-        while (res.v != res.o) {
-            printf(" %d", res.v+1);
-
-            res.ff = from[res.o][res.f][res.v];
-            res.v = res.f;
-            res.f = res.ff;
+        while (!res.empty()) {
+            printf("%d ", res.front());
+            res.pop_front();
         }
         printf("\n");
     }
