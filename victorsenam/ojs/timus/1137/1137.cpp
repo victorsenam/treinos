@@ -1,84 +1,55 @@
-// WA
-
 #include <bits/stdc++.h>
 
 using namespace std;
 
-const int N = 103;
-const int M = 10007;
-const int MAX = 1000007;
+const int N = 101;
+const int M = 1001;
+const int L = 10001;
 
-int n;
-int k;
-int turn;
-vector<int> adj[M];
+int n, m;
 int a, b;
-int visi[M];
-int used[M];
-int sol[MAX];
-int ss;
-int att;
-bool needs[M];
-int togo[M];
-int tt;
+int es;
+int to[3*N*M], nx[3*N*M], head[L];
 
+void dfs (int u, int l) {
+    int nw = es;
+    nx[es] = nx[l];
+    nx[l] = es;
+    to[es++] = u;
 
-bool dfs(int u, int d) {
-    if (u == d)
-        return 1;
-    if (visi[u] == turn)
-        return 0;
-    visi[u] = turn;
-
-    sol[ss++] = u;
-    used[u]++;
-    for (int i = 0; i < adj[u].size(); i++) {
-        if (dfs(adj[u][i], d))
-            return 1;
+    for (int ed = head[u]; ed != -1; ed = head[u]) {
+        head[u] = nx[ed];
+        dfs(to[ed], nw);
     }
-    ss--;
-    used[u]--;
-    return 0;
 }
 
 int main () {
     scanf("%d", &n);
-    int maxl = 0;
+
+    memset(head, -1, sizeof head);
 
     for (int i = 0; i < n; i++) {
-        scanf("%d", &k);
+        scanf("%d", &m);
         scanf("%d", &a);
-        a--;
-
-        for (int j = 0; j < k; j++) {
+        
+        for (int i = 0; i < m; i++) {
             scanf("%d", &b);
-            b--;
-            if (!needs[b]) {
-                needs[b] = 1;
-                togo[tt++] = b;
-            }
-            adj[a].push_back(b);
-            a = b;
+
+            nx[es] = head[a];
+            head[a] = es;
+            to[es++] = b;
+            swap(a, b);
         }
     }
 
+    head[0] = es;
+    nx[es] = -1;
+    to[es++] = a;
 
-    att = togo[0];
-    for (int i = 0; i <= tt; i++) {
-        if (i != tt && used[togo[i%tt]])
-            continue;
+    dfs(a, es-1);
 
-        turn++;
-        if (!dfs(att, togo[i%tt])) {
-            printf("0\n");
-            return 0;
-        }
-
-        att = togo[i%tt];
-    }
-
-    printf("%d", ss);
-    for (int i = 0; i < ss; i++)
-        printf(" %d", sol[i]+1);
-    printf(" %d\n", togo[0]+1);
+    printf("%d ", es-head[0]-2);
+    for (int ed = nx[head[0]]; ed != -1; ed = nx[ed]) 
+        printf("%d ", to[ed]);
+    printf("\n");
 }
