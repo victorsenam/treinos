@@ -1,3 +1,5 @@
+// TLE tem que melhorar o djs
+
 #include <bits/stdc++.h>
 
 using namespace std;
@@ -20,23 +22,28 @@ int turn;
 int visi[N];
 int from[N];
 int dist[N];
+int relx[N];
 int rw;
 int locw, locm;
 deque<int> res;
 
 void montaRes(vert aux) {
     res.clear();
-    rw = dist[aux.p] + aux.w;
+    rw = aux.w + dist[aux.v];
+ //   printf("=== %d === \n", rw);
     int at = aux.p;
     while (from[at] != at) {
-        res.push_back(at);
+        res.push_front(at);
+       // printf("-> %d\n", at+1);
         at = from[at];
     }
     at = aux.v;
     while (from[at] != at) {
-        res.push_front(at);
+        res.push_back(at);
+        //printf("<- %d\n", at+1);
         at = from[at];
     }
+    res.push_front(at);
 }
 
 void djs(int ini) {
@@ -52,11 +59,16 @@ void djs(int ini) {
         att = pq.top();
         pq.pop();
 
+        if (att.w >= rw)
+            break;
+
         if (visi[att.v] == turn) {
             if (from[att.v] == att.p)
                 continue;
-            if (dist[att.p] + att.w < rw)
+            if (att.w + dist[att.v] < rw) {
+ //               printf("Res de %d\n", ini+1);
                 montaRes(att);
+            }
             continue;
         }
 
@@ -70,10 +82,14 @@ void djs(int ini) {
             aux.v = to[ed];
             aux.p = att.v;
 
-            if (aux.v == aux.p)
+            if (aux.v == att.p)
                 continue;
-
-            pq.push(aux);
+            
+            if (relx[aux.v] != turn || dist[aux.v] > aux.w) {
+                relx[aux.v] = turn;
+                dist[aux.v] = aux.w;
+                pq.push(aux);
+            }
         }
     }
 }
@@ -100,7 +116,7 @@ int main () {
             continue;
         }
         while (!res.empty()) {
-            printf("%d ", res.front());
+            printf("%d ", res.front()+1);
             res.pop_front();
         }
         printf("\n");
