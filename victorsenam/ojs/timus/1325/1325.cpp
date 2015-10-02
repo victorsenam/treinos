@@ -1,4 +1,3 @@
-// TLE
 #include <bits/stdc++.h>
 
 using namespace std;
@@ -7,84 +6,63 @@ const int N = 500;
 const int mi[8] = {0, 0, 1, -1, -1, -1, 1, 1};
 const int mj[8] = {1, -1, 0, 0, -1, 1, -1, 1};
 
-struct vert
-{
-    int st, bt;
+struct edge {
     int i, j;
-    bool operator < (const vert & a) const {
-        if (bt != a.bt)
-            return bt < a.bt;
-        if (st != a.st)
-            return st < a.st;
-        if (i != a.i)
-            return i < a.i;
-        return j < a.j;
+    int b, d;
+    bool operator < (const edge & a) const {
+        if (b == a.b)
+            return d > a.d;
+        return b > a.b;
     }
 };
 
 int n, m;
-vert ini;
-int oi, oj;
+priority_queue<edge> pq;
+edge ini, fim;
+bool visi[N][N];
 char mat[N][N];
-vert dist[N][N];
-set<vert> pq;
 
-inline bool isVal (int i, int j)
-{ return (i >= 0 && i < n && j >= 0 && j < m); }
+inline bool isVal (edge & a) {
+    return (a.i >= 0 && a.i < n && a.j >= 0 && a.j < m);
+}
 
-int main () 
-{
-    scanf("%d %d", &n, &m);
-    scanf("%d %d", &ini.i, &ini.j);
-    scanf("%d %d", &oi, &oj);
-    ini.i--;
-    ini.j--;
-    oi--;
-    oj--;
+int main () {
+    scanf("%d %d %d %d %d %d", &n, &m, &ini.i, &ini.j, &fim.i, &fim.j);
+    ini.i--; ini.j--; fim.i--; fim.j--;
+    ini.d = 1;
+    ini.b = 0;
+    fim.d = INT_MAX;
+    pq.push(ini);
 
-    for (int i = 0; i < n; i++) {
-        scanf("%s", mat[i]);
-        for (int j = 0; j < m; j++)
-            dist[i][j].st = dist[i][j].bt = INT_MAX;
-    }
-
-    ini.bt = 0;
-    ini.st = 1;
-    dist[ini.i][ini.j] = ini;
-    pq.clear();
-    pq.insert(ini);
+    for (int i = 0; i < n; i++)
+        scanf(" %s", mat[i]);
 
     while (!pq.empty()) {
-        vert att = *(pq.begin());
-        pq.erase(pq.begin());
-
-        if (att.i == oi && att.j == oj)
-            break;
-        if (dist[att.i][att.j] < att)
+        edge att = pq.top();
+        pq.pop();
+        if (visi[att.i][att.j])
             continue;
-    
+        visi[att.i][att.j] = 1;
+
+        if (fim.i == att.i && fim.j == att.j) {
+            fim = att;
+            break;
+        }
+
         for (int k = 0; k < 8; k++) {
-            vert nx = att;
+            edge nx = att;
             nx.i += mi[k]; nx.j += mj[k];
-            if (!isVal(nx.i, nx.j) || mat[nx.i][nx.j] == '0')
+            if (!isVal(nx) || mat[nx.i][nx.j] == '0')
                 continue;
-            
-            nx.st++;
-            nx.bt += (mat[nx.i][nx.j] != mat[att.i][att.j]);
+            nx.d = att.d + 1;
+            nx.b = att.b + (mat[att.i][att.j] != mat[nx.i][nx.j]);
 
-            if (dist[nx.i][nx.j] < nx)
-                continue;
-
-            pq.erase(dist[nx.i][nx.j]);
-            pq.insert(nx);
-
-            dist[nx.i][nx.j] = nx;
-            pq.insert(nx);
+            pq.push(nx);
         }
     }
 
-    if (dist[oi][oj].st == INT_MAX)
+    if (fim.d == INT_MAX)
         printf("0 0\n");
-    else 
-        printf("%d %d\n", dist[oi][oj].st, dist[oi][oj].bt);
+    else
+        printf("%d %d\n", fim.d, fim.b);
 }
