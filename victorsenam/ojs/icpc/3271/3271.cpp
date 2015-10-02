@@ -8,6 +8,9 @@ const int N = 22;
 const num M = (1u<<20);
 
 pair<int, int> memo[M];
+int edge[M];
+int par[M];
+int from[N];
 num obj;
 int dest;
 int n, m, p;
@@ -29,9 +32,12 @@ pair<int, int> pd (num mask) {
             continue;
         for (int ed = hd[i]; ed != -1; ed = nx[ed]) {
             pair<int, int> loc = pd(mask|(1u<<to[ed]));
-            loc.first += hw[ed];
+            loc.first = max(loc.first, loc.first+hw[ed]);
             loc.second++;
-            memo[mask] = min(memo[mask], loc);
+            if (loc < memo[mask]) {
+                memo[mask] = loc;
+                edge[mask] = ed;
+            }
         }
     }
 
@@ -39,6 +45,7 @@ pair<int, int> pd (num mask) {
 }
 
 int main () {
+    int cs = 0;
     while (scanf("%d %d %d", &n, &dest, &m) != EOF && (n != -1)) {
         es = 0;
         for (int i = 0; i < (1u<<n); i++)
@@ -55,10 +62,31 @@ int main () {
         scanf("%d", &p);
         obj = 0u;
         for (int i = 0; i < p; i++) {
-            scanf("%d", &a);
-            obj |= (1u<<(a-1));
+            scanf("%d", from+i);
+            from[i]--;
+            obj |= (1u<<(from[i]));
         }
 
-        printf("%d\n", pd(1u<<(dest-1)).first);
+        printf("Case %d: distance = %d\n", ++cs, pd(1u<<(dest-1)).first);
+        int ss = 0;
+        int att = (1u<<dest-1);
+        par[dest] = -1;
+        memset(par, -1, sizeof par);
+        while ((att|obj) != att) {
+            par[to[edge[att]]] = to[edge[att]^1];
+            att |= (1<<to[edge[att]]);
+        }
+        
+        for (int i = 0; i < p; i++) {
+            att = from[i];
+            printf("   %d", att+1);
+            att = par[att];
+            while (att != -1) {
+                printf("-%d", att+1);
+                att = par[att];
+            }
+            printf("\n");
+        }
+        printf("\n");
     }
 }
