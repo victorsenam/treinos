@@ -40,7 +40,7 @@ void suffixarray () {
             tmp[i+1] = tmp[i] + suf_cmp(sa[i], sa[i+1]);    // conta quantos items estão corretamente ordenados em sa[0,i]
 
         for (int i = 0; i < n; i++)
-            hk[sa[i]] = tmp[i];                             // nao entendi ainda
+            hk[sa[i]] = tmp[i];                             // determina em que intervalo cada sa esta
 
         gap <<= 1;
     } while (tmp[n-1] != n-1);

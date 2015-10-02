@@ -2,32 +2,54 @@
 
 using namespace std;
 
-const int N = 107;
-const int M = 3007;
-const int MAX = 100007;
+const int N = 101;
+const int M = 1001;
+const int L = 10001;
 
-bool vis[N];
-int pv[N*M], nx[N*M], cyc[N], to[N*M], es;
+int n, m;
 int a, b;
-int m, n, r;
+int es;
+int to[3*N*M], nx[3*N*M], head[L];
+
+void dfs (int u, int l) {
+    int nw = es;
+    nx[es] = nx[l];
+    nx[l] = es;
+    to[es++] = u;
+
+    for (int ed = head[u]; ed != -1; ed = head[u]) {
+        head[u] = nx[ed];
+        dfs(to[ed], nw);
+    }
+}
 
 int main () {
     scanf("%d", &n);
 
+    memset(head, -1, sizeof head);
+
     for (int i = 0; i < n; i++) {
         scanf("%d", &m);
         scanf("%d", &a);
-        nx[es] = pv[es] = cyc[i] = es;
-        to[es++] = a;
-        for (int j = 0; j < m-1; j++) {
-            scanf("%d", &a);
-            nx[es] = cyc[i];
-            pv[es] = pv[cyc[i]];
-            pv[cyc[i]] = es;
+        
+        for (int i = 0; i < m; i++) {
+            scanf("%d", &b);
+
+            nx[es] = head[a];
+            head[a] = es;
             to[es++] = b;
+            swap(a, b);
         }
-        scanf("%d", &a);
     }
 
-    
+    head[0] = es;
+    nx[es] = -1;
+    to[es++] = a;
+
+    dfs(a, es-1);
+
+    printf("%d ", es-head[0]-2);
+    for (int ed = nx[head[0]]; ed != -1; ed = nx[ed]) 
+        printf("%d ", to[ed]);
+    printf("\n");
 }

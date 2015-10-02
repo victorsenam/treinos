@@ -1,100 +1,91 @@
-// REALLY CLOSE
+// Incompleto
+// TODO: Tirar a Pq do Dijkstra
 
 #include <bits/stdc++.h>
 
 using namespace std;
 
-const int N = 103;
+const int N = 101;
+const int M = N*N;
 
-vector<pair<int, int> > adj[N];
-int n, m, a, b, l;
-int memo[N][N][2];
-int res[N][N][2];
-int visi[N][N][2];
+struct vert {
+    int v, w, p;
+
+    bool operator < (const vert & a) const
+    { return w < a.w; }
+};
+
+int nx[M], hd[M], hg[M], to[M];
+int es;
+int n, m;
+int a, b, l;
 int turn;
-int obj;
-int sol[N];
-int ss;
+vert best[N];
+int rw;
+int locw, locm;
+deque<int> res;
 
-int pd (int u, int p, bool f) {
-    if (!f && u == obj) {
-        return 0;
-    }
+void montaRes(vert aux) {
+    res.clear();
+    rw = aux.w + best[aux.v].w;
+}
 
-    int & me = memo[u][p][f];
-    if (visi[u][p][f] == turn)
-        return me;
-    visi[u][p][f] = turn;
+void djs(int ini) {
+    priority_queue<vert> pq;
+    turn++;
 
-    me = INT_MAX;
-    int mini = INT_MAX;
-    int scm = INT_MAX;
-    for (int i = 0; i < adj[u].size(); i++) {
-        if (adj[u][i].first == p) {
-            scm = min(scm, adj[u][i].second);
-            if (mini > scm)
-                swap(mini, scm);
-            continue;
+    vert att;
+    att.v = att.p = ini;
+    att.w = 0;
+    pq.push(att);
+
+    for (int i = n; i >= 1; i--) {
+        att = best[ord[0]];
+        for (int j = 1; i < n; j++)
+            att = min(att, best[ord[j]]);
+
+        if (att.w >= rw)
+            break;
+
+        for (int ed = hd[att.v]; ed != -1; ed = nx[ed]) {
+            vert aux = att;
+            aux.w += hg[ed];
+            aux.v = to[ed];
+            aux.p = att.v;
+
+            if (aux.v == att.p)
+                continue;
+            
+            pq.push(aux);
         }
-
-        int aux = pd(adj[u][i].first, u, 0);
-        aux = max(aux, aux + adj[u][i].second);
-        me = min(me, aux);
-        if (me == aux)
-            res[u][p][f] = adj[u][i].first;
     }
-
-    if (scm != INT_MAX) {
-        int aux = pd(p, u, 0);
-        aux = max(aux, aux + scm);
-        me = min(me, aux);
-        if (me == aux)
-            res[u][p][f] = p;
-    }
-
-    return me;
 }
 
 int main () {
     while (scanf("%d %d", &n, &m) != EOF && n != -1) {
-        for (int i = 0; i < N; i++)
-            adj[i].clear();
-        
+        es = 0;
+        for (int i = 0; i < n; i++)
+            hd[i] = -1;
+
         for (int i = 0; i < m; i++) {
             scanf("%d %d %d", &a, &b, &l);
             a--; b--;
-            adj[a].push_back(make_pair(b,l));
-            adj[b].push_back(make_pair(a,l));
+            nx[es] = hd[a]; hg[es] = l; hd[a] = es; to[es++] = b;
+            nx[es] = hd[b]; hg[es] = l; hd[b] = es; to[es++] = a;
         }
 
-        int bes = INT_MAX;
-        ss = 0;
-        for (int i = 0; i < n; i++) {
-            turn++;
-            obj = i;
-            if (pd(i,i,1) < bes) {
-                bes = pd(i,i,1);
-                ss = 0;
-                sol[ss++] = i;
-                b = i;
-                a = res[i][i][1];
-                while (a != i) {
-                    sol[ss++] = a;
-                    a = res[a][b][0];
-                    swap(a,b);
-                }
-            }
-        }
+        rw = INT_MAX;
+        for (int i = 0; i < n; i++)
+            djs(i);
 
-        if (bes == INT_MAX)
+        if (rw == INT_MAX) {
             printf("No solution.\n");
-        else {
-            for (int i = ss; i > 0; i--) {
-                printf("%d", sol[i]+1);
-                if (i > 1)
-                    printf(" ");
-            }
-            printf("\n");
+            continue;
         }
+        while (!res.empty()) {
+            printf("%d ", res.front()+1);
+            res.pop_front();
+        }
+        printf("\n");
     }
 }
