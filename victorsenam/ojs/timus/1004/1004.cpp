@@ -1,6 +1,3 @@
-// Incompleto
-// TODO: Tirar a Pq do Dijkstra
-
 #include <bits/stdc++.h>
 
 using namespace std;
@@ -20,6 +17,7 @@ int es;
 int n, m;
 int a, b, l;
 int turn;
+int ord[N];
 vert best[N];
 int rw;
 int locw, locm;
@@ -28,21 +26,35 @@ deque<int> res;
 void montaRes(vert aux) {
     res.clear();
     rw = aux.w + best[aux.v].w;
+    vert att = best[aux.p];
+    while (att.p != att.v) {
+        res.push_back(att.v);
+        att = best[att.p];
+    }
+    att = best[aux.v];
+    while (att.p != att.v) {
+        res.push_front(att.v);
+        att = best[att.p];
+    }
+    res.push_front(att.v);
 }
 
 void djs(int ini) {
-    priority_queue<vert> pq;
     turn++;
 
-    vert att;
-    att.v = att.p = ini;
-    att.w = 0;
-    pq.push(att);
+    for (int i = 0; i < n; i++) {
+        ord[i] = i;
+        best[i].w = INT_MAX;
+        best[i].v = best[i].p = i;
+    }
+    best[ini].w = 0;
 
-    for (int i = n; i >= 1; i--) {
-        att = best[ord[0]];
-        for (int j = 1; i < n; j++)
-            att = min(att, best[ord[j]]);
+    for (int i = 0; i < n; i++) {
+        for (int j = i+1; j < n; j++) {
+            if (best[ord[j]] < best[ord[i]])
+                swap(ord[i], ord[j]);
+        }
+        vert att = best[ord[i]];
 
         if (att.w >= rw)
             break;
@@ -56,7 +68,11 @@ void djs(int ini) {
             if (aux.v == att.p)
                 continue;
             
-            pq.push(aux);
+            if (aux < best[aux.v]) {
+                best[aux.v] = aux;
+            } else if (att.p != att.v && best[aux.v].w + aux.w < rw) {
+                montaRes(aux);
+            }
         }
     }
 }
