@@ -29,6 +29,8 @@ int bt (int l) {
                 di[1] += (2-i==j);
                 mat[i][j] = 'X';
                 res = max(res, bt(l-1));
+                if (res == 1)
+                    return 1;
                 row[i]--;
                 col[j]--;
                 di[0] -= (i==j);
@@ -55,6 +57,8 @@ int bt (int l) {
                 di[1] -= (2-i==j);
                 mat[i][j] = 'O';
                 res = min(res, bt(l-1));
+                if (res == -1)
+                    return -1;
                 row[i]++;
                 col[j]++;
                 di[0] += (i==j);
