@@ -37,4 +37,5 @@ int main () {
         if (i) printf(" ");
         printf("%d", res[i]+1);
     }
+    printf("\n");
 }
