@@ -2,97 +2,101 @@
 
 using namespace std;
 
-const int N = 2*52;
-const int M = 103;
+const int N = 103;
+const int M = 203;
 
 int hd[N], nx[M], to[M], es;
-int sets[N][2], cs;
-int att[2];
-bool vis[N];
-int cor[N];
 int n, m;
 int a, b;
-int memo[N][N];
-bool opti[N][N];
-int visi[N][N];
-int path[N];
+int cor[N];
+int sets[N][2];
+bool visi[N][N];
+bool solv[N][N];
+bool memo[N][N];
+bool sol[N];
 
-bool pd (int i, int r) {
-    if (r < 0)
-        return 0;
-    if (i == cs)
-        return (r == 0);
-    
-    if (visi[i][r])
-        return memo[i][r];
-    visi[i][r] = 1;
-
-    if (pd(i+1, r-sets[i][0])) {
-        memo[i][r] = 1;
-        opti[i][r] = 0;
-    } else  if (pd(i+1, r-sets[i][1])) {
-        memo[i][r] = 1;
-        opti[i][r] = 1;
-    } else {
-        memo[i][r] = 0;
-    }
-
-    return memo[i][r];
+void fail() {
+    printf("IMPOSSIBLE\n");
+    exit(0);
 }
 
-bool dfs (int u, int c) {
-    if (vis[u])
-        return (cor[u] == c);
+bool solve (int a, int b, int i) {
+    if (a == 0 && b == 0)
+        return 1;
+    if (a < 0 || b < 0)
+        return 0;
 
-    vis[u] = 1;
-    cor[u] = c;
-    sets[(c>>1)][c&1]++;
+    if (visi[a][b])
+        return memo[a][b];
+    visi[a][b] = 1;
 
+    if (solve(a-sets[i][0], b-sets[i][1], i+1)) {
+        memo[a][b] = 1;
+        solv[a][b] = 0;
+    } else if (solve(a-sets[i][1], b-sets[i][0], i+1)) {
+        memo[a][b] = 1;
+        solv[a][b] = 1;
+    } else {
+        memo[a][b] = 0;
+    }
+    return memo[a][b];
+}
+
+void dfs (int u, int c) {
+    if (cor[u] == -1)
+        cor[u] = c;
+    else if (cor[u] != c)
+        fail();
+    else
+        return;
+    
     for (int ed = hd[u]; ed != -1; ed = nx[ed])
-        if (!dfs(to[ed], c^1))
-            return 0;
-
-    return 1;
+        dfs(to[ed], c^1);
 }
 
 int main () {
-    scanf("%d %d", &n, &m);
+    memset(cor, -1, sizeof cor);
     memset(hd, -1, sizeof hd);
+
+    scanf("%d %d", &n, &m);
 
     for (int i = 0; i < m; i++) {
         scanf("%d %d", &a, &b);
-        a--;
-        b--;
-
+        a--; b--;
         nx[es] = hd[a]; hd[a] = es; to[es] = b; es++;
         nx[es] = hd[b]; hd[b] = es; to[es] = a; es++;
     }
 
-    bool ok = 1;
-    for (int i = 0; ok && i < 2*n; i++) {
-        if (vis[i]) 
-            continue;
-        if (!dfs(i, 2*cs))
-            ok = 0;
-        cs++;
+    int cs = 0;
+    for (int i = 0; i < 2*n; i++) {
+        if (cor[i] == -1)
+            dfs(i, 2*(cs++));
+        sets[(cor[i]>>1)][(cor[i]&1)]++;
     }
 
-    if (!ok || !pd(0,n))
-        printf("IMPOSSIBLE\n");
+    if (!solve(n, n, 0))
+        fail();
 
-    int att = n;
-    for (int i = cs-1; i >= 0; i--) {
-        path[i] = 2*i+opti[i][att];
-        att -= sets[i][opti[i][att]];
+    a = b = n;
+    for (int i = 0; i < cs; i++) {
+        if (!solv[a][b]) {
+            sol[2*i] = 1;
+            a -= sets[i][0];
+            b -= sets[i][1];
+        } else {
+            sol[2*i+1] = 1;
+            a -= sets[i][1];
+            b -= sets[i][0];
+        }
     }
 
     for (int i = 0; i < 2*n; i++) {
-        if (binary_search(path, path+cs, cor[i]))
+        if (sol[cor[i]])
             printf("%d ", i+1);
     }
     printf("\n");
     for (int i = 0; i < 2*n; i++) {
-        if (!binary_search(path, path+cs, cor[i]))
+        if (!sol[cor[i]])
             printf("%d ", i+1);
     }
     printf("\n");
