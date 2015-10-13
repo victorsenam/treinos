@@ -7,39 +7,54 @@ const int N = 51;
 const int M = 501;
 
 int m, n;
-int hd[M], nx[N*M], to[N*M], es;
+int uf[N*M], wf[N*M];
+bool used[N*M];
 int a;
 
+int find (int i) {
+    if (uf[i] == i)
+        return i;
+    return uf[i] = find(uf[i]);
+}
+
+void join (int i, int j) {
+    i = find(i); j = find(j);
+    if (i == j)
+        return;
+    if (wf[i] < wf[j])
+        swap(i, j);
+    wf[i] += wf[j];
+    uf[j] = uf[i];
+}
+
 int main () {
-    memset(hd, -1, sizeof hd);
     scanf("%d %d", &m, &n);
 
     int res = 0;
 
     for (int i = 0; i < m; i++) {
+        uf[i] = i;
+        wf[i] = 1;
+    }
+
+    for (int i = 0; i < m; i++) {
         for(int j = 0; j < n; j++) {
             scanf("%d", &a);
             a--;
-            if (a == i)
+            if (i == a)
                 continue;
-            nx[es] = hd[i]; hd[i] = es; to[es] = a; es++;
+            join(a, i);
+            res++;
         }
     }
 
-    int att = -1;
+    res--;
     for (int i = 0; i < m; i++) {
-        while (hd[i] != -1) {
-            if (att != -1 && att != i)
+        if (!used[uf[i]]) {
+            if (uf[i] != i || wf[i] != 1)
                 res++;
-            att = i;
-            while (hd[att] != -1) {
-                int go = to[hd[att]];
-                hd[att] = nx[hd[att]];
-                //printf("%d -> %d\n", att, go);
-                att = go;
-                res++;
-            }
         }
+        used[uf[i]] = 1;
     }
-    printf("%d\n", res);
+    printf("%d\n", max(res, 0));
 }
