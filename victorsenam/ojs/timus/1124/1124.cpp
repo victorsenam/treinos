@@ -1,4 +1,3 @@
-// WA
 #include <bits/stdc++.h>
 
 using namespace std;
@@ -8,7 +7,6 @@ const int M = 501;
 
 int m, n;
 int uf[N*M], wf[N*M];
-bool used[N*M];
 int a;
 
 int find (int i) {
@@ -48,13 +46,13 @@ int main () {
         }
     }
 
-    res--;
+    int cnt = 0;
     for (int i = 0; i < m; i++) {
-        if (!used[uf[i]]) {
-            if (uf[i] != i || wf[i] != 1)
-                res++;
-        }
-        used[uf[i]] = 1;
+        if (find(i) == i && wf[i] != 1)
+            cnt++;
     }
-    printf("%d\n", max(res, 0));
+    if (cnt > 0)
+        cnt--;
+    res += cnt;
+    printf("%d\n", res);
 }
