@@ -7,27 +7,9 @@ typedef unsigned long long int num;
 const int N = 2003;
 const int M = 200003;
 
-struct hsh {
-    num h1, h2;
-    hsh operator ^ (const hsh & b) const {
-        hsh n;
-        n.h1 = (h1^(b.h1));
-        n.h2 = (h2^(b.h2));
-        return n;
-    }
-    bool operator < (const hsh & b) const {
-        if (h1 == b.h1)
-            return h2 < b.h2;
-        return h1 < b.h1;
-    }
-    bool operator == (const hsh & b) const {
-        return (h1==b.h1)&&(h2==b.h2);
-    }
-};
-
 int n, m;
 int hd[N], nx[M], to[M], es;
-hsh ch[N], vl[M];
+num ch[N], vl[M];
 int a, b;
 int visi[N];
 int rets[M], rs;
@@ -36,38 +18,30 @@ int pre[N];
 int ord;
 int brid;
 
-hsh dfs (int u, int fr) {
+num dfs (int u, int fr) {
     if (visi[u] == 1) {
         rets[rs++] = fr;
-        hsh aux;
-        aux.h1 = rand();
-        aux.h1 <<= 32;
-        aux.h1 |= rand();
-        aux.h2 = rand();
-        aux.h2 <<= 32;
-        aux.h2 |= rand();
+        num aux = rand();
+        aux <<= 32;
+        aux |= rand();
 
-        ch[u] = (ch[u]^aux);
+        ch[u] ^= aux;
         return aux;
     }
-    if (visi[u] == 2) {
-        hsh aux;
-        aux.h1 = aux.h2 = 0;
-        return aux;
-    }
+    if (visi[u] == 2)
+        return 0;
 
     pre[u] = low[u] = ord++;
     visi[u] = 1;
 
-    hsh ret;
-    ret.h1 = ret.h2 = 0;
+    num ret = 0;
     for (int ed = hd[u]; ed != -1; ed = nx[ed]) {
         if (ed != (fr^1)) {
             int aux = visi[to[ed]];
     //        printf("[%d] (%d,%d) (%d)\n", ed, u, to[ed], visi[to[ed]]);
             vl[ed] = dfs(to[ed], ed);
             low[u] = min(low[u], low[to[ed]]);
-            ret = (ret^vl[ed]);
+            ret ^= vl[ed];
         }
     }
 
@@ -102,22 +76,14 @@ int main () {
     int res = brid*(m-1) - brid*(brid-1)/2;
 
     int qtd = 0;
-    hsh last;
-    last.h1 = last.h2 = 0;
-    int sz = 0;
+    num last = 0;
 
     //for (int i = 0; i < m; i++)
     //    printf("%02d %s\n", i+1, ((bitset<8>)(vl[2*i]|vl[2*i+1])).to_string().c_str());
 
+    sort(vl, vl+2*m);
     for (int i = 0; i < 2*m; i++) {
-        if (vl[i] == last)
-            continue;
-        vl[sz++] = vl[i];
-    }
-
-    sort(vl, vl+sz);
-    for (int i = 0; i < sz; i++) {
-        if (vl[i].h1 == 0 && vl[i].h2 == 0)
+        if (vl[i] == 0)
             continue;
         if (last == vl[i]) {
             qtd++;
