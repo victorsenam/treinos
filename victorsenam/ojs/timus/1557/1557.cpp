@@ -13,6 +13,10 @@ num ch[N], vl[M];
 int a, b;
 int visi[N];
 int rets[M], rs;
+int low[N];
+int pre[N];
+int ord;
+int brid;
 
 num dfs (int u, int fr) {
     if (visi[u] == 1) {
@@ -20,22 +24,30 @@ num dfs (int u, int fr) {
         num aux = rand();
         aux <<= 32;
         aux |= rand();
+
         ch[u] ^= aux;
-        //printf("ret %d %d -> %s\n", to[fr^1], to[fr], ((bitset<64>)aux).to_string().c_str());
         return aux;
     }
     if (visi[u] == 2)
         return 0;
 
+    pre[u] = low[u] = ord++;
     visi[u] = 1;
 
     num ret = 0;
     for (int ed = hd[u]; ed != -1; ed = nx[ed]) {
-        //printf("%d -> %d\n", u, to[ed]);
         if (ed != (fr^1)) {
+            int aux = visi[to[ed]];
+    //        printf("[%d] (%d,%d) (%d)\n", ed, u, to[ed], visi[to[ed]]);
             vl[ed] = dfs(to[ed], ed);
+            low[u] = min(low[u], low[to[ed]]);
             ret ^= vl[ed];
         }
+    }
+
+    if (low[u] == pre[u] && fr >= 0) {
+        brid++;
+     //   printf("%d is bridge\n", fr);
     }
 
     visi[u] = 2;
@@ -58,14 +70,33 @@ int main () {
 
     for (int i = 0; i < n; i++)
         dfs(i, -1);
-    for (int i = 0; i < rs; i++) {
-        printf("%d has val %llu\n", rets[i], vl[rets[i]]);
-    }
+    //for (int i = 0; i < rs; i++)
+        //printf("%d has val %llu\n", rets[i], vl[rets[i]]);
 
-    //for (int i = 0; i < 2*m; i++)
-    //    printf("%d %d: %llu %s\n", to[i^1], to[i], vl[i], ((bitset<64>)vl[i]).to_string().c_str() );
+    int res = brid*(m-1) - brid*(brid-1)/2;
+
+    int qtd = 0;
+    num last = 0;
+
+    //for (int i = 0; i < m; i++)
+    //    printf("%02d %s\n", i+1, ((bitset<8>)(vl[2*i]|vl[2*i+1])).to_string().c_str());
 
     sort(vl, vl+2*m);
-    for (int i = 0; i < 2*m; i++)
-        printf("%d %d: %llu\n", to[i^1], to[i], vl[i]);
+    for (int i = 0; i < 2*m; i++) {
+        if (vl[i] == 0)
+            continue;
+        if (last == vl[i]) {
+            qtd++;
+        } else {
+            res += qtd*(qtd-1)/2;
+ //           printf("sz %d\n", qtd);
+            qtd = 1;
+            last = vl[i];
+        }
+    }
+    res += qtd*(qtd-1)/2;
+  //  printf("sz %d\n", qtd);
+
+    printf("%d\n", res);
+    
 }
