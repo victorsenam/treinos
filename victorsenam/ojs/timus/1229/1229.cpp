@@ -1,12 +1,10 @@
-// INCOMPLETO
-
 #include <bits/stdc++.h>
 
 using namespace std;
 
 const int W = 101;
 const int N = W*W + 3;
-const int M = N*4 + 3;
+const int M = N*6 + 3;
 
 const int di[4] = {1, -1, 0, 0};
 const int dj[4] = {0, 0, 1, -1};
