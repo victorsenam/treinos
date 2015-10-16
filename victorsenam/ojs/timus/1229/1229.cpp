@@ -43,6 +43,7 @@ bool bfs () {
 
     while (qi < qf) {
         int att = q[qi++];
+        printf("%d\n", att);
 
         for (int ed = hd[att]; ed != -1; ed = nx[ed]) {
             if (flx[ed] < cap[ed] && visi[to[ed]] != turn) {
