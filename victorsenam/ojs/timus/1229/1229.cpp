@@ -22,8 +22,8 @@ int dist[N], visi[N], turn;
 int src, snk;
 
 inline void connect (int u, int v) {
-    nx[es] = hd[u]; hd[u] = es; to[u] = v; cap[es] = 1; flx[es] = 0; es++;
-    nx[es] = hd[v]; hd[v] = es; to[v] = u; cap[es] = 0; flx[es] = 0; es++;
+    nx[es] = hd[u]; hd[u] = es; to[es] = v; cap[es] = 1; flx[es] = 0; es++;
+    nx[es] = hd[v]; hd[v] = es; to[es] = u; cap[es] = 0; flx[es] = 0; es++;
 }
 
 inline bool isVal (int i, int j, int v) {
@@ -43,8 +43,6 @@ bool bfs () {
 
     while (qi < qf) {
         int att = q[qi++];
-        printf("%d\n", att);
-
         for (int ed = hd[att]; ed != -1; ed = nx[ed]) {
             if (flx[ed] < cap[ed] && visi[to[ed]] != turn) {
                 visi[to[ed]] = turn;
@@ -54,20 +52,15 @@ bool bfs () {
         }
     }
 
-    for (int i = 0; i < w*h+2; i++)
-        printf("%d ", visi[i]==turn?dist[i]:-1);
-    printf("\n");
     return visi[snk] == turn;
 }
 
 int dfs (int u, int fl) {
-    if (fl == 0)
-        return 0;
     if (u == snk)
         return fl;
 
     for (int & ed = hl[u]; ed != -1; ed = nx[ed]) {
-        if (dist[u] + 1 == dist[to[ed]]) {
+        if (flx[ed] < cap[ed] && dist[u] + 1 == dist[to[ed]]) {
             int loc = dfs(to[ed], min(fl, cap[ed]-flx[ed]));
             if (loc > 0) {
                 flx[ed] += loc;
@@ -82,7 +75,6 @@ int dfs (int u, int fl) {
 int dinic () {
     int res = 0;
     while (bfs()) {
-        printf("lala\n");
         int loc = 0;
         for (int i = 0; i < h*w+2; i++)
             hl[i] = hd[i];
@@ -110,15 +102,38 @@ int main () {
     
     for (int i = 0; i < h; i++) {
         for (int j = 0; j < w; j++) {
-            if ((i+j)%2) {
-                connect(i*w+j, w*h);
+            if ((i+j)&1) {
+                connect(src, i*w+j);
                 for (int k = 0; k < 4; k++)
                     if (isVal(i+di[k], j+dj[k], mat[i][j]))
                         connect(i*w+j, (i+di[k])*w+(j+dj[k]));
-            } else
-                connect(i*w+j, w*h+1);
+            } else {
+                connect(i*w+j, snk);
+            }
         }
     }
 
-    printf("%d\n", dinic());
+    int ans = dinic();
+    if (ans == w*h/2) {
+        int rs = 1;
+        for (int i = 0; i < h; i++) {
+            for (int j = 0; j < w; j++) {
+                if ((i+j)&1)
+                    continue;
+                for (int ed = hd[i*w+j]; ed != -1; ed = nx[ed]) {
+                    if (to[ed] >= w*h || flx[ed] == 0)
+                        continue;
+
+                    mat[i][j] = mat[to[ed]/w][to[ed]%w] = rs++;
+                }
+            }
+        }
+        for (int i = 0; i < h; i++) {
+            for (int j = 0; j < w; j++)
+                printf("%d ", mat[i][j]);
+            printf("\n");
+        }
+    } else {
+        printf("-1\n");
+    }
 }
