@@ -8,111 +8,119 @@ const double eps = 1e-11;
 
 struct vect {
     num x, y;
+
+    vect() {}
+    vect(num px, num py) : x(px), y(py) {}
+
+    inline vect operator + (const vect & b) const
+    { return vect(x+b.x, y+b.y); }
+
+    inline vect operator - (const vect & b) const
+    { return vect(x-b.x, y-b.y); }
+
+    inline num operator * (const vect & b) const
+    { return x*b.x + y*b.y; }
     
-    vect operator + (const vect & b) const {
-        vect res;
-        res.x = x + b.x;
-        res.y = y + b.y;
-        return res;
-    }
+    inline num operator ^ (const vect & b) const
+    { return x*b.y - y*b.x; }
 
-    vect operator - (const vect & b) const {
-        vect res;
-        res.x = x - b.x;
-        res.y = y - b.y;
-        return res;
-    }
+    inline vect operator * (num al) const
+    { return vect(x*al, y*al); }
 
-    // dot product
-    num operator * (const vect & b) const
-    { return ((x*b.x)+(y*b.y)); }
+    inline vect operator / (num al) const
+    { return vect(x/al, y/al); }
 
-    // scalar product
-    vect operator * (num b) const {
-        vect res;
-        res.x = x*b;
-        res.y = y*b;
-        return res;
-    }
-
-    vect over (const vect & b) const 
+    inline vect proj (const vect & b) const
     { return b*(((*this)*b)/(b*b)); }
+
+    inline void print ()
+    { printf("%.10lf %.10lf\n", x, y); }
+
+    inline num norm ()
+    { return sqrt((*this)*(*this)); }
+
+    inline vect unit ()
+    { return ((*this)/((*this).norm())); }
+
 };
 
-num har, hpr;
-vect a, b, c;
-vect ps, pt;
+vect v[3];
+vect s, t;
+num pr, ar;
+
+num area (vect a, vect b, vect c) {
+    if (abs((a-b)^(a-c)) < eps)
+        return 0.0;
+
+    vect ab = b-a;
+    vect ac = c-a;
+    return (ab.norm())*((ac-ac.proj(ab)).norm())/2.0;
+}
+
+num go (vect v, vect da, num la, vect db, num lb, num val) {
+    vect a = v + da*(pr-val);
+    vect b = v + db*val;
+
+    return area(v, a, b);
+}
+
+bool solve (vect v, vect a, vect b) {
+    vect da = (a-v);
+    vect db = (b-v);
+    num la = da.norm();
+    num lb = db.norm();
+    da = da/la;
+    db = db/lb;
+
+    num lo = max(0.0, pr-la);
+    num hi = min(lb, pr);
+
+    while ( hi - lo > eps ) {
+        num q1 = lo + (hi-lo)/3.0;
+        num q2 = lo + (hi-lo)*2.0/3.0;
+
+        num ra = go(v, da, la, db, lb, q1);
+        num rb = go(v, da, la, db, lb, q2);
+
+        if (abs(ra-ar) > abs(rb-ar))
+            lo = q1;
+        else
+            hi = q2;
+    }
+
+    num res = go(v, da, la, db, lb, lo);
+    if (abs(res - ar) < eps) {
+        s = v + da*(pr-lo);
+        t = v + db*lo;
+
+        return 1;
+    } else  {
+        return 0;
+    }
+}
 
 void succ () {
-    printf("YES\n%.10lf %.10lf\n%.10lf %.10lf\n", ps.x, ps.y, pt.x, pt.y);
-}
-
-num area (vect c, vect b, vect a) {
-    a = c-a;
-    b = c-b;
-
-    num res = 0;
-    if (b*b > eps) {
-        vect h = (a-a.over(b));
-        res = (sqrt(h*h)*sqrt(b*b))/2;
-    }
-
-    return res;
-}
-
-bool bb (vect a, vect b, vect c) {
-    vect va = b-a;
-    vect vb = c-b;
-    num la = sqrt(va*va);
-    num lb = sqrt(vb*vb);
-
-    num lo = max(0.0, la-hpr);
-    num hi = min(la+lb-hpr, la);
-
-    ps = a;
-    pt = a;
-    area(ps, pt, b);
-    
-    while (hi - lo > eps) {
-        num fs = lo + (hi-lo)/3.0;
-        num ss = lo + (hi-lo)*2.0/3.0;
-        ps = a + va*(fs/la);
-        pt = b + vb*((fs+hpr-la)/lb);
-
-        num pa = area(ps, pt, b);
-
-        vect qs = a + va*(ss/la);
-        vect qt = b + vb*((ss+hpr-la)/lb);
-        num qa = area(qs, qt, b);
-
-        if (abs(har - pa) > abs(har - qa))
-            lo = fs;
-        else
-            hi = ss;
-    }
-
-    if (abs(area(ps, pt, b) - har) < eps)
-        return 1;
-    return 0;
+    printf("YES\n");
+    s.print();
+    t.print();
+    exit(0);
 }
 
 int main () {
-    scanf("%lf %lf %lf %lf %lf %lf",
-        &a.x, &a.y,
-        &b.x, &b.y,
-        &c.x, &c.y
-    );
+    for (int i = 0; i < 3; i++)
+        scanf("%lf %lf", &v[i].x, &v[i].y);
 
-    har = area(a, b, c)/2.0;
-    hpr = sqrt((a-b)*(a-b)) + sqrt((b-c)*(b-c)) + sqrt((c-a)*(c-a));
-    hpr /= 2.0;
+    ar = (area(v[0], v[1], v[2]))/2.0;
+    pr = ((v[1]-v[0]).norm() + (v[2]-v[1]).norm() + (v[0]-v[2]).norm())/2.0;
 
-    if (bb(a, b, c))
+    if (solve(v[0], v[1], v[2]))
         succ();
-    else if (bb(c, a, b))
+
+    if (solve(v[1], v[2], v[0]))
         succ();
-    else if (bb(b, c, a))
+
+    if (solve(v[2], v[0], v[1]))
         succ();
-    else
-        printf("NO\n");
+
+    printf("NO\n");
 }
