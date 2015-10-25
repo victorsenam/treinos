@@ -1,3 +1,4 @@
+// INCOMPLETO
 #include <bits/stdc++.h>
 
 using namespace std;
@@ -39,36 +40,49 @@ int main () {
     if (fs - t < eps) {
         printf("%.9lf\n", fs);
     } else {
-        double lo = min(v.x - vm, v.x + vm);
-        double hi = -lo;
+        double lo = -1.0;
+        double hi = 1.0;
         double lastres = 1000.0;
         double res = 0.0;
+        double mini = res;
 
         while (hi - lo > eps && abs(lastres - res) > eps) {
             double pt = lo + (hi-lo)/3.0;
-            double st = lo + (hi-lo)*2.0/3.0;
+            double ps = lo + (hi-lo)*2.0/3.0;
 
-            double dy = sqrt((vm*vm)-(pt-v.x)*(pt-v.x));
-            double pr = timeTo(w, (b-(a+(vect(pt,w.y+dy)*t))), vm);
-            pr = min(pr, timeTo(w, (b-(a+(vect(pt,w.y-dy)*t))), vm));
-            pr += t;
+            double tr = t + timeTo(w, b-a+((vect(pt, sqrt(1.0-pt*pt))*vm+v)*t), vm);
+            double sr = t + timeTo(w, b-a+((vect(ps, sqrt(1.0-ps*ps))*vm+v)*t), vm);
 
-            dy = sqrt((vm*vm)-(st-v.x)*(st-v.x));
-            double sr = timeTo(w, (b-(a+(vect(st,w.y+dy)*t))), vm);
-            sr = min(sr, timeTo(w, (v-(a+(vect(st,w.y-dy)*t))), vm));
-            sr += t;
-
-            printf("%.7lf(%.7lf) %.7lf(%.7lf)\n", pr, pt, sr, st);
-
-            res = min(sr, pr);
-            
-            if (pr > sr) {
-                lo = pt;
+            lastres = res;
+            if (tr > sr) {
+                lo = tr;
+                res = sr;
             } else {
-                hi = st;
+                hi = sr;
+                res = tr;
             }
         }
+        mini = res;
+        lo = -1.0;
+        hi = 1.0;
+        while (hi - lo > eps && abs(lastres - res) > eps) {
+            double pt = lo + (hi-lo)/3.0;
+            double ps = lo + (hi-lo)*2.0/3.0;
 
-        printf("%.9lf\n", res);
+            double tr = t + timeTo(w, b-a+((vect(pt, -sqrt(1.0-pt*pt))*vm+v)*t), vm);
+            double sr = t + timeTo(w, b-a+((vect(ps, -sqrt(1.0-ps*ps))*vm+v)*t), vm);
+
+            lastres = res;
+            if (tr > sr) {
+                lo = tr;
+                res = sr;
+            } else {
+                hi = sr;
+                res = tr;
+            }
+            mini = min(mini, res);
+        }
+
+        printf("%.9lf\n", mini);
     }
 }
