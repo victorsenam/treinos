@@ -4,42 +4,68 @@ using namespace std;
 
 const int N = 10007;
 
-int x[N], y[N];
-int pa[N], pl[N];
-double res;
-int n;
-int anc;
+const int N = 307;
 
-inline int cross (int i, int j) {
-    return (x[i]*y[j] - x[j]*y[i]);
+struct pos {
+    int x, y;
+};
+
+pos anc;
+int n;
+pos v[N], u[N];
+int pa[N], pl[N];
+
+inline double dist (pos a, pos b)
+{ return sqrt( (double) ( (a.x-b.x)*(a.x-b.x) + (a.y-b.y)*(a.y-b.y) ) ); }
+
+inline int cross (pos a, pos b)
+{ return a.x*b.y - a.y*b.x; }
+
+inline pos diff (pos a, pos b) {
+    pos res;
+    res.x = a.x - b.x;
+    res.y = a.y - b.y;
+    return res;
 }
 
-inline int inner (int i, int j)
-{ return (y[i]-y[j])*(y[i]-y[j]) + (x[i]-x[j])*(x[i]-x[j]); }
+bool cmp_lex (pos a, pos b) {
+    if (a.x == b.x)
+        return a.y < b.y;
+    return a.x < b.x;
+}
 
-bool cmp_ang (int i, int j)
-{ return cross(i,anc) < cross(j,anc); }
-
-bool cmp_lex (int i, int j) {
-    if (x[i] == x[j])
-        return y[i] < y[j];
-    return x[i] < x[j];
+bool cmp_ang (pos a, pos b) {
+    return cross(diff(anc, a), diff(anc, b)) < 0;
 }
 
 int main () {
     scanf("%d", &n);
 
     for (int i = 0; i < n; i++)
-        scanf("%d %d", x+i, y+i);
+        scanf("%d %d", &v[i].x, &v[i].y);
 
-    sort(pl, pl+n, cmp_lex);
+    sort(v, v+n, cmp_lex);
+    
+    double res = 0.0;
 
-    for (int i = 0; i < n; i++) {
-        anc = i;
+    for (int i = 0; i < n-1; i++) {
+        for (int j = i; j < n; j++)
+            u[j] = v[j];
 
-        sort(pa+1, pa+n, cmp_ang);
-        for (int j = 0; j < n; j++) {
-            
+        anc = v[i];
+        sort(u+i+1, u+n, cmp_ang);
+
+        double mini = dist(anc, u[i+1]);
+        for (int j = i+2; j < n; j++) {
+            if (cmp_ang(u[j-1], u[j])) {
+                res += mini;
+                mini = dist(anc, u[j]);
+            } else {
+                mini = min(dist(anc, u[j]), mini);
+            }
         }
+        res += mini;
     }
+
+    printf("%.0lf\n", round(res));
 }
