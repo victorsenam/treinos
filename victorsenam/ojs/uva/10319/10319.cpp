@@ -74,19 +74,19 @@ int main () {
             
             if (a1 == a2)
                 connect(a1^1, a1);
-
-            if (s1 == s2)
+            else if (s1 == s2)
                 connect(s1^1, s1);
+            else {
+                connect(a1^1, s1);
+                connect(a1^1, a2);
+                connect(s2^1, s1);
+                connect(s2^1, a2);
 
-            connect(a1^1, s1);
-            connect(a1^1, a2);
-            connect(s2^1, s1);
-            connect(s2^1, a2);
-
-            connect(s1^1, s2);
-            connect(s1^1, a1);
-            connect(a2^1, s2);
-            connect(a2^1, a1);
+                connect(s1^1, s2);
+                connect(s1^1, a1);
+                connect(a2^1, s2);
+                connect(a2^1, a1);
+            }
         }
 
         turn++;

@@ -2,62 +2,70 @@
 
 using namespace std;
 
-typedef double num;
+const int N = 10007;
 
-const int N = 304;
-const num eps = 1e-9;
+const int N = 307;
 
-num wg[N*N], a[N*N], b[N*N], x[N], y[N];
-int n, p[N*N];
+struct pos {
+    int x, y;
+};
 
-bool cmp_ed (int i, int j) {
-    if (abs(a[i]-a[j]) < eps) {
-        if (abs(b[i]-b[j]) < eps)
-            return wg[i] > wg[j];
-        return b[i] < b[j];
-    }
-    return a[i] < a[j];
+pos anc;
+int n;
+pos v[N], u[N];
+int pa[N], pl[N];
+
+inline double dist (pos a, pos b)
+{ return sqrt( (double) ( (a.x-b.x)*(a.x-b.x) + (a.y-b.y)*(a.y-b.y) ) ); }
+
+inline int cross (pos a, pos b)
+{ return a.x*b.y - a.y*b.x; }
+
+inline pos diff (pos a, pos b) {
+    pos res;
+    res.x = a.x - b.x;
+    res.y = a.y - b.y;
+    return res;
 }
 
-int main() {
+bool cmp_lex (pos a, pos b) {
+    if (a.x == b.x)
+        return a.y < b.y;
+    return a.x < b.x;
+}
+
+bool cmp_ang (pos a, pos b) {
+    return cross(diff(anc, a), diff(anc, b)) < 0;
+}
+
+int main () {
     scanf("%d", &n);
 
     for (int i = 0; i < n; i++)
-        scanf("%lf %lf", x+i, y+i);
+        scanf("%d %d", &v[i].x, &v[i].y);
 
-    int es = 0;
-    for (int i = 0; i < n; i++) {
-        for (int j = i+1; j < n; j++) {
-            p[es] = es;
-            a[es] = x[i]-x[j];
-            b[es] = y[i]-y[j];
-            wg[es] = sqrt(a[es]*a[es]+b[es]*b[es]);
+    sort(v, v+n, cmp_lex);
+    
+    double res = 0.0;
 
-            if (a[es] < 0) {
-                a[es] = -a[es];
-                b[es] = -b[es];
+    for (int i = 0; i < n-1; i++) {
+        for (int j = i; j < n; j++)
+            u[j] = v[j];
+
+        anc = v[i];
+        sort(u+i+1, u+n, cmp_ang);
+
+        double mini = dist(anc, u[i+1]);
+        for (int j = i+2; j < n; j++) {
+            if (cmp_ang(u[j-1], u[j])) {
+                res += mini;
+                mini = dist(anc, u[j]);
+            } else {
+                mini = min(dist(anc, u[j]), mini);
             }
-
-            a[es] /= wg[es];
-            b[es] /= wg[es];
-            printf("((%.7lf,%.7lf)-(%.7lf,%.7lf))/%.7lf = (%.7lf,%.7lf)\n", x[i], y[i], x[j], y[j], wg[es], a[es], b[es]);
-            es++;
         }
+        res += mini;
     }
 
-    sort(p, p+es, cmp_ed);
-
-    num res = wg[p[0]];
-    for (int i = 1; i < es; i++) {
-        if (abs(a[p[i-1]]-a[p[i]]) < eps && abs(b[p[i-1]]-b[p[i]]) < eps)
-            continue;
-        
-        printf("%.7lf\n", wg[p[i]]);
-        res += wg[p[i]];
-    }
-
-    printf("%.0lf\n", res);
+    printf("%.0lf\n", round(res));
 }
-
-
-
