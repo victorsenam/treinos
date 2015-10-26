@@ -2,62 +2,44 @@
 
 using namespace std;
 
-typedef double num;
+const int N = 10007;
 
-const int N = 304;
-const num eps = 1e-9;
+int x[N], y[N];
+int pa[N], pl[N];
+double res;
+int n;
+int anc;
 
-num wg[N*N], a[N*N], b[N*N], x[N], y[N];
-int n, p[N*N];
-
-bool cmp_ed (int i, int j) {
-    if (abs(a[i]-a[j]) < eps) {
-        if (abs(b[i]-b[j]) < eps)
-            return wg[i] > wg[j];
-        return b[i] < b[j];
-    }
-    return a[i] < a[j];
+inline int cross (int i, int j) {
+    return (x[i]*y[j] - x[j]*y[i]);
 }
 
-int main() {
+inline int inner (int i, int j)
+{ return (y[i]-y[j])*(y[i]-y[j]) + (x[i]-x[j])*(x[i]-x[j]); }
+
+bool cmp_ang (int i, int j)
+{ return cross(i,anc) < cross(j,anc); }
+
+bool cmp_lex (int i, int j) {
+    if (x[i] == x[j])
+        return y[i] < y[j];
+    return x[i] < x[j];
+}
+
+int main () {
     scanf("%d", &n);
 
     for (int i = 0; i < n; i++)
-        scanf("%lf %lf", x+i, y+i);
+        scanf("%d %d", x+i, y+i);
 
-    int es = 0;
+    sort(pl, pl+n, cmp_lex);
+
     for (int i = 0; i < n; i++) {
-        for (int j = i+1; j < n; j++) {
-            p[es] = es;
-            a[es] = x[i]-x[j];
-            b[es] = y[i]-y[j];
-            wg[es] = sqrt(a[es]*a[es]+b[es]*b[es]);
+        anc = i;
 
-            if (a[es] < 0) {
-                a[es] = -a[es];
-                b[es] = -b[es];
-            }
-
-            a[es] /= wg[es];
-            b[es] /= wg[es];
-            printf("((%.7lf,%.7lf)-(%.7lf,%.7lf))/%.7lf = (%.7lf,%.7lf)\n", x[i], y[i], x[j], y[j], wg[es], a[es], b[es]);
-            es++;
+        sort(pa+1, pa+n, cmp_ang);
+        for (int j = 0; j < n; j++) {
+            
         }
     }
-
-    sort(p, p+es, cmp_ed);
-
-    num res = wg[p[0]];
-    for (int i = 1; i < es; i++) {
-        if (abs(a[p[i-1]]-a[p[i]]) < eps && abs(b[p[i-1]]-b[p[i]]) < eps)
-            continue;
-        
-        printf("%.7lf\n", wg[p[i]]);
-        res += wg[p[i]];
-    }
-
-    printf("%.0lf\n", res);
 }
-
-
-
