@@ -2,7 +2,7 @@
 
 using namespace std;
 
-typedef double num;
+const int N = 10007;
 
 const int N = 307;
 

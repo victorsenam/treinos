@@ -2,95 +2,69 @@
 
 using namespace std;
 
+const int N = 5003;
+const int INI = 1000000000;
+
 typedef long long int num;
 
-const int N = 5007;
-const num MAXI = 1000000000;
-
-num a[N];
-bool mx[N];
 int n, m;
-num opr[N][4];
-num val[N], used[N];
-bool sol[N];
+num init[N], sum[N];
+int ty, l, r;
+num d;
+int op[N][4];
 
 void fail () {
-	printf("NO\n");
-	exit(0);
+    printf("NO\n");
+    exit(0);
 }
 
-void reverse (int k, int op) {
-	if (opr[op][1] < k || opr[op][2] >= k)
-		return;
+int main () {
+    scanf("%d %d", &n, &m);
 
-	if (opr[op][0] == 1) {
-		val[k] -= opr[op][3];
-	} else {
-		val[k] = min(val[k], opr[op][3]);
-	}
-}
+    for (int i = 0; i < n; i++) {
+        init[i] = INI;
+        sum[i] = 0;
+    }
 
-bool apply (int k, int op) {
-	if (op >= m)
-		return 1;
+    for (int i = 0; i < m; i++) {
+        scanf("%d %d %d %I64d", &ty, &l, &r, &d);
+        op[i][0] = ty; op[i][1] = l; op[i][2] = r; op[i][3] = d;
 
-	if (opr[op][1] < k || opr[op][2] >= k)
-		return apply(k, op);
+        l--;
 
-	if (opr[op][0] == 1) {
-		val[k] += opr[op][3];
-		if (val[k] >= MAXI || val[k] <= -MAXI || !apply(k, op+1)){
-			val[k] -= opr[op][3];
-			return 0;
-		}
-	} else {
-		bool usedop = 0;
-		if (val[k] == opr[op][3] && !sol[op]) {
-			sol[op] = 1;
-			usedop = 1;
-		}
-		if (val[k] > opr[op][3] || !apply(k, op+1)) {
-			if (usedop)
-				sol[op] = 0;
-			return 0;
-		}
-	}
-	return 1;
-}
+        if (ty == 1) {
+            for (int j = l; j < r; j++)
+                sum[j] += d;
+        } else {
+            for (int j = l; j < r; j++) {
+                init[j] = min(init[j], d-sum[j]);
+                if (init[j] < -INI)
+                    fail();
+            }
+        }
+    }
 
-void restr (int op, int k) {
-	if (used[k])
-		return;
+    for (int i = 0; i < n; i++)
+        sum[i] = init[i];
 
-	val[k]= opr[op][3];
-	used[k] = 1;
-	for (int i = op-1; i >= 0; i--)
-		reverse(k, i);
+    for (int i = 0; i < m; i++) {
+        ty = op[i][0]; l = op[i][1]-1; r = op[i][2]; d = op[i][3];
 
-	if (!apply(k, 0))
-		used[k] = 0;
-}
+        if (ty == 1) {
+            for (int j = l; j < r; j++)
+                sum[j] += d;
+        } else {
+            bool ok = 0;
+            for (int j = l; j < r; j++) {
+                ok |= (sum[j] == d);
+            }
 
-int main ( ) {
-	scanf("%d %d", &n, &m);
-
-	for (int i = 0; i < m; i++) {
-		scanf("%d %d %d %d", &opr[i][0], &opr[i][1], &opr[i][2], &opr[i][3]);
-		opr[i][1]--;
-	}
-
-	for (int i = 0; i < m; i++) {
-		if (opr[i][0] == 1)
-			sol[i] = 1;
-		else {
-			for (int j = opr[i][1]; !sol[i] && j < opr[i][2]; j++)
-				restr(i, j);
-			if (!sol[i])
-				fail();
-		}
-	}
-
-	printf("YES\n");
-	for (int i = 0; i < n; i++)
-		printf("%d ", val[i]);
+            if (!ok)
+                fail();
+        }
+    }
+    printf("YES\n");
+    for (int i = 0; i < n; i++) {
+        printf("%d ", (int) init[i]);
+    }
 }
