@@ -26,6 +26,17 @@ struct mod
     mod operator*(mod b) { return (1ll*x*1ll*b.x)%MOD; }
 };
 
+int n, m, aux, last, ans;
 int main()
 {
+    getnum(n,m);
+    for(int i=0;i<n;i++)
+        for(int j=0;j<2*m;j++)
+        {
+            getnum(aux);
+            if(j&1)
+                ans += (last || aux);
+            last = aux;
+        }
+    printf("%d\n", ans);
 }
