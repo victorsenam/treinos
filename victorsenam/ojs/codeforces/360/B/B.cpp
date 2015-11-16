@@ -4,54 +4,53 @@ using namespace std;
 
 const int N = 2007;
 
-int visi[N][N];
+typedef long long num;
+
 int k, n;
-int turn;
-int memo[N][N];
-int a[N];
-int lim;
+num pd[N];
+int in;
+num a[N];
+num cnt;
 
-int pd (int ls, int i) {
-    if (i == n)
-        return 0;
-    
-    int & me = memo[ls][i];
-
-    if (visi[ls][i] == lim)
-        return me;
-    visi[ls][i] = lim;
-
-    me = pd(ls, i+1) + 1;
-    if (ls == n || (abs(a[i] - a[ls]) <= lim*(i-ls)) )
-        me = min(me, pd(i, i+1));
-
-    return me;
+num solve (num lim) {
+    pd[n-1] = 0;
+    for (int i = n-2; i >= 0; i--) {
+        pd[i] = n - i - 1;
+        for (int j = i+1; j < n; j++) {
+            if (abs(a[j] - a[i]) > lim*(j-i))
+                continue;
+            pd[i] = min(pd[i], pd[j] + (j-i-1));
+        }
+    }
+    num res = pd[0];
+    for (int i = 1; i < n; i++)
+        res = min(res, pd[i] + i);
+    return res;
 }
 
 int main () {
     scanf("%d %d", &n, &k);
 
-    memset(memo, -1, sizeof memo);
-    
-    int maxi = INT_MIN;
-    int mini = INT_MAX;
+    num maxi = INT_MIN;
+    num mini = INT_MAX;
     for (int i = 0; i < n; i++) {
-        scanf("%d", a+i);
+        scanf("%d", &in);
+        a[i] = in;
         maxi = max(maxi, a[i]);
         mini = min(mini, a[i]);
     }
 
-    int lo = 0;
-    int hi = maxi-mini;
+    num lo = 0;
+    num hi = maxi-mini;
 
+    cnt = 0;
     while ( lo < hi ) {
-        lim = lo + (hi-lo)/2;
+        num lim = lo + (hi-lo)/2;
         
-        if (pd(n, 0) > k)
+        if (solve(lim) > k)
             lo = lim+1;
         else
             hi = lim;
     }
-    printf("%d\n", lo);
+    printf("%d\n", (int) lo);
 }
-
