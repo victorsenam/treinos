@@ -17,14 +17,12 @@ int pd (int ls, int i) {
     
     int & me = memo[ls][i];
 
-    if (visi[ls][i] == turn)
+    if (visi[ls][i] == lim)
         return me;
-    visi[ls][i] = turn;
+    visi[ls][i] = lim;
 
     me = pd(ls, i+1) + 1;
-    if (ls == n)
-        me = min(me, pd(i, i+1));
-    else if (abs(a[i] - a[ls]) <= lim*(i-ls))
+    if (ls == n || (abs(a[i] - a[ls]) <= lim*(i-ls)) )
         me = min(me, pd(i, i+1));
 
     return me;
@@ -32,6 +30,8 @@ int pd (int ls, int i) {
 
 int main () {
     scanf("%d %d", &n, &k);
+
+    memset(memo, -1, sizeof memo);
     
     int maxi = INT_MIN;
     int mini = INT_MAX;
@@ -45,8 +45,7 @@ int main () {
     int hi = maxi-mini;
 
     while ( lo < hi ) {
-        lim = (hi+lo)/2;
-        turn++;
+        lim = lo + (hi-lo)/2;
         
         if (pd(n, 0) > k)
             lo = lim+1;
