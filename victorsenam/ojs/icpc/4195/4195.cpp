@@ -2,36 +2,40 @@
 
 using namespace std;
 
-#define N 1001
+const int N = 1007;
+typedef long long int num;
 
-int n, k, v;
-unsigned int m[N][N], s[N], aux;
+num dp[2][N];
+int n, k;
+int x[N];
 
-int main () {
+int main ( ) {
     while (scanf("%d %d", &n, &k) != EOF && n) {
-        s[n] = 0;
-        for (int i = n-1; i >= 0; i--) {
-            scanf("%d", &aux);
-            s[i] = s[i+1] + aux;
-            printf("%d ", s[i]);
+        for (int i = 0; i < n; i++)
+            scanf("%d", x+i);
+
+        dp[0][0] = 0;
+        num acc = 0, cst;
+        for (int i = 0; i < n; i++) {
+            dp[0][i] = dp[0][i-!!i] + acc*x[i];
+            acc += x[i];
         }
-        printf("\n");
 
-        for (int i = 0; i <= k; i++) m[n][i] = 0;
-        for (int i = n-1; i >= 0; i--) printf("%d ", m[i][0] = m[i+1][0] + (s[i]-s[i+1])*s[i+1]);
-        printf("\n");
+        for (int q = 1; q <= k; q++) {
+            bool ty = (q&1);
+            for (int i = 0; i < n; i++) {
+                acc = x[i]; 
+                cst = 0;
+                dp[ty][i] = dp[!ty][i-1];
 
-        for (int i = n-1; i>= 0; i--) {
-            for (int j = 1; j <= k; j++) {
-                v = m[i][j] = m[i][0];
-                for (int b = n-1; b > i; b--) {
-                    v -= s[b+1]*(s[b]-s[b+1]); // Isso está errado! Acho que estou fazendo na ordem errada...
-                    m[i][j] = min(m[i][j], v+m[b][j-1]);
+                for (int j = i-1; j >= 0; j--) {
+                    cst += acc*x[j];
+                    dp[ty][i] = min(dp[ty][i], dp[!ty][j-!!j] + cst);
+                    acc += x[j];
                 }
-                printf("%d %d -> %d\n", i, j, m[i][j]);
             }
         }
 
-        printf("%d\n", m[n][k]);
+        printf("%lld\n", dp[k&1][n-1]);
     }
 }
