@@ -97,17 +97,8 @@ int dfs (int u, int fr) {
 
 void solve (int ed) {
     if (ans[ed] == 1) {
-        bool un = 1;
-        for (int at = hd[to[ed^1]]; at != -1 && un; at = nx[at]) {
-            if (at == ed)
-                continue;
-            if (to[at] == to[ed] && wg[ed] == wg[at])
-                un = 0;
-        }
-        if (un) {
-            printf("YES\n");
-            return;
-        }
+        printf("YES\n");
+        return;
     } 
 
 
@@ -121,7 +112,7 @@ void solve (int ed) {
     if (x < 1 || x >= wg[ed] || di == INT_MAX)
         printf("NO\n");
     else
-        printf("CAN %I64d\n", wg[ed] - x);
+        printf("CAN %lld\n", wg[ed] - x);
 }
 
 int main () {
@@ -134,7 +125,7 @@ int main () {
     for (int i = 0; i < m; i++){ 
         int a, b;
         num w;
-        scanf("%d %d %I64d", &a, &b, &w);
+        scanf("%d %d %lld", &a, &b, &w);
         a--; b--;
 
         connect(a, b, w);
