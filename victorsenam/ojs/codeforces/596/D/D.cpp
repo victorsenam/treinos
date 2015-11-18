@@ -2,77 +2,106 @@
 
 using namespace std;
 
-const int N = 2007;
-
 typedef long long int num;
+const int N = 2003;
 
 double memo[N][N][2][2];
-int tl[N], tr[N];
 bool visi[N][N][2][2];
-num n, h;
-num x[N];
 double p;
+int lf[N], rf[N];
+num x[N];
+int n;
+num h;
 
-double pd (int i, int j, bool l, bool r) {
-    if (visi[i][j][l][r])
-        return memo[i][j][l][r];
-    visi[i][j][l][r] = 1;
+num calc(int i, bool side, bool occ) {
+    if (side == 1) {
+        if (i == n-1)
+            return h;
+        else 
+            return min(h, max(0ll, x[i+1]-x[i]-(occ?h:0)));
+    } else {
+        if (i == 0)
+            return h;
+        else 
+            return min(h, max(0ll, x[i]-x[i-1]-(occ?h:0)));
+    }
+}
+
+double dp (int i, int j, bool l, bool r) {
+    if (i > j)
+        return 0.0;
 
     double & me = memo[i][j][l][r];
+    if (visi[i][j][l][r])
+        return me;
+    visi[i][j][l][r] = 1;
 
-    if (i + 1 == j) {
-        me = 0.0;
-
+    me = 0.0;
+        
+    if (i == j) {
+        me += p*calc(i, 0, l);
+        me += (1.0-p)*calc(i, 1, r);
     } else {
-        cl[i][j] = 0.5*p;
-        cr[i][j] = 0.5*(1.0-p);
-        memo[i][j] = 0.0;
+        int aux;
+        // direita pra direita
+        me += 0.5*(1.0-p)*(dp(i, j-1, l, 0) + calc(j, 1, r));
+        // esquerda pra esquerda
+        me += 0.5*p*(dp(i+1, j, 0, r) + calc(i, 0, l));
 
-        memo[i][j] += 0.5*p*pd(i+1, j, min(h, x[i+1]-x[i]), r, cl[i][j]);
-        memo[i][j] += 0.5*(1.0-p)*pd(i, j-1, l, min(h, x[j-1]-x[j-2]), cr[i][j]);
-
-        int att = min(tr[i], j);
-        memo[i][j] += 0.5*(1.0-p)*(x[att-1]-x[i]);
-        if (att == j)
-            cr[i][j] += 0.5*(1.0-p);
-        else
-            memo[i][j] += 0.5*(1.0-p)*(h + pd(att, j, min(h, x[att]-x[att-1]), 0, 0.5*(1.0-p)));
-
-        att = max(tl[j-1], i-1);
-        memo[i][j] += 0.5*(p)*(x[j-1]-x[att+1]);
-        if (att == i-1)
-            cl[i][j] += 0.5*p;
-        else
-            memo[i][j] += 0.5*p*(h + pd(i, att+1, 0, min(h, x[att+1]-x[att]), 0.5*p));
+        // direita pra esquerda
+        aux = lf[j];
+        
+        double loc = 0;
+        if (aux < i) {
+            loc = 0.5*p*(x[j] - x[i] + calc(i, 0, l));
+        } else {
+            loc = 0.5*p*(x[j] - x[aux+1] + h + dp(i, aux, l, 1));
+        }
+        me += loc;
+        
+        // esquerda pra direita
+        aux = rf[i];
+        if (aux > j) {
+            me += 0.5*(1.0-p)*(x[j]-x[i] + calc(j, 1, r));
+        } else {
+            me += 0.5*(1.0-p)*(x[aux-1] - x[i] + h + dp(aux, j, 1, r));
+        }
     }
 
-    return memo[i][j] + cl[i][j]*l + cr[i][j]*r;
+    return me;
 }
 
 int main () {
-    scanf("%I64d %I64d %lf", &n, &h, &p);
+    scanf("%d %I64d %lf", &n, &h, &p);
 
     for (int i = 0; i < n; i++)
         scanf("%I64d", x+i);
+
     sort(x, x+n);
 
-    int i = 0;
-    while (i < n) {
-        int att = i+1;
-        while (att < n && x[att] - x[att-1] < h) att++;
-        for (int j = i; j < att; j++)
-            tr[j] = att;
-        i = att;
+    int ls = 0;
+    for (int i = 0; i < n; i++) {
+        if (ls > i)
+            rf[i] = ls;
+        else {
+            do {
+                ls++;
+            } while (ls < n && x[ls] - x[ls-1] < h);
+            rf[i] = ls;
+        }
     }
 
-    i = n-1;
-    while (i >= 0) {
-        int att = i-1;
-        while (att >= 0 && x[att+1] - x[att] < h) att--;
-        for (int j = i; j > att; j--)
-            tl[j] = att;
-        i = att;
+    ls = n-1;
+    for (int i = n-1; i >= 0; i--) {
+        if (ls < i)
+            lf[i] = ls;
+        else {
+            do {
+                ls--;
+            } while (ls >= 0 && x[ls+1] - x[ls] < h);
+            lf[i] = ls;
+        }
     }
 
-    printf("%lf\n", pd(0, n, 0, 0));
+    printf("%.20f\n", dp(0, n-1, 0, 0));
 }
