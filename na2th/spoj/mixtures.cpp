@@ -1,46 +1,32 @@
-#include<cstdio>
-#include<cstring>
-#include<algorithm>
-#define oo 1000000000
-#define ME 101
-typedef int num;
+#include <bits/stdc++.h>
 using namespace std;
+typedef long long num;
 
-num mem[ME][ME], res[ME][ME], exp[ME];
-num n;
+const int MN = 101;
 
-num solve( int l, int r )
-{
-    if( l > r || r >= n ) return oo;
-    if( mem[l][r] == -1 )
-    {
-        if( l == r )
-        {
-            res[l][r] = exp[l];
-            mem[l][r] = 0;
-        }
-        else
-        {
-            mem[l][r] = oo;
-            res[l][l] = exp[l];
-            for( int k = l; k+1 <= r ; k++ )
-            {
-                res[l][k+1] = (res[l][k] + exp[k+1])%100;
-                mem[l][r]   = min( mem[l][r], solve(l,k) + solve(k+1,r) + res[l][k]*res[k+1][r] );
-            }
-        }
-    }
-    return mem[l][r];
-}
+num sol[MN][MN], res[MN][MN], in[MN];
+int n;
 
 int main()
 {
-    while( scanf(" %d", &n ) > 0 )
+    while( scanf(" %d", &n) != EOF )
     {
-        for( int i = 0; i < n; i++ )
-            scanf("%d", exp+i);
+        for(int i=0;i<n;i++)
+            scanf(" %lld", in+i);
 
-        memset( mem, -1 , sizeof mem );
-        printf("%d\n", solve(0,n-1) );
+        for(int i=0;i<n;i++)
+            sol[i][i+1] = 0, res[i][i+1] = in[i];
+
+        for(int t=2;t<n+1;t++)
+            for(int i=0;i+t<n+1;i++)
+            {
+                sol[i][i+t] = 1e9;
+                res[i][i+t] = (res[i][i+1]+res[i+1][i+t])%100;
+                for(int k=i;k<i+t;k++)
+                    sol[i][i+t] = min(sol[i][i+t], 
+                    sol[i][k] + sol[k][i+t] + res[i][k]*res[k][i+t]);
+            }
+
+        printf("%lld\n", sol[0][n]);
     }
 }
