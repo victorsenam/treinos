@@ -9,12 +9,11 @@ int main () {
     scanf("%I64u %I64u", &w, &h);
 
     num ans = 0llu;
-    w++;h++;
     
-    num i = 2llu;
-    while (w > i && h > i) {
-        ans += (w-i)*(h-i);
-        i += 2llu;
-    }
+    for (num i = 2; i <= w; i+=2)
+        for (num j = 2; j <= h; j+=2) {
+            ans += (w-i+1llu)*(h-j+1llu);
+        }
+
     printf("%I64u\n", ans);
 }
