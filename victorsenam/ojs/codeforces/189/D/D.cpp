@@ -1,4 +1,4 @@
-// INCOMPLETO
+// WA
 
 #include <bits/stdc++.h>
 
@@ -14,7 +14,7 @@ struct node {
     int u;
     int d;
     int r;
-    bool operator <(const node & ot) const {
+    bool operator < (const node & ot) const {
         if (d == ot.d)
             return r > ot.r;
         return d > ot.d;
@@ -24,6 +24,7 @@ struct node {
 int adj[N][N][N];
 int dist[N][K];
 int visi[N][K];
+int seen[N][K];
 int turn;
 int n, m, r;
 int a[Q], b[Q], k[Q], p[Q], ans[Q];
@@ -50,10 +51,9 @@ void djs (int src, int k) {
         aux.r = 0;
         aux.d = adj[0][src][i];
 
-        for (int c = 1; c < m; c++) {
+        for (int c = 1; c < m; c++)
             aux.d = min(aux.d, adj[c][src][i]);
-            pq.push(aux);
-        }
+        pq.push(aux);
     }
 
     while (!pq.empty()) {
@@ -63,7 +63,6 @@ void djs (int src, int k) {
         if (visi[att.u][att.r] == turn)
             continue;
         visi[att.u][att.r] = turn;
-        dist[att.u][att.r] = att.d;
 
         if (att.r == k)
             continue;
@@ -75,9 +74,15 @@ void djs (int src, int k) {
                 nxt.d += adj[c][att.u][i];
                 nxt.r++;
 
-                if (visi[nxt.u][nxt.r] == turn)
+                if (seen[nxt.u][nxt.r] != turn) {
+                    dist[nxt.u][nxt.r] = INT_MAX;
+                    seen[nxt.u][nxt.r] = turn;
+                }
+
+                if (dist[nxt.u][nxt.r] <= nxt.d)
                     continue;
 
+                dist[nxt.u][nxt.r] = nxt.d;
                 pq.push(nxt);
             }
         }
@@ -96,6 +101,7 @@ int main () {
 
     for (int q = 0; q < r; q++) {
         scanf("%d %d %d", a+q, b+q, k+q);
+        a[q]--; b[q]--;
         p[q] = q;
     }
 
