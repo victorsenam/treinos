@@ -12,8 +12,6 @@ int n, m, k;
 bool sp[N];
 int dist[N];
 int src[N];
-int visi[N];
-int turn;
 int qu[N], qi, qf;
 int s, t;
 
@@ -37,10 +35,10 @@ bool solve (int q) {
     for (int i = 0; i < n; i++) {
         uf[i] = i;
         wf[i] = 1;
-        if (sp[i]) {
+        src[i] = -1;
+        if (sp[i] || i == t) {
             qu[qf++] = i;
             dist[i] = 0;
-            visi[i] = turn;
             src[i] = i;
         }
     }
@@ -48,14 +46,16 @@ bool solve (int q) {
     while (qi < qf && find(s) != find(t)) {
         int u = qu[qi++];
 
+        if (dist[u] == q)
+            continue;
+
         for (int ed = hd[u]; ed != -1; ed = nx[ed]) {
-            if (visi[to[ed]] != turn) {
-                visi[to[ed]] = turn;
+            if (src[to[ed]] == -1) {
                 src[to[ed]] = src[u];
-                dist[to[ed]] = dist[u];
+                dist[to[ed]] = dist[u]+1;
                 qu[qf++] = to[ed];
             } else if (dist[to[ed]] + dist[u] + 1 <= q) {
-                join(u, to[ed]);
+                join(src[u], src[to[ed]]);
             }
         }
     }
@@ -89,9 +89,6 @@ int main () {
 
     while (lo < hi) {
         int q = (lo+hi)/2;
-        printf("%d %d %d\n", q, lo, hi);
-
-        turn++;
 
         if (solve(q))
             hi = q;
