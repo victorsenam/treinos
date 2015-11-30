@@ -1,93 +1,15 @@
-// WA
-
 #include <bits/stdc++.h>
 
 using namespace std;
 
-typedef long long int num;
-
 const int N = 62;
-const int K = 1003;
-const int Q = 100007;
-
-struct node {
-    int u;
-    int d;
-    int r;
-    bool operator < (const node & ot) const {
-        if (d == ot.d)
-            return r > ot.r;
-        return d > ot.d;
-    }
-};
+const int K = 1001;
 
 int adj[N][N][N];
-int dist[N][K];
-int visi[N][K];
-int seen[N][K];
+int memo[N][N][K];
 int turn;
 int n, m, r;
-int a[Q], b[Q], k[Q], p[Q], ans[Q];
-
-bool q_cmp (int i, int j) {
-    if (a[i] == a[j])
-        return k[i] > k[j];
-    return a[i] < a[j];
-}
-
-void floyd (int c) {
-    for (int s = 0; s < n; s++)
-        for (int i = 0; i < n; i++)
-            for (int j = 0; j < n; j++)
-                adj[c][i][j] = min(adj[c][i][j], adj[c][i][s] + adj[c][s][j]);
-}
-
-void djs (int src, int k) {
-    priority_queue<node> pq;
-
-    for (int i = 0; i < n; i++) {
-        node aux;
-        aux.u = i;
-        aux.r = 0;
-        aux.d = adj[0][src][i];
-
-        for (int c = 1; c < m; c++)
-            aux.d = min(aux.d, adj[c][src][i]);
-        pq.push(aux);
-    }
-
-    while (!pq.empty()) {
-        node att = pq.top();
-        pq.pop();
-
-        if (visi[att.u][att.r] == turn)
-            continue;
-        visi[att.u][att.r] = turn;
-
-        if (att.r == k)
-            continue;
-
-        for (int c = 0; c < m; c++) {
-            for (int i = 0; i < n; i++) {
-                node nxt = att;
-                nxt.u = i;
-                nxt.d += adj[c][att.u][i];
-                nxt.r++;
-
-                if (seen[nxt.u][nxt.r] != turn) {
-                    dist[nxt.u][nxt.r] = INT_MAX;
-                    seen[nxt.u][nxt.r] = turn;
-                }
-
-                if (dist[nxt.u][nxt.r] <= nxt.d)
-                    continue;
-
-                dist[nxt.u][nxt.r] = nxt.d;
-                pq.push(nxt);
-            }
-        }
-    }
-}
+int a, b, k;
 
 int main () {
     scanf("%d %d %d", &n, &m, &r);
@@ -96,25 +18,40 @@ int main () {
         for (int i = 0; i < n; i++)
             for (int j = 0; j < n; j++)
                 scanf("%d", &adj[c][i][j]);
-        floyd(c);
+        for (int s = 0; s < n; s++)
+            for (int i = 0; i < n; i++)
+                for (int j = 0; j < n; j++)
+                    adj[c][i][j] = min(adj[c][i][j], adj[c][i][s] + adj[c][s][j]);
+    }
+
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < n; j++) {
+            memo[i][j][0] = adj[0][i][j];
+            for (int c = 1; c < m; c++)
+                memo[i][j][0] = min(memo[i][j][0], adj[c][i][j]);
+        }
+    }
+    
+    int t;
+    for (t = 1; t < K; t++) {
+        bool ch = 0;
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < n; j++) {
+                memo[i][j][t] = memo[i][0][0] + memo[0][j][t-1];
+                for (int s = 1; s < n; s++)
+                    memo[i][j][t] = min(memo[i][j][t], memo[i][s][0] + memo[s][j][t-1]);
+                if (memo[i][j][t] < memo[i][j][t-1])
+                    ch = 1;
+            }
+        }
+        if (!ch)
+            break;
     }
 
     for (int q = 0; q < r; q++) {
-        scanf("%d %d %d", a+q, b+q, k+q);
-        a[q]--; b[q]--;
-        p[q] = q;
+        scanf("%d %d %d", &a, &b, &k);
+        a--; b--;
+
+        printf("%d\n", memo[a][b][min(k, t)]);
     }
-
-    sort(p, p+r, q_cmp);
-
-    for (int q = 0; q < r; q++) {
-        turn++;
-        if (!q || a[p[q]] != a[p[q-1]])
-            djs(a[p[q]], k[p[q]]);
-
-        ans[p[q]] = dist[b[p[q]]][k[p[q]]];
-    }
-
-    for (int i = 0; i < r; i++)
-        printf("%d\n", ans[i]);
 }
