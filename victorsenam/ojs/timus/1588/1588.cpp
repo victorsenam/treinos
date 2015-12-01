@@ -4,8 +4,6 @@ using namespace std;
 
 const int N = 10007;
 
-const int N = 307;
-
 struct pos {
     int x, y;
 };
