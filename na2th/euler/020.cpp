@@ -1,36 +1,54 @@
 #include <bits/stdc++.h>
 using namespace std;
 typedef int num;
-num carry, n, as, in, partial, sum, ans[200];
+const int MD = 200;
+const int B  = 10;
 
-int main()
+short ans[MD], aux[MD], spc[MD], as, is;
+
+void increment()
 {
-    ios::sync_with_stdio(false);
-    memset( ans, 0, sizeof ans );
-    ans[0] = 1;
-    as = 1;
+    short carry = 1;
+    for(int i=0; i < is; i++)
+    {
+        num partial = aux[i] + carry;
+        aux[i] = partial%B;
+        carry  = partial/B;
+    }
+    while(carry)
+    {
+        aux[is++] = carry%B;
+        carry /= B;
+    }
+}
 
-    cin >> in;
-    for( n = 1; n <= in ; n++ )
+void multiply()
+{
+    memset(spc, 0, sizeof spc);
+    short carry; num partial;
+    for(int i=0;i<as;i++)
     {
         carry = 0;
-        for( int i = 0; i < as; i++ )
+        for(int j=0;j<is; j++)
         {
-            cout << n << "*" << ans[i] << endl;
-            partial = n*ans[i] + carry;
-
-            ans[i] = partial%10;
-            carry = partial/10;
+            num partial = carry + spc[i+j] + ans[i]*aux[j];
+            spc[i+j] = partial%B;
+            carry    = partial/B;
         }
-        if( carry )
-            ans[as++] = carry;
+        spc[i+is] = carry;
     }
-    for( int i = 0; i < as; i++ )
-        cout << ans[as-i-1];
-    cout << endl;
+    memcpy(ans, spc, sizeof spc);
+    for(as=MD-1;!ans[as];--as); as++;
+}
 
-    sum = 0;
-    for( int i = 0; i < as; i++ )
-        sum += ans[i];
-    cout << sum << endl;
+int n, tot;
+int main()
+{
+    scanf(" %d", &n);
+    aux[0] = ans[0] = as = is = 1;
+    for(int i=0;i<n;i++, increment())
+        multiply();
+    for(int i=0;i<as;i++)
+        tot += ans[i];
+    printf("%d\n", tot);
 }
