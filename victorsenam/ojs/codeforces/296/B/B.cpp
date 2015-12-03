@@ -31,12 +31,12 @@ num pd (int i, bool up, bool down) {
                 loc = mod(loc + pd(i+1, ((x<y)||up), ((x>y)||down)));
     } else if (a[i] == '?') {
         for (int x = '0'; x <= '9'; x++)
-            loc = mod(loc + pd(i+1, ((x<a[i])||up), ((x>a[i])||down)));
+            loc = mod(loc + pd(i+1, ((x<b[i])||up), ((x>b[i])||down)));
     } else if (b[i] == '?') {
         for (int x = '0'; x <= '9'; x++)
-            loc = mod(loc + pd(i+1, ((x>b[i])||up), ((x<b[i])||down)));
+            loc = mod(loc + pd(i+1, ((x>a[i])||up), ((x<a[i])||down)));
     } else {
-        loc = pd(i+1, up, down);
+        loc = pd(i+1, (up||a[i]<b[i]), (down||a[i]>b[i]));
     }
     
     memo[i][up][down] = loc;
