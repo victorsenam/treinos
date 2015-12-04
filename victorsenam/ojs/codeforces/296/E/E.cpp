@@ -108,48 +108,48 @@ int main ( ){
     
     pd[0][0][0] = pd[0][0][1] = 1;
 
-    for (int t = 1; t <= k; t++) {
-        bool es = ((k-t)&1);
+    for (int t = 1; t <= d; t++) {
+        bool es = !((d-t)&1);
         for (int l = 0; l <= ql; l++) {
             for (int h = 0; h <= qh; h++) {
-                printf("=== \n");
+               // printf("=== \n");
                 pd[l][h][es] = 0;
 
                 if (es) {
                     for (int nl = l; nl >= 0; nl--) {
                         int cl = l - nl;
-                        for (int nh = h; nh >= 0; nh--) {
+                        for (int nh = h - !cl; nh >= 0; nh--) {
                             int ch = h - nh;
-                            if (!(ch|cl))
-                                continue;
                             if ((ch<<1) + cl > k) 
-                                break;
+                                continue;
                             pd[l][h][es] = mod(pd[l][h][es] + mod(mod(comb[l][cl]*comb[h][ch])*pd[nl][nh][!es]));
+                 //           printf("a (%d %d) %d %d %d -> ", cl, ch, nl, nh, t-1);
+                 //           printf("%I64d*", comb[l][cl]);
+                 //           printf("%I64d*", comb[h][ch]);
+                 //           printf("%I64d\n", pd[nl][nh][!es]);
                         }
                     }
                 } else {
                     for (int nl = l; nl <= ql; nl++) {
                         int cl = nl - l;
-                        for (int nh = h; nh <= qh; nh++) {
+                        for (int nh = h + !cl; nh <= qh; nh++) {
                             int ch = nh - h;
-                            if (!(ch|cl))
+                            if ((ch<<1) + cl > k)
                                 continue;
-                            if ((ch<<1) + cl > k) 
-                                break;
                             pd[l][h][es] = mod(pd[l][h][es] + mod(mod(comb[ql-l][cl]*comb[qh-h][ch])*pd[nl][nh][!es]));
-                   //         printf("%d %d %d -> ", nl, nh, es);
-                   //         printf("%lld ", comb[ql-l][cl]);
-                   //         printf("%lld ", comb[qh-h][ch]);
-                   //         printf("%lld\n", pd[nl][nh][!es]);
+                 //           printf("b (%d %d) %d %d %d -> ", cl, ch, nl, nh, t-1);
+                 //           printf("%I64d*", comb[ql-l][cl]);
+                 //           printf("%I64d*", comb[qh-h][ch]);
+                 //           printf("%I64d\n", pd[nl][nh][!es]);
                         }
                     }
                 }
                 
-                printf("%d %d %d[%d]-> %lld\n", l, h, t, es, pd[l][h][es]);
+               // printf("%d %d %d [%d]-> %I64d\n", l, h, es, t, pd[l][h][es]);
             }
         }
     }
 
     printf("%d\n", d);
-    printf("%I64d\n", pd[ql][qh][0]);
+    printf("%I64d\n", pd[ql][qh][1]);
 }
