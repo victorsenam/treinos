@@ -1,3 +1,5 @@
+// INCOMPLETO, FAZER ITERATIVO
+
 #include <bits/stdc++.h>
 
 using namespace std;
