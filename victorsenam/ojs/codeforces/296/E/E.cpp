@@ -1,59 +1,22 @@
-// ERRADO, TEM QUE COLOCAR COMBINAÇÕES NO MEIO DA PD, A LOGICA TA ERRADA... (MAS EU SEI ARRUMAR xD)
-
 #include <bits/stdc++.h>
 
 using namespace std;
 typedef long long int num;
 
-const int N = 53;
-const int K = 103;
+const int N = 51;
+const int K = 101;
 const int T = N*N;
 const num MOD = 1000000007;
 
 int dist[N][N][3];
+num comb[N][N];
 int n, k;
 int ql, qh;
-int qu[T][4], qi, qf;
-bool visi[N][N][K][3*N][2];
-num memo[N][N][K][3*N][2];
+int qu[T][3], qi, qf;
+num pd[N][N][2];
 
 inline num mod (num a)
 { return (a%MOD + MOD)%MOD; }
-
-num pd (int l, int h, int w, int t, bool es, bool ch) {
-    if (t < 0)
-        return 0;
-    if ((l|h) == 0 && !ch)
-        return (t == 0);
-    
-    num & me = memo[l][h][w][t][ch];
-
-    if (visi[l][h][w][t][ch])
-        return me;
-    visi[l][h][w][t][ch] = 1;
-
-    me = 0;
-    if (es) {
-        if (w != k)
-            me = mod(me + pd(l, h, k, t-1, !es));
-        
-        if (l && w)
-            me = mod(me + mod(l*pd(l-1, h, w-1, t, es)));
-        if (h && (w>>1))
-            me = mod(me + mod(h*pd(l, h-1, w-2, t, es)));
-    } else {
-        if (w != k)
-            me = mod(me + pd(l, h, k, t-1, !es));
-
-        if ((ql-l) && w)
-            me = mod(me + mod((ql-l)*pd(l+1, h, w-1, t, es)));
-        if ((qh-h) && (w>>1))
-            me = mod(me + mod((qh-h)*pd(l, h+1, w-2, t, es)));
-    }
-
-    printf("== %d %d %d %d %d -> %lld\n", l, h, w, t, es, me);
-    return me;
-}
 
 int main ( ){
     scanf("%d %d", &n, &k);
@@ -129,7 +92,62 @@ int main ( ){
         d = dist[0][0][1];
     if (dist[0][0][1] != -1)
         d = min(dist[0][0][1], d);
+        
+    for (int i = 0; i < N; i++) {
+        comb[i][0] = 1;
+        for (int j = 1; j <= i; j++)
+            comb[i][j] = mod(comb[i-1][j-1] + comb[i-1][j]);
+    }
+
+    if (d == -1) {
+        printf("-1\n0\n");
+        return 0;
+    }
+    
+    pd[0][0][0] = pd[0][0][1] = 1;
+
+    for (int t = 1; t <= k; t++) {
+        bool es = ((k-t)&1);
+        for (int l = 0; l <= ql; l++) {
+            for (int h = 0; h <= qh; h++) {
+                printf("=== \n");
+                pd[l][h][es] = 0;
+
+                if (es) {
+                    for (int nl = l; nl >= 0; nl--) {
+                        int cl = l - nl;
+                        for (int nh = h; nh >= 0; nh--) {
+                            int ch = h - nh;
+                            if (!(ch|cl))
+                                continue;
+                            if ((ch<<1) + cl > k) 
+                                break;
+                            pd[l][h][es] = mod(pd[l][h][es] + mod(mod(comb[l][cl]*comb[h][ch])*pd[nl][nh][!es]));
+                        }
+                    }
+                } else {
+                    for (int nl = l; nl <= ql; nl++) {
+                        int cl = nl - l;
+                        for (int nh = h; nh <= qh; nh++) {
+                            int ch = nh - h;
+                            if (!(ch|cl))
+                                continue;
+                            if ((ch<<1) + cl > k) 
+                                break;
+                            pd[l][h][es] = mod(pd[l][h][es] + mod(mod(comb[ql-l][cl]*comb[qh-h][ch])*pd[nl][nh][!es]));
+                   //         printf("%d %d %d -> ", nl, nh, es);
+                   //         printf("%lld ", comb[ql-l][cl]);
+                   //         printf("%lld ", comb[qh-h][ch]);
+                   //         printf("%lld\n", pd[nl][nh][!es]);
+                        }
+                    }
+                }
+                
+                printf("%d %d %d[%d]-> %lld\n", l, h, t, es, pd[l][h][es]);
+            }
+        }
+    }
 
     printf("%d\n", d);
-    printf("%lld\n", pd(ql, qh, k, d, 1, 0));
+    printf("%I64d\n", pd[ql][qh][0]);
 }
