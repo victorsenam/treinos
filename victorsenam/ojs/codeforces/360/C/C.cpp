@@ -2,52 +2,47 @@
 
 using namespace std;
 
-typedef long long num;
+typedef long long int num;
 
-const num MOD = 1e9+7;
 const int N = 2007;
+const int K = 2007;
+const num MOD = 1000000007;
 
 int n, k;
 char str[N];
-num memo[N][N][3];
-bool visi[N][N][3];
+num s[N];
+num pd[K][N];
+num acc[N];
 
 inline num mod (num a)
 { return (a%MOD + MOD)%MOD; }
 
-num pd (int i, int k, int pre) {
-    if (k < 0)
-        return 0;
-    if (i == n)
-        return (!k)&&(pre!=1);
-
-    num & me = memo[i][k][pre];
-    if (visi[i][k][pre])
-        return me;
-    visi[i][k][pre] = 1;
-
-    me = 0;
-
-    if (pre == 0) { // leq
-        me = mod(me + pd(i+1, k, 0));
-        me = mod(me + mod(num(str[i]-'a')*pd(i+1, k, 2)));
-    } else if (pre == 1) { // gt
-        me = mod(me + pd(i+1, k, 1));
-        me = mod(me + mod(num('z'-str[i])*pd(i+1, k, 2)));
-    } else {
-        me = mod(me + pd(i+1, k, 0));
-        me = mod(me + pd(i+1, k-(n-i), 1));
-        me = mod(me + mod(num(str[i]-'a')*pd(i+1, k, 2)));
-        me = mod(me + mod(num('z'-str[i])*pd(i+1, k-(n-i), 2)));
-    }
-
-
-    printf("%d %d [%d] -> %lld\n", i, k, pre, me);
-    return me;
-}
-
 int main () {
-    scanf("%d %d %s", &n, &k, str);
+    scanf("%d %d", &n, &k);
+    scanf(" %s", str);
 
-    printf("%lld\n", mod(pd(0, k, 2)));
+    for (int i = 0; i < n; i++)
+        s[i] = str[i]-'a';
+
+    pd[0][0] = 1;
+    for (int g = 0; g <= k; g++) {
+        for (int i = 1; i <= n; i++) {
+            num & r = pd[g][i];
+
+            r = 0;
+            acc[i] = mod(acc[i-1] + pd[g][i-1]);
+            r = mod(r + mod(s[i-1]*acc[i]));
+
+            int aux = n-i+1;
+            for (int j = 0; j < i && g >= aux; j++) {
+                r = r + (25ll-s[i-1])*pd[g-aux][i-j-1];
+                aux += n-i+1;
+            }
+            r = mod(r);
+        }
+    }
+    num res = 0;
+    for (int i = 0; i <= n; i++)
+        res = res + pd[k][i];
+    printf("%I64d\n", mod(res));
 }
