@@ -126,19 +126,17 @@ int main () {
 
     for (int i = 0; i < n; i++) {
         for (int j = 0; j < n; j++) {
-            if (mat[i][j] == 1)
-                mat[i][j] = 1;
-            else if (res[j].test(i) || j == i)
-                mat[i][j] = 0;
+            if (res[i].test(j) && i != j)
+                mat[j][i] = 1;
             else
-                mat[i][j] = -N;
+                mat[j][i] = 0;
         }
     }
 
     printf("%d\n", n-hungarian());
 
     for (int i = 0; i < n; i++)
-        printf("%d<->%d\n", match[i]+1, i+1);
+        printf("%d<->%d\n", i+1, match[i]+1);
 
     for (int i = 0; i < n; i++)
         if (mat[match[i]][i] == 0)
