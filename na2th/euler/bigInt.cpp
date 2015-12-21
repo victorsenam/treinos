@@ -1,186 +1,216 @@
 #include <bits/stdc++.h>
-
-#define BASE 1000000000
-
+#define pb push_back
+#define bi back_inserter
 using namespace std;
+const int B = 10;
+const int bpt = 7;
+typedef unsigned short dig;
+typedef long long num;
+typedef vector<dig> Int;
+const Int U(1,1);
+const Int Z(1,0);
 
-typedef vector<int> Int;
-Int U (1,1), Z (1,0);
-
-bool operator<(Int a, Int b)
+bool valid(const Int& a)
 {
-    Int::iterator ap, bp;
-    if( a.size() < b.size() )
-        return true;
-    if( a.size() > b.size() )
-        return false;
-    ap = a.end(); ap--;
-    bp = b.end(); bp--;
-    while( *ap == *bp && ap != a.begin() && bp != b.begin() )
-    {
-        ap--;
-        bp--;
-    }
-    return *ap < *bp;
+    for(int i=0;i<a.size();i++)
+        if(a[i] > 10u) return false;
+    return true;
 }
 
-bool operator==(Int a, Int b)
+void printInt(const Int& a)
 {
-    Int::iterator ap, bp;
-    if( a.size() != b.size() )
-        return false;
-    ap = a.end(); ap--;
-    bp = b.end(); bp--;
-    while( *ap == *bp && ap != a.begin() && bp != b.begin() )
-    {
-        ap--;
-        bp--;
-    }
-    return *ap == *bp;
+    assert(valid(a));
+    for(int i=a.size()-1;i>=0;--i)
+        putchar(48+a[i]);
+    putchar('\n');
 }
 
-Int operator+(Int a, Int b)
+Int str2Int(char * s)
 {
-    int t, ap, bp;
-    long partial, carry;
-    Int ans;
-    ap = bp = carry = 0;
-    t = min( a.size(), b.size() );
-
-    while( ap < t )
-    {
-        partial = a[ap++] + b[bp++] + carry;
-        ans.push_back(partial%BASE);
-        carry = partial/BASE;
-    }
-
-    while( ap < a.size() )
-    {
-        partial = a[ap++] + carry;
-        ans.push_back(partial%BASE);
-        carry = partial/BASE;
-    }
-
-    while( bp < b.size() )
-    {
-        partial = b[bp++] + carry;
-        ans.push_back(partial%BASE);
-        carry = partial/BASE;
-    }
-
-    if( carry )
-        ans.push_back( carry );
-
+    Int ans (0);
+    for(int i=0;s[i];i++)
+        ans.pb(s[i]-48);
+    reverse(ans.begin(),ans.end());
     return ans;
 }
 
-// Assume que a > b
-Int operator-(Int a, Int b)
+Int int2Int(num e)
 {
-    if( a == b ) return Z;
-    Int ans;
-    long partial;
-    int t, u;
+    Int ans(0);
+    for(;e;e/=B)
+        ans.pb(e%B);
+    return ans;
+}
 
-    ans.resize( a.size() );
-    t = min( a.size(), b.size() );
+num Int2int(const Int& a)
+{
+    num t = 0;
+    for(int i=a.size()-1;i>=0;i--)
+        t = t*10 + a[i];
+    return t;
+}
 
-    for( int p = ans.size() - 1; p >= t; p-- )
-        ans[p] = a[p];
+inline Int normalize(const Int& a)
+{
+    Int ans(a);
+    while(ans.size() > 1 && !ans.back())
+        ans.pop_back();
+    return ans;
+}
 
-    t--;
-    while( t >= 0 )
+bool operator<(const Int& a, const Int& b)
+{
+    if(a.size() != b.size())
+        return a.size() < b.size();
+    int i = a.size()-1;
+    while(i && a[i] == b[i]) --i;
+    return a[i] < b[i];
+}
+
+bool operator==(const Int& a, const Int& b)
+{
+    if(a.size() != b.size()) return false;
+    for(int i=0;i<a.size();i++)
+        if(a[i] != b[i]) return false;
+    return true;
+}
+
+Int operator+(const Int& a, const Int& b)
+{
+    if(b.size() > a.size()) return b+a;
+    int carry = 0, partial;
+    Int ans (a.size(), 0);
+    for(int i=0;i<a.size();i++)
     {
-        ans[t] = a[t] - b[t];
-        u = t;
-        while( ans[u] < 0 )
+        partial = carry + a[i];
+        if(i<b.size()) partial += b[i];
+        ans[i] = partial%B;
+        carry = partial/B;
+    }
+    for(;carry;carry/=B) ans.pb(carry%B);
+    return ans;
+}
+
+Int operator-(const Int& a, const Int& b)
+{
+    if(a==b) return Z;
+    Int ans(a);
+    for(int i=0;i<b.size();i++)
+    {
+        if(b[i] > ans[i])
         {
-            ans[u] += BASE;
-            ans[++u]--;
+            int j=i+1;
+            for(;!ans[j];j++)
+                ans[j] = B-1;
+            ans[j]--;
+            ans[i] += B;
         }
-        t--;
+        ans[i] -= b[i];
     }
+    return normalize(ans);
+}
 
-    while( !ans.back() ) ans.pop_back();
-
+Int operator<<(const Int& a, num e)
+{
+    Int ans (e, 0);
+    for(int i=0;i<a.size();i++)
+        ans.pb(a[i]);
     return ans;
 }
 
-Int operator*(Int a, Int b)
+Int halve(const Int& a)
 {
-    Int ans (a.size()+b.size(), 0);
-    long partial, carry;
-    for( int i = 0; i < a.size(); i++ )
+    Int ans (0);
+    for(int i=0;i<a.size();i++)
+        ans.pb(a[i]>>1);
+    for(int i=1;i<a.size();i++)
+        if(a[i]&1) ans[i-1] += 5;
+    return normalize(ans);
+}
+
+Int operator*(const Int& a, const Int& b)
+{
+    if(a.size() < 128 || b.size() < 128)
     {
-        carry = 0;
-        for( int j = 0 ; j < b.size(); j++ )
+        Int ans(a.size()+b.size()+1,0);
+        for(int i=0;i<a.size();i++)
         {
-            partial = (long)a[i]*b[j] + ans[i+j] + carry;
-            ans[i+j] = partial%BASE;
-            carry = partial/BASE;
+            int carry = 0;
+            for(int j=0;j<b.size();j++)
+            {
+                int partial = ans[i+j] + a[i]*b[j] + carry;
+                ans[i+j] = partial%B;
+                carry = partial/B;
+            }
+            for(int j=0;carry;j++,carry/=B)
+                ans[i+j+b.size()] = carry%B;
         }
-        ans[i+b.size()] = carry;
+        return normalize(ans);
     }
+    if(b.size() > a.size()) return b*a;
+    int d = (b.size())>>1;
+    Int a0 (a), a1;
+    move(a0.begin()+d, a0.end(), bi(a1));
+    a0.erase(a0.begin()+d, a0.end());
+    a0 = normalize(a0);
 
-    if( !ans.back() ) ans.pop_back();
+    Int b0 (b), b1;
+    move(b0.begin()+d, b0.end(), bi(b1));
+    b0.erase(b0.begin()+d,b0.end());
+    b0 = normalize(b0);
+
+    Int z1 ((a1+a0)*(b1+b0)),
+        z0 (a0*b0), z2 (a1*b1);
+    Int ans ((z2<<(2*d)) + ((z1-z2-z0)<<d) + z0);
     return ans;
 }
 
-Int operator^(Int a, long e)
+Int operator/(const Int& p, const Int& q)
 {
-    Int t;
-    if( !e )
+    assert(!(q==Z));
+    if(p<q) return Z;
+    Int lo (U), hi (p);
+    while(lo<hi)
     {
-        t.push_back(1);
-        return t;
+        Int mid (halve(lo+hi+U));
+        if( p < mid*q )
+            hi = mid - U;
+        else
+            lo = mid;
     }
-    if( e == 1 )
-        return a;
-    t = a^(e/2);
-    return t*t*(a^(e%2));
+    return lo;
 }
 
-Int operator!(Int a)
+Int fexp(Int a, long long e)
 {
-    if( a == Z )
-        return U;
-    return a*(!(a-U));
-}
-
-// Assume que *p tem uma string terminada em \0 só formada de numeros
-Int str2Int(char * in)
-{
-    Int ans;
-    int partial, 
-        n = strlen(in),
-        c = 0;
-
-    while( c < n )
+    Int t(U);
+    while(e)
     {
-        partial = 0;
-        for(int p = 1; p < BASE && c < n; p *= 10 )
-            partial += p*(in[n-1-c++] - 0x30);
-        ans.push_back(partial);
+        if(e&1) t = t*a;
+        a = a*a;
+        e>>=1;
     }
-
-    return ans;
+    return t;
 }
 
-int digits(Int a)
+Int operator!(const Int& a)
 {
-    int p, dpi, ans;
-    dpi = ans = 0;
-    for( p = 1; p < BASE; p *= 10, dpi++ );
-    for( p = 1; p < a.back() ; p *=10 ) ans++;
-    return ans + dpi*(a.size()-1);
+    if(a<U) return U;
+    return a*!(a-U);
 }
 
 int main()
 {
-    Int t;
-    char input[100];
-    scanf("%s", input);
-    t = str2Int(input);
-    t = !t;
-    printInt(t); printf("\n[%d]\n", digits(t) );
+    char in[50];
+    int n;
+    while(!feof(stdin))
+    {
+        scanf(" %s%d", in, &n);
+        Int a(str2Int(in)<<(2*n)),
+            x(U<<n);
+        int g = 2*log2(n);
+        while(g--)
+            x = halve(x+a/x);
+        printInt(x);
+    }
 }
