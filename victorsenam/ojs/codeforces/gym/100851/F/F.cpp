@@ -9,8 +9,11 @@ const num eps = 1e-9;
 
 int n;
 num w, mid;
-int uf[N], wf[N];
+int uf[N], wf[N], vf[N];
 num x[N], y[N];
+num cost[N][N];
+int res[2];
+int turn;
 
 inline num sq (num a)
 { return a*a; }
@@ -19,6 +22,11 @@ inline num dist (int i, int j)
 { return sq(x[i]-x[j])+sq(y[i]-y[j]); }
 
 int find (int i) {
+    if (vf[i] != turn) {
+        uf[i] = i;
+        wf[i] = 1;
+        vf[i] = turn;
+    }
     if (uf[i] == i)
         return i;
     return uf[i] = find(uf[i]);
@@ -34,32 +42,37 @@ void join (int i, int j) {
     uf[j] = i;
 }
 
-pair<bool, int> solve () {
-    for (int i = 0; i <= n+1; i++) {
-        uf[i] = i;
-        wf[i] = 1;
-    }
-
+bool solve () {
+    turn++;
     for (int i = 0; i < n; i++) {
-        if (sq(x[i]) - mid <= eps)
+        if (cost[i][n] <= mid)
             join(n, i);
-        if (sq(w-x[i]) - mid <= eps)
+        if (cost[i][n+1] <= mid)
             join(n+1, i);
 
         for (int j = 0; j < n; j++)
-            if (dist(i, j) - mid <= eps)
+            if (cost[i][j] <= mid)
                 join(i, j);
     }
 
-    if (find(n) == find(n+1))
-        return make_pair(true, 0);
+    if (find(n) == find(n+1)) {
+        res[0] = res[1] = 0;
+        return 1;
+    }
 
+    num aux = 4.*mid;
     for (int i = 0; i < n; i++) {
-        if (find(i) == find(n+1) && sq(x[i]) - 4.*mid <= eps)
-            return make_pair(true, (n)*(n+2) + i);
+        if (find(i) == find(n+1) && cost[i][n] <= aux) {
+            res[0] = n;
+            res[1] = i;
+            return 1;
+        }
 
-        if (find(i) == find(n) && sq(w-x[i]) - 4.*mid <= eps)
-            return make_pair(true, (n+1)*(n+2) + i);
+        if (find(i) == find(n) && cost[i][n+1] <= aux) {
+            res[0] = n+1;
+            res[1] = i;
+            return 1;
+        }
 
         if (find(i) != find(n))
             continue;
@@ -67,12 +80,15 @@ pair<bool, int> solve () {
             if (find(j) != find(n+1))
                 continue;
 
-            if (dist(i, j) - 4.*mid <= eps)
-                return make_pair(true, i*(n+2) + j);
+            if (cost[i][j] <= aux) {
+                res[0] = i;
+                res[1] = j;
+                return 1;
+            }
         }
     }
 
-    return make_pair(false, 0);
+    return 0;
 }
 
 int main () {
@@ -88,24 +104,30 @@ int main () {
     for (int i = 0; i < n; i++)
         scanf("%lf %lf", x+i, y+i);
 
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < n; j++)
+            cost[i][j] = dist(i, j);
+        cost[i][n] = sq(x[i]);
+        cost[i][n+1] = sq(w-x[i]);
+    }
+
     num lo = 0;
     num hi = sq(w);
 
-    while (hi - lo > 1e-2) {
+    while (hi - lo > 1e-1) {
         mid = .5*(hi+lo);
 
-        pair<bool, int> res = solve();
-        if (res.first)
+        if (solve())
             hi = mid;
         else
             lo = mid;
     }
 
     mid = hi;
-    pair<bool, int> res = solve();
+    solve();
 
-    int a = res.second/(n+2);
-    int b = res.second%(n+2);
+    int a = res[0];
+    int b = res[1];
 
     if (a == n)
         printf("%.3f %.3f\n", .5*x[b], y[b]);
