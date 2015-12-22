@@ -2,16 +2,17 @@
 
 using namespace std;
 
-typedef double num;
+typedef long long int num;
 
 const int N = 3007;
-const num eps = 1e-9;
 
-int n;
-num w, mid;
-int uf[N], wf[N], vf[N];
+int n, mid;
+num w;
+int uf[N], wf[N];
 num x[N], y[N];
 num cost[N][N];
+num dists[N*N];
+int ds;
 int res[2];
 int turn;
 
@@ -22,11 +23,6 @@ inline num dist (int i, int j)
 { return sq(x[i]-x[j])+sq(y[i]-y[j]); }
 
 int find (int i) {
-    if (vf[i] != turn) {
-        uf[i] = i;
-        wf[i] = 1;
-        vf[i] = turn;
-    }
     if (uf[i] == i)
         return i;
     return uf[i] = find(uf[i]);
@@ -43,32 +39,39 @@ void join (int i, int j) {
 }
 
 bool solve () {
-    turn++;
+    for (int i = 0; i <= n+1; i++) {
+        uf[i] = i;
+        wf[i] = 1;
+    }
+    num aux = dists[mid];
+    num met = (aux>>2);
+
     for (int i = 0; i < n; i++) {
-        if (cost[i][n] <= mid)
+        if (cost[n][i] <= met)
             join(n, i);
-        if (cost[i][n+1] <= mid)
+        if (cost[n+1][i] <= met)
             join(n+1, i);
 
         for (int j = 0; j < n; j++)
-            if (cost[i][j] <= mid)
+            if (cost[i][j] <= met)
                 join(i, j);
     }
+    if (w*w <= met)
+        join(n, n+1);
 
     if (find(n) == find(n+1)) {
         res[0] = res[1] = 0;
         return 1;
     }
 
-    num aux = 4.*mid;
     for (int i = 0; i < n; i++) {
-        if (find(i) == find(n+1) && cost[i][n] <= aux) {
+        if (find(i) == find(n+1) && cost[n][i] <= aux) {
             res[0] = n;
             res[1] = i;
             return 1;
         }
 
-        if (find(i) == find(n) && cost[i][n+1] <= aux) {
+        if (find(i) == find(n) && cost[n+1][i] <= aux) {
             res[0] = n+1;
             res[1] = i;
             return 1;
@@ -87,6 +90,11 @@ bool solve () {
             }
         }
     }
+    if (w*w <= aux) {
+        res[0] = n;
+        res[1] = n+1;
+        return 1;
+    }
 
     return 0;
 }
@@ -94,45 +102,52 @@ bool solve () {
 int main () {
     freopen("froggy.in", "r", stdin);
     freopen("froggy.out", "w", stdout);
-    scanf("%lf %d", &w, &n);
-
-    if (n == 0) {
-        printf("%.3f %.3f\n", .5*w, 7.);
-        return 0;
-    }
+    scanf("%lld %d", &w, &n);
 
     for (int i = 0; i < n; i++)
-        scanf("%lf %lf", x+i, y+i);
+        scanf("%lld %lld", x+i, y+i);
 
     for (int i = 0; i < n; i++) {
-        for (int j = 0; j < n; j++)
-            cost[i][j] = dist(i, j);
-        cost[i][n] = sq(x[i]);
-        cost[i][n+1] = sq(w-x[i]);
+        for (int j = 0; j < n; j++) {
+            dists[ds++] = cost[i][j] = dist(i, j);
+            dists[ds] = (dists[ds-1]<<2); ds++;
+        }
+        dists[ds++] = cost[n][i] = sq(x[i]);
+        dists[ds] = (dists[ds-1]<<2); ds++;
+        dists[ds++] = cost[n+1][i] = sq(w-x[i]);
+        dists[ds] = (dists[ds-1]<<2); ds++;
     }
+    dists[ds++] = w*w;
 
-    num lo = 0;
-    num hi = sq(w);
+    sort(dists, dists+ds);
+    ds = unique(dists, dists+ds) - dists;
 
-    while (hi - lo > 1e-1) {
-        mid = .5*(hi+lo);
+    int lo = 0;
+    int hi = ds;
+
+    while (lo < hi) {
+        mid = lo + ((hi-lo)>>1);
 
         if (solve())
             hi = mid;
         else
-            lo = mid;
+            lo = mid+1;
     }
 
     mid = hi;
-    solve();
+    printf("%lld\n", dists[mid]);
+    assert(solve());
 
     int a = res[0];
     int b = res[1];
+ //   printf("%d %d\n", a, b);
 
-    if (a == n)
-        printf("%.3f %.3f\n", .5*x[b], y[b]);
+    if (a == n && b == n+1)
+        printf("%.3f %.3f\n", .5*double(w), 7.);
+    else if (a == n)
+        printf("%.3f %.3f\n", .5*double(x[b]), double(y[b]));
     else if (a == n+1)
-        printf("%.3f %.3f\n", x[b] + .5*(w-x[b]), y[b]);
+        printf("%.3f %.3f\n", double(x[b]) + .5*double(w-x[b]), double(y[b]));
     else
-        printf("%.3f %.3f\n", .5*(x[a]+x[b]), .5*(y[a]+y[b]));
+        printf("%.3f %.3f\n", .5*double(x[a]+x[b]), .5*double(y[a]+y[b]));
 }
