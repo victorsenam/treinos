@@ -1,3 +1,5 @@
+// JEITO NOOB PROVAVELMENTE CERTO
+
 #include <bits/stdc++.h>
 
 using namespace std;
@@ -50,10 +52,11 @@ int main () {
         for (int k = 2; k <= p; k++) {
             dp[i][k] = dp[i][k-1];
 
-            for (int j = 0; j < i; j++)
-                dp[i][k] = min(dp[i][k], dp[j][k-1] + t[i]*num(i) - pre[i-!!i]);
+            for (int j = 0; j < i; j++) {
+                dp[i][k] = min(dp[i][k], dp[j][k-1] + t[i]*num(i-j) - pre[i] + pre[j-!!j]);
+            }
         }
     }
 
-    printf("%lld\n", dp[m-1][p]);
+   printf("%lld\n", dp[m-1][p]);
 }
