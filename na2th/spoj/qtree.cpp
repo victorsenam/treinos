@@ -10,32 +10,7 @@ const int M = 2*N;
 int n;
 int hd[N], d[N], sz[N], anc[N], pre[N], val[N];
 int to[M], nx[M], w[M], es;
-int ts, ps, ls;
-
-namespace lca
-{
-    int tree[4*N], id[N];
-    node cmp(node u, node v)
-    { return d[u] < d[v]? u : v; }
-    void build()
-    {
-        d[n] = INT_MAX;
-        for(int i=2*n-2;i>0;i--)
-            tree[i] = cmp(tree[i<<1],tree[i<<1|1]);
-    }
-    node lca(node u, node v)
-    {
-        node ans = n;
-        int l = min(id[u], id[v]),
-            r = max(id[u], id[v]) + 1;
-        for(;l<r;l>>=1,r>>=1)
-        {
-            if(l&1) ans = cmp(ans, tree[l++]);
-            if(r&1) ans = cmp(ans, tree[--r]);
-        }
-        return ans;
-    }
-}
+int ps, ls;
 
 namespace hld
 {
@@ -64,8 +39,7 @@ namespace hld
     void update(int p)
     {
         if(!p) return;
-        if(p < n)
-            tree[p] = cmp(tree[p<<1],tree[p<<1|1]);
+        if(p < n) tree[p] = cmp(tree[p<<1],tree[p<<1|1]);
         update(p>>1);
     }
     node t_query(int l, int r)
@@ -76,20 +50,17 @@ namespace hld
         if(r&1) ans = cmp(ans, tree[--r]);
         return cmp(ans, t_query(l>>1,r>>1));
     }
-    node climb(node u, node v)
+    node query(node u, node v)
     {
         node ans = n;
         while(chain[u] != chain[v])
         {
+            if(d[chain[u]] < d[chain[v]]) swap(u,v);
             ans = cmp(ans, t_query(id[u],id[chain[u]]+1));
             u = anc[chain[u]];
         }
+        if(id[u] > id[v]) swap(u,v);
         return cmp(ans, t_query(id[u], id[v]));
-    }
-    node query(node u, node v)
-    {
-        node a = lca::lca(u,v);
-        return cmp(climb(u,a), climb(v,a));
     }
 }
 
@@ -97,7 +68,6 @@ void dfs(node u, int d)
 {
     int spc = u, bst = 0;
     ::d[u] = d;
-    lca::tree[lca::id[u]=ts++] = u;
     hld::chain[u] = u;
     pre[ps++] = u;
     sz[u] = 1;
@@ -106,7 +76,6 @@ void dfs(node u, int d)
         {
             anc[to[e]] = u;
             dfs(to[e], d+1);
-            lca::tree[ts++] = u;
             sz[u] += sz[to[e]];
             if(sz[to[e]] > bst)
                 bst = sz[to[e]], spc = to[e];
@@ -145,10 +114,9 @@ int main()
             nx[es] = hd[v]; hd[v] = es++;
         }
         prepare(0, INT_MIN);
-        ls = ps = 0; ts = 2*n-1;
+        ls = ps = 0;
         anc[0] = 0; val[0] = INT_MIN;
         dfs(0,0);
-        lca::build();
         hld::build();
         char cmd = 0;
         while(cmd != 'D')
