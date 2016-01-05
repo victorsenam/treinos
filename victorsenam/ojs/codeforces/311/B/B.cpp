@@ -1,5 +1,3 @@
-// WA TESTE 2
-
 #include <bits/stdc++.h>
 
 using namespace std;
@@ -58,13 +56,17 @@ int main () {
     }
 
     num add = 0;
+    num mint = LLONG_MAX;
     for (int i = 0; i < m; i++) {
         int h;
         scanf("%d %I64d", &h, t+i);
         t[i] -= d[h-1];
+        mint = min(mint, t[i]);
+    }
+
+    for (int i = 0; i < m; i++) {
+        t[i] -= mint;
         add -= t[i];
-        if (t[i] < 0)
-            t[i] = 0;
     }
 
     sort(t, t+m);
@@ -85,8 +87,10 @@ int main () {
             int l = upper_bound(st, st+ss, t[i-1]) - st - 1;
 
             dp[k][i] = sa[l]*t[i-1] + sb[l] + t[i-1]*i;
+            DEBUG("(%d,%d): %I64d(%I64d)", k, i, dp[k][i], -sa[l]);
         }
     }
 
-   printf("%I64d\n", dp[p][m]+add);
+    DEBUG("%I64d\n", add);
+    printf("%I64d\n", dp[p][m]+add);
 }
