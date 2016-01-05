@@ -1,5 +1,3 @@
-// WA TESTE 2
-
 #include <bits/stdc++.h>
 
 using namespace std;
@@ -21,32 +19,6 @@ num d[N];
 num t[N];
 num dp[P][N];
 num pre[N];
-
-num sa[N];
-num sb[N];
-num st[N];
-int ss;
-
-num inter (int i) {
-    if (!i)
-        return INT_MIN;
-
-    return (sb[i]-sb[i-1]+sa[i-1]-sa[i]-1)/(sa[i-1]-sa[i]);
-}
-
-void insert (num a, num b) {
-    sa[ss] = a;
-    sb[ss] = b;
-    st[ss] = inter(ss);
-
-    while (ss && st[ss] <= st[ss-1]) {
-        sa[ss-1] = sa[ss];
-        sb[ss-1] = sb[ss];
-        ss--;
-        st[ss] = inter(ss);
-    }
-    ss++;
-}
 
 int main () {
     scanf("%d %d %d", &n, &m, &p);
@@ -70,23 +42,17 @@ int main () {
     sort(t, t+m);
 
     dp[1][0] = 0;
-    for (int i = 1; i <= m; i++) {
-        dp[1][i] = t[i-1]*num(i);
-    }
+    for (num i = 1; i <= m; i++)
+        dp[1][i] = t[i-1]*i;
 
     for (int k = 2; k <= p; k++) {
-        ss = 0;
-        insert(0, dp[k-1][0]);
         dp[k][0] = 0;
-
-        for (int i = 1; i <= m; i++) {
-            insert(-i, dp[k-1][i]);
-
-            int l = upper_bound(st, st+ss, t[i-1]) - st - 1;
-
-            dp[k][i] = sa[l]*t[i-1] + sb[l] + t[i-1]*i;
+        for (num i = 1; i <= m; i++) {
+            dp[k][i] = LLONG_MAX;
+            for (num j = 0; j <= i; j++)
+                dp[k][i] = min(dp[k][i], dp[k-1][j] + t[i-1]*(i-j));
         }
     }
 
-   printf("%I64d\n", dp[p][m]+add);
+    printf("%I64d\n", dp[p][m]+add);
 }
