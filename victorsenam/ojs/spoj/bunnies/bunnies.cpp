@@ -1,5 +1,3 @@
-// talvez a ideia esteja certa e a forma recursiva também... mas é treta.
-
 #include <bits/stdc++.h>
 
 using namespace std;
@@ -7,8 +5,7 @@ typedef unsigned long long int ull;
 typedef long long int ll;
 typedef ll num;
 
-// const int N = 3007;
-const int N = 307;
+const int N = 3007;
 const num INF = LLONG_MAX - 1000000000ll;
 
 #ifndef ONLINE_JUDGE
@@ -17,54 +14,52 @@ const num INF = LLONG_MAX - 1000000000ll;
 #define DEBUG(...) {}
 #endif
 
-num memo[N][N][N];
-num dp[N][N][N];
-int visi[N][N][N];
+num dp[N][N];
+int opt[N][N];
 int turn;
 int k, n, t;
 num a[N];
 
-num fdp (int k, int n, int t) {
-    t = min(t, n);
-    if (k == 0)
-        return 0;
-    if (n == 0 || t < k)
-        return LLONG_MAX - 1000000000ll;
+void solve (int qk, int qn) {
+    for (int i = 1; i <= qk; i++) {
+        dp[i][i] = dp[i-1][i-1] + a[i-1];
+        opt[i][i] = i;
+    }
 
-    num & me = memo[k][n][t];
-    if (visi[k][n][t] == turn)
-        return me;
+    for (int t = 1; t <= qn; t++) {
+        for (int k = 1; k <= qk && k + t <= qn; k++) {
+            int st = opt[k][k+t-1];
+            dp[k][k+t] = dp[k-(a[st-1]==a[k+t-1])][k+t-1] + a[st-1];
+            opt[k][k+t] = st;
 
-    me = min(fdp(k - (a[t] == a[n]), n-1, t) + a[t], fdp(k, n, t-1));
+            int en = k+t;
+            if (k < qk)
+                en = opt[k+1][k+t];
 
-    return me;
+            for (int j = st+1; j <= en; j++) {
+                num val = dp[k-(a[j-1]==a[k+t-1])][k+t-1] + a[j-1];
+                if (val < dp[k][k+t]) {
+                    dp[k][k+t] = val;
+                    opt[k][k+t] = j;
+                }
+            }
+        }
+    }
 }
 
 int main () {
     scanf("%d", &t);
 
-    while (t-- && ++turn) {
+    while (t--) {
         scanf("%d %d", &n, &k);
 
-        for (int i = 1; i <= n; i++)
+        for (int i = 0; i < n; i++)
             scanf("%lld", a+i);
 
-        sort(a+1, a+n+1);
+        sort(a, a+n);
 
-        for (int ik = 1; ik <= k; ik++) {
-            for (int it = ik; it <= ik; it++)
-                dp[ik][ik][it] = dp[ik-1][ik-1][ik-1] + a[ik];
+        solve(k, n);
 
-            for (int in = ik+1; in <= n; in++) {
-                dp[ik][in][ik] = dp[ik-(a[in]==a[ik])][in-1][ik];
-                for (int it = ik+1; it <= in; it++)
-                    dp[ik][in][it] = min(dp[ik-(a[it]==a[in])][in-1][it], dp[ik][in][it-1]);
-                for (int it = in+1; it <= n; it++)
-                    dp[ik][in][it] = dp[ik][in][in];
-            }
-        }
-
-        printf("%lld\n", fdp(k, n, n));
-        printf("%lld\n", dp[k][n][n]);
+        printf("%lld\n", dp[k][n]);
     }
 }
