@@ -1,3 +1,5 @@
+// BEM ERRADO... Talvez a ideia esteja certa mas o codigo esta bem errado...
+
 #include <bits/stdc++.h>
 
 using namespace std;
