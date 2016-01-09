@@ -8,23 +8,33 @@ typedef ll num;
 const int N = 3007;
 
 #ifndef ONLINE_JUDGE
-#define DEBUG(...) {fprintf(stderr, "%3d| ", __LINE__); fprintf(stderr, __VA_ARGS__); fprintf(stderr, "\n");}
+#define DEBUG(...) {} //{fprintf(stderr, "%3d| ", __LINE__); fprintf(stderr, __VA_ARGS__); fprintf(stderr, "\n");}
 #else
 #define DEBUG(...) {}
 #endif
+
+bool rev_cmp (num a, num b)
+{ return a > b; }
 
 struct cvx {
     num sa[N], sb[N], st[N];
     int ss;
 
-    inline num numceil (num a, num b)
-    { return (a+b-1)/b; }
+    inline num numdiv (num a, num b)
+    { return (a)/b; }
 
     inline num inter (int i) {
         if (!i)
-            return LLONG_MIN;
+            return LLONG_MAX;
 
-        return numceil(sb[i]-sb[i-1], sa[i-1]-sa[i]);
+        if (sa[i] == sa[i-1]) {
+            if (sb[i] >= sb[i-1])
+                return LLONG_MIN;
+            else
+                return LLONG_MAX;
+        }
+
+        return numdiv(sb[i]-sb[i-1], sa[i-1]-sa[i]);
     }
 
     void insert (num a, num b) {
@@ -32,20 +42,23 @@ struct cvx {
         sb[ss] = b;
         st[ss] = inter(ss);
 
-        while (ss && st[ss] <= st[ss-1]) {
+        while (ss && st[ss] >= st[ss-1]) {
             sa[ss-1] = sa[ss];
             sb[ss-1] = sb[ss];
             ss--;
             st[ss] = inter(ss);
         }
-        ss++;
+
+        if (st[ss] != LLONG_MIN)
+            ss++;
     }
 
     inline void reset ()
     { ss = 0; }
 
     num get (num x) {
-        int l = upper_bound(st, st+ss, x) - st - 1;
+        int l = upper_bound(st, st+ss, x, rev_cmp) - st - 1;
+        DEBUG("got [%lld] %d/%d", st[l], l, ss);
         return sa[l]*x + sb[l];
     }
 };
