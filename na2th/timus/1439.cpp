@@ -8,14 +8,15 @@ int x[T], y[T];
 int lc[T], rc[T];
 int sl[T], sz[T];
 
-void update(int t)
+int update(int t)
 {
-    if(t == -1) return;
+    if(t == -1) return t;
     sz[t] = 1;
     sl[t] = 0;
     if(lc[t] != -1) sl[t]  = sz[lc[t]];
     if(rc[t] != -1) sz[t] += sz[rc[t]];
     sz[t] += sl[t];
+    return t;
 }
 
 void split(int t, int k)
@@ -33,8 +34,7 @@ int merge(int tl, int tr)
     if(min(tl,tr) == -1) return max(tl, tr);
     if(y[tl] > y[tr]) rc[tl] = merge(rc[tl], tr);
     else lc[ans=tr] = merge(tl, lc[tr]);
-    update(tl); update(tr);
-    return ans;
+    return update(ans);
 }
 
 int find(int t, int k)
