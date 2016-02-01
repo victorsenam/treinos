@@ -56,18 +56,18 @@ struct posi {
 
 posi att, obj;
 
-bool bt (int t) {
+int bt (int t) {
     if (att == obj) {
-        printf("%d\n", t);
-        return 1;
+        return t;
     }
     if (t >= 6)
-        return 0;
+        return 7;
 
     posi ini = att;
+    int res = 7;
 
-    if (!att.trymove()) return 0;
-    if (!att.trymove()) { att.move(1); return 0; }
+    if (!att.trymove()) return 7;
+    if (!att.trymove()) { att.move(1); return 7; }
 
     for (int dir = 0; dir < 3; dir++) {
         if (dir == ini.d)
@@ -77,18 +77,15 @@ bool bt (int t) {
             att.turn(dir, sen);
             int k = 2;
             while (k-- && att.trymove()); k++;
-            if (!k) {
-                printf("[%d]", t); ini.print(); printf(" -> "); att.print(); printf("\n");
-                if (bt(t+1)) return 1;
-            }
+            if (!k) res = min(bt(t+1), res);
             while (k++ < 2) att.move(1);
             att.turn(ini.d,ini.s);
 
             if (!att.trymove()) continue;
             att.turn(dir, sen);
             if (att.trymove()) {
-                printf("[%d]", t); ini.print(); printf(" -> "); att.print(); printf("\n");
-                if (bt(t+1)) return 1;
+             //   printf("[%d]", t); ini.print(); printf(" -> "); att.print(); printf("\n");
+                res = min(res, bt(t+1));
                 att.move(1);
             }
             att.turn(ini.d,ini.s);
@@ -100,7 +97,7 @@ bool bt (int t) {
     att.move(1);
 
     assert(ini == att);
-    return 0;
+    return res;
 }
 
 int main () {
@@ -110,8 +107,11 @@ int main () {
         att.move(1);
         memset(mat, 0, sizeof mat);
 
-        printf("Case %d: \n", ++ts);
-        if (!bt(0))
+        printf("Case %d: ", ++ts);
+        int val = bt(0);
+        if (val > 6)
             printf("Impossible\n");
+        else
+            printf("%d\n", val);
     }
 }
