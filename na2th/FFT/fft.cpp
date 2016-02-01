@@ -59,6 +59,8 @@ int conv(int * A, int as, int * B, int bs, int * C)
     n = 1<<k;
     for(int i=0;i<n;i++)
         p[i] = ((i&1)<<(k-1))|(p[i>>1]>>1);
+    for(int i=as;i<n;i++) A[i] = 0;
+    for(int i=bs;i<n;i++) B[i] = 0;
 
     dft(A, 0); dft(B, 0);
     for(int i=0;i<n;i++) C[i] = (mod(A[i])*mod(B[i])).x;
