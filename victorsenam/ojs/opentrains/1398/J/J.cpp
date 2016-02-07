@@ -18,7 +18,7 @@ bool visi[N][N];
 num memo[N][N];
 num pe;
 int de;
-num fat[K];
+num choose[K][K];
 
 num pd (int pl, int en) {
     if (en <= 0)
@@ -51,10 +51,14 @@ int main () {
     freopen("whats.out", "w", stdout);
     scanf("%d %d", hp, hp+1);
     scanf("%d %d", &gs, &ps);
-    
-    fat[0] = 1.;
-    for (int i = 1; i < K; i++)
-        fat[i] = fat[i-1]*num(i);
+
+    for (int i = 0; i < K; i++)
+        choose[i][0] = 1.;
+    for (int i = 1; i < K; i++) {
+        choose[i][i] = 1.;
+        for (int j = i+1; j < K; j++)
+            choose[j][i] = choose[j-1][i-1] + choose[j-1][i];
+    }
 
     for (int i = 0; i < gs; i++) {
         scanf("%d", vp+i);
@@ -70,7 +74,7 @@ int main () {
                 p[i][j][k] = p[i][j][k-1]*pp;
 
             for (int k = vp[i]; k >= 0; k--) {
-                p[i][j][k] *= acc*num(fat[vp[i]])/(num(fat[vp[i]-k])*num(fat[k]));
+                p[i][j][k] *= acc*choose[vp[i]][k];
                 sum += p[i][j][k];
                 acc *= (1.-pp);
             }
