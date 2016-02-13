@@ -1,2 +1,7 @@
-mkdir $1
-cp code_temp.cpp $1/$1.cpp
+ST=A
+
+for x in $(eval echo {$ST..$1})
+do
+    mkdir $x
+    cp code_temp.cpp $x/$x.cpp
+done
