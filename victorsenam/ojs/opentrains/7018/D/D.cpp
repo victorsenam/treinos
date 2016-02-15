@@ -2,92 +2,106 @@
 
 using namespace std;
 
-const int N = 107;
-const int M = 407;
-const int C = 2007;
+typedef long long int ll;
+const int N = 400;
 
-struct res {
-    int path;
-    int length;
-};
+int ncp, m, ncm, end;
+int hd[N], nx[N], to[N], deg[N], wg[N], cf[N], es, res[N];
+int ch[N], turn;
+bool st;
+ll search, path, att, dist;
 
-int chpts, cfpts, m, dst, en;
-int hd[N], nx[M], pv[M], to[M], cf[M], wg[M], deg[M], es;
-bool ch[N];
-res memo[M][C];
-int visi[M][C];
+void sim (int e) {
+    if (to[e] == end && !st)
+        return 1;
 
-inline void bef (int ed, int nw) {
-    nx[pv[ed]] = nw;
-    pv[nw] = pv[ed];
+    if (st) {
+        if (cf[e] > 0 && cf[e] + att <= dist) {
+            search += wg[e];
+            path += wg[e];
+            st = 0;
+            att = 0;
+        } else if (att + wg[e] > dist) {
+            path += ((dist-att)<<1);
+            return 0;
+        } else if (ch[to[e]]) {
+            path += (wg[e]<<1);
+            return 0;
+        }
+    }
 
-    pv[ed] = nw;
-    nx[nw] = ed;
-}
+    if (ch[e]) {
+        st = 1;
+        att = 0;
 
-void insert (int u, int nw) {
-    if (!hd[u]) {
-        hd[u] = nx[nw] = pv[nw] = nw;
-    } else if (deg[nw] < deg[hd[u]]) {
-        bef(hd[u], nw);
-        hd[u] = nw;
-    } else {
-        int ed = nx[hd[u]];
-        while (ed != hd[u] && deg[ed] < deg[nw])
-            ed = nx[ed];
-        bef(ed, nw);
+        bool up_s = 1;
+        int up_a = 180;
+        do {
+            int best = e^1;
+            for (int ed = hd[to[e]]; ed; ed = nx[ed]) {
+                int at_a = (deg[ed]+360-deg[e])%360;
+                int at_s = 0;
+                if (at_a < 180)
+                    at_s = 1;
+                else
+                    at_a = 360 - at_a;
+
+                if (make_pair(at_a, at_s) >= make_pair(up_a, up_s))
+                    continue;
+
+                
+            }
+        } while (best != e^1);
     }
 }
 
 int main () {
-    while (scanf("%d %d %d %d %d %d %d", &chpts, &m, &cfpts, &dst, to+1, &en, deg) && chpts+m+cfpts+dst+to[1]+en+deg[1]) {
+    while (scanf("%d %d %d %lld %d %d %d", &ncp, &m, &ncm, &dist, to+1, &end, deg) && to[1]) {
         memset(hd, 0, sizeof hd);
-        memset(ch, 0, sizeof ch);
-        es = 2;
-        wg[0] = wg[1] = 0;
-
-        for (int i = 0; i < chpts; i++) {
-            int a;
-            scanf("%d", &a); a--;
-            ch[a] = 1;
+        turn++;
+        to[1]--;
+        for (int i = 0; i < ncp; i++) {
+            scanf("%d", to);
+            ch[to[0]-1] = turn;
         }
 
+        es = 2;
         for (int i = 0; i < m; i++) {
-            scanf("%d %d %d %d %d", to+es+1, to+es, deg+es, deg+es+1, wg+es);
-            wg[es] = wg[es+1];
-            cf[es] = cf[es+1] = 0;
+            scanf("%d %d %d %d %d", to+es, to+es+1, deg+es+1, deg+es, wg+es);
+            wg[es+1] = wg[es];
             to[es]--; to[es+1]--;
 
-            // tinha entendido errado, n precisa ordenar, mas vou deixar aq pq ta sexy...
-            insert(to[es+1], es);
-            insert(to[es], es+1);
-            
+            nx[es+1] = hd[to[es]]; hd[to[es]] = es+1;
+            nx[es] = hd[to[es+1]]; hd[to[es+1]] = es;
             es += 2;
         }
-        
-        for (int i = 0; i < cfpts; i++) {
-            int vt, ed, ds;
-            scanf("%d %d %d", &vt, &ed, &ds);
-            vt--;
 
+        memset(cf, 0, sizeof cf);
+        for (int i = 0; i < ncm; i++) {
+            int ed, d;
+            scanf("%d %d %d", to, &ed, &d);
             ed <<= 1;
-            if (to[ed] == vt)
-                ed++;
+            ed ^= (to[ed] != to[0]);
 
-            cf[ed] = max(cf[ed], ds);
-            cf[ed^1] = max(cf[ed^1], wg[es]-ds);
+            cf[ed] = max(cf[ed], d);
+            cf[ed^1] = max(cf[ed^1], wg[ed]-d);
         }
-
+        
         for (int i = 0; i < N; i++) {
             if (!hd[i])
                 continue;
-            printf("%d:", i+1);
-            int ed = hd[i];
-            do {
-                printf(" %d(%d)", to[ed]+1, deg[ed]);
-                ed = nx[ed];
-            } while (ed != hd[i]);
+            printf("[");
+            if (ch[i])
+                printf("*");
+            else
+                printf(" ");
+            printf("]%d:", i+1);
+
+            for (int ed = hd[i]; ed; ed = nx[ed])
+                printf(" %d(%d,%d)", to[ed]+1, deg[ed], cf[ed]);
             printf("\n");
         }
+
+        st = search = path = att = 0;
     }
 }
