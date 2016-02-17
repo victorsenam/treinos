@@ -7,11 +7,12 @@ typedef long long int ll;
 
 int hd[N], to[N], nx[N], wg[N], cf[N], deg[N], es;
 bool ch[N];
-int st[N], ss;
 int turn, us[N];
-ll sim, ans, att;
-int nch, m, ncf, dist, end;
+ll sim, ans, att, dist;
+int nch, m, ncf, end;
 int ts;
+int st[N][3], ss;
+int ls, u, d, g, e;
 
 bool choose (int ref, int o_e, int a_e) {
     int o_d = (deg[o_e] + ref - 360)%360 - 180;
@@ -22,11 +23,18 @@ bool choose (int ref, int o_e, int a_e) {
     return a_d > o_d;
 }
 
+void failed() {
+    st[ls][1] = deg[st[ls+1][2]^1];                     
+    sim += min(att, dist); // se for pra somar duas vezes
+    att = 0;
+    ss = ls;
+}
+
 int main () {
     ts = 0;
-    while (scanf("%d %d %d %d %d %d %d", &nch, &m, &ncf, &dist, to+1, &end, deg) && end) {
-        to[1]--; end--;
-        deg[0] = (deg[0]+180)%360;
+    while (scanf("%d %d %d %lld %d %d %d", &nch, &m, &ncf, &dist, &st[0][0], &end, &st[0][1]) && end) {
+        st[0][0]--; end--;
+        st[0][1] = (st[0][1]+180)%360;
 
         es = 2;
         ss = 0;
@@ -34,7 +42,7 @@ int main () {
         memset(ch, 0, sizeof ch);
         for (int i = 0; i < nch; i++) {
             scanf("%d", to);
-            ch[to[0]-1] = turn;
+            ch[to[0]-1] = 1;
         }
 
         for (int i = 0; i < m; i++) {
@@ -60,44 +68,25 @@ int main () {
         for (int i = 0; i < N; i++) {
             if (!hd[i])
                 continue;
-            printf("[%c]%d:", ch[i]?'*':' ', i+1);
+            printf("[%c]%d:", (ch[i]?'*':' '), i+1);
             for (int ed = hd[i]; ed; ed = nx[ed])
                 printf(" %d(%d,%d)", to[ed]+1, deg[ed], cf[ed]);
             printf("\n");
         }
 
-        sim = ans = att = 0;
-        st[ss++] = 1;
-        bool back = 0;
-        while (42) {
-            int e = st[ss-1];
+        int cntt = 108;
+        ls = -1;
+        while (cntt--) {
+            u = st[ss][0];
+            d = (st[ss][1] + 180)%360;
+            printf("[%d] %d %d %d\n", ss, u+1, d, (st[ss][2]>>1));
 
-            if (back) { // voltando
-                if (att) {
-                    att -= wg[e];
-                    ss--;
-                    sim += wg[e]; // tem que somar de novo em sim?
-                    continue;
-                } else {
-                    e = (st[ss]^1);
-                }
-            } else if (att) { // tentando checa fim
-                if (ch[to[e]]) {
-                    back = 1;
-                    continue;
-                }
-            } else if (end == to[e]) { // sucesso
-                break;
-            } else if (ch[to[e]]) { // escolha (começo)
+            if (ch[u] && ls != ss) {
+                ls = ss;
                 ++turn;
             }
 
-            int u = to[e];
-            int d = deg[e^1];
-
-            d = (d + 180)%360;
-
-            int g = (e^1);
+            g = (e^1);
             for (int ed = hd[u]; ed; ed = nx[ed]) {
                 if (ch[u] && us[u] == turn)
                     continue;
@@ -106,35 +95,39 @@ int main () {
                     g = ed;
             }
 
-            if (att || ch[u]) {
-                if (g == (e^1)) {
-                    back = 1;
-                    continue;
-                } else if (cf[u] != wg[u]) {
-                    if (att + cf[u] <= dist) {
-                        back = 1;
-                        sim += 2*cf[u]; // *2?
-                        continue;
+            if (g == (e^1)) {
+                failed();
+            } else if (att || ch[u]) {
+                if (att && ch[u]) {
+                failed(); continue;
+                } else {
+                    att += cf[g];
+                    
+                    if (att > dist) {
+                        sim += cf[g];
+                        failed();
                     } else {
-                        ans += att;
-                        att = 0;
                         sim += wg[g];
-                        ans += wg[g];
-                        st[ss++] = g;
+                        if (wg[g] != cf[g]) {
+                            ans += att + wg[g] - cf[g];
+                            att = 0;
+                        }  
+
+                        ss++;
+                        st[ss][0] = to[g];
+                        st[ss][1] = deg[g^1];
+                        st[ss][2] = g;
                     }
                 }
             } else {
+                ss++;
+                st[ss][0] = to[g];
+                st[ss][1] = deg[g^1];
+                st[ss][2] = g;
+
                 sim += wg[g];
                 ans += wg[g];
-                st[ss++] = g;
             }
-
-            back = 0;
         }
-        
-        printf("%lld %lld\n", ans, sim);
-        for (int i = 1; i < ss; i++)
-            printf(" %d", (st[i]>>1));
-        printf("\n");
-    }
+    }       
 }
