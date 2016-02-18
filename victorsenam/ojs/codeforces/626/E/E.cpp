@@ -11,5 +11,17 @@ typedef int num;
 #define DEBUG(...) {}
 #endif
 
+const int N = 200007;
+
+int x[N];
+int n;
+
 int main () {
+    scanf("%d", &n);
+    for (int i = 0; i < n; i++)
+        scanf("%d", x+i);
+
+    int lo = 0;
+    int hi = (x<<1)-1;
+
 }
