@@ -1,7 +1,7 @@
-// ERRADO
-
 #include <bits/stdc++.h>
 using namespace std;
+
+#define debug(...) {}
 
 const int N = 10007;
 const int M = 107;
@@ -16,7 +16,7 @@ int srt[N];
 
 int find (int i) {
     if (uf[i] == i) return i;
-    uf[i] = find(uf[i]);
+    return uf[i] = find(uf[i]);
 }
 
 void join (int i, int j) {
@@ -54,28 +54,38 @@ int main () {
         sort(srt, srt+n*m, s_cmp);
         res = att = mr = 0;
 
-        for (int i = 0; i < n*m; i++) {
-            int l = srt[i]/m; int c = srt[i]%m;
-            if (i && mat[l][c] != mat[srt[i-1]/m][srt[i-1]%m]) {
-                res += att - mr;
-            }
-            att++;
-            mk[srt[i]] = 1;
+        int i = 0;
+        for (int lv = 0; lv <= N && i < n*m; lv++) {
+            for(; i < n*m && mat[srt[i]/m][srt[i]%m] == lv; i++) {
+                int l = srt[i]/m; int c = srt[i]%m;
+                att++;
+                debug("(%d,%d)\n", l, c);
+                mk[srt[i]] = 1;
 
-            for (int k = 0; k < 4; k++) {
-                int nl = l + dx[k]; int nc = c + dy[k];
-                int vt = n*m;
-                if (nl > 0 && nl < n && nc > 0 && nc < m) {
-                    vt = nl*m+nc;
+                for (int k = 0; k < 4; k++) {
+                    int nl = l + dx[k]; int nc = c + dy[k];
+                    int vt = n*m;
+                    if (nl >= 0 && nl < n && nc >= 0 && nc < m) {
+                        vt = nl*m+nc;
+                    }
+                    if (find(srt[i]) == find(vt) || !mk[vt])
+                        continue;
+
+                    debug("(%d,%d)-(%d,%d)", l, c, nl, nc);
+                    if (find(vt) == find(n*m)) {
+                        mr += wf[find(srt[i])];
+                        debug(" + %d", wf[find(srt[i])]);
+                    } else if (find(srt[i]) == find(n*m)) {
+                        mr += wf[find(vt)];
+                        debug(" + %d", wf[find(vt)]);
+                    }
+                    debug("\n");
+                    
+                    join(vt, srt[i]);
                 }
-                if (find(srt[i]) == find(vt) || !mk[vt])
-                    continue;
-
-                if (find(vt) == find(n*m))
-                    mr += wf[find(srt[i])];
-                
-                join(vt, srt[i]);
             }
+            res += att - mr;
+            debug("lv %d : %d - %d\n", lv, att, mr);
         }
         printf("%d\n", res);
     }
