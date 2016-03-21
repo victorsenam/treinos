@@ -90,29 +90,27 @@ int main() {
         */
 
         ll a, b, imp, par;
-        a = (fac(is)*fac(ps))%modn; b = 1;
-        for(int i = 0; i < 10; i++) { b *= fac(f[i][1]+f[i][0]); b %= modn; }
-        ll res = (a * fexp(b,modn-2))%modn;
+        a = fac(is)%modn; b = 1;
+        for(int i = 0; i < 10; i++) { b *= fac(f[i][1]); b %= modn; }
+        imp = (a * fexp(b,modn-2))%modn;
         
+        a = fac(ps)%modn; b = 1;
+        for(int i = 0; i < 10; i++) { b *= fac(f[i][0]); b %= modn; }
+        par = (a * fexp(b,modn-2))%modn;
     
         if(f[0][0]) {
             f[0][0]--;
-            a = (fac(is)*fac(ps-1))%modn; b = 1;
-            for (int i = 0; i < 10; i++) { b *= fac(f[i][1]+f[i][0]); b %= modn; }
-            a = (a*(f[0][0]+f[0][1]+1))%modn;
-            res = (modn+res-(a*fexp(b,modn-2))%modn)%modn;
-
-            /*
-            f[0][0]--;
-            a = fac(ps-1);
-            b = 1;
-            for(int i = 0; i < 10; i++) { b *= fac(f[i][0]); b %= modn; }
-            par -= a * fexp(b,modn-2);
-            */
+            a = fac(ps-1)%modn; b = 1;
+            for (int i = 0; i < 10; i++) { b *= fac(f[i][0]); b %= modn; }
+            ll res = (a * fexp(b,modn-2))%modn;
+            //res *= f[0][0]+1;
+            //res %= modn;
+            par = (modn+par-res)%modn;
         }
 
 
-        printf("%lld\n",res);
+        //printf("%lld %lld\n",imp,par);
+        printf("%lld\n",(imp*par)%modn);
     }
 }
 
