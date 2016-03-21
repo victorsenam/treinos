@@ -3,6 +3,7 @@
 using namespace std;
 typedef unsigned long long int ull;
 typedef long long int ll;
+typedef int num;
 
 #ifndef ONLINE_JUDGE
 #define DEBUG(...) {fprintf(stderr, __VA_ARGS__);}
