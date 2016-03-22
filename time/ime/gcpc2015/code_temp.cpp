@@ -11,16 +11,5 @@ typedef int num;
 #define DEBUG(...) {}
 #endif
 
-const int N = 4*100007;
-
-struct seg {
-    int n;
-    int l[N], r[N];
-    ll c[N], v[N];
-
-    void build (int r) {
-    }
-};
-
 int main () {
 }

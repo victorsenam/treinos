@@ -11,16 +11,16 @@ typedef int num;
 #define DEBUG(...) {}
 #endif
 
-const int N = 4*100007;
-
-struct seg {
-    int n;
-    int l[N], r[N];
-    ll c[N], v[N];
-
-    void build (int r) {
-    }
-};
 
 int main () {
+    int n, k;
+    scanf("%d %d", &n, &k);
+    k = min(k, n/2);
+
+    ll res = 0;
+    for (int i = 1; i <= k; i++) {
+        res += n-i;
+        res += n-i-k;
+    }
+    printf("%I64d\n", res);
 }

@@ -11,16 +11,15 @@ typedef int num;
 #define DEBUG(...) {}
 #endif
 
-const int N = 4*100007;
-
-struct seg {
-    int n;
-    int l[N], r[N];
-    ll c[N], v[N];
-
-    void build (int r) {
-    }
-};
+ll n;
 
 int main () {
+    cin >> n;
+    ll ans = 0;
+    ll i;
+    for(i = 1; i * i < n; i++)
+        if(n%i == 0) ans += 2;
+    if (n%i == 0) ans++;
+    cout << ans << endl;
 }
+
