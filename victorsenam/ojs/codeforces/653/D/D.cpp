@@ -1,122 +1,124 @@
+// Dinicão da massa
 #include <bits/stdc++.h>
-
 using namespace std;
-typedef unsigned long long int ull;
-typedef long long int ll;
-typedef int num;
 
-#ifndef ONLINE_JUDGE
-#define DEBUG(...) {fprintf(stderr, __VA_ARGS__);}
-#else
-#define DEBUG(...) {}
-#endif
-
-const int N = 70;
-const int M = 2007;
-const double eps = 1e-9;
-typedef long long ll;
+typedef long long int num;
+const int N = 200;
+const int M = 4007;
 
 struct dinic {
-    int n, m;
-    int hd[N], to[M], nx[M], es;
-    ll cp[M], fl[M], wg[M];
-    int he[N];
-    int src, snk;
-    int qu[N], qi, qf;
-    int dist[N], turn;
-    int visi[N];
+    int hd[N], nx[M], to[M], ht[M], es;
+    num fl[M], cp[M];
+    int n, src, snk;
+    int dist[N], seen[N], visi[N], turn;
+    int qi, qf, qu[N];
 
-    void clear (int in)  {
-        memset(hd, 0, sizeof hd);
-        memset(dist, 0, sizeof dist);
-        memset(visi, 0, sizeof visi);
-        turn = 0;
+    inline void init () // antes de montar o grafo
+    { es = 2; }
+
+    inline void reset () {
         es = 2;
-        n = in;
-        src = 0;
-        snk = n-1;
+        memset(hd, 0, sizeof hd);
+        memset(fl, 0, sizeof fl);
+        memset(seen, 0, sizeof seen);
+        memset(visi, 0, sizeof visi);
     }
 
-    void reset (double p) {
-        for (int i = 2; i < es; i++) {
-            fl[i] = 0;
-            cp[i] = (ll) floor(double(wg[i])/p);
-        }
-    }
-
-    void connect (int i, int j, int w) {
-        nx[es] = hd[i]; hd[i] = es; to[es] = j; wg[es] = w; es++;
-        nx[es] = hd[j]; hd[j] = es; to[es] = i; wg[es] = 0; es++;
+    inline void connect (int i, int j, num cap) {
+        nx[es] = hd[i]; hd[i] = es; to[es] = j; cp[es] = cap; fl[es] = 0; es++; 
+        nx[es] = hd[j]; hd[j] = es; to[es] = i; cp[es] = fl[es] = 0; es++;
     }
 
     bool bfs () {
-        ++turn;
+        turn++;
+        qi = qf = 0;
+
         qu[qf++] = snk;
-        visi[snk] = turn;
         dist[snk] = 0;
+        seen[snk] = turn;
 
         while (qi < qf) {
             int u = qu[qi++];
-            
-            he[u] = hd[u];
+
+            if (visi[u] == turn)
+                continue;
+            visi[u] = turn;
+
             for (int ed = hd[u]; ed; ed = nx[ed]) {
-                if (cp[ed^1] == fl[ed^1] || visi[to[ed]] == turn)
+                if (cp[ed^1] == fl[ed^1])
                     continue;
-                visi[to[ed]] = turn;
-                dist[to[ed]] = dist[u]+1;
-                qu[qf++] = to[ed];
+                int v = to[ed];
+
+                if (seen[v] == turn)
+                    continue;
+                seen[v] = turn;
+                dist[v] = dist[u]+1;
+                qu[qf++] = v;
             }
         }
 
-        return (visi[src] == turn);
+        return (seen[src] == turn);
     }
 
-    ll dfs (int u, ll att) {
-        if (att <= 0)
-            return 0;
-        for (int & ed = he[u]; ed; ed = nx[ed]) {
-            if ((visi[to[ed]] != turn || dist[to[ed]] + 1 != dist[u])) continue;
-            if (ll loc = dfs(to[ed], min(att, cp[ed]-fl[ed]))) {
-                fl[ed] += loc;
-                fl[ed^1] -= loc;
-                return loc;
+    num dfs (int u, num flw) {
+        if (u == snk || flw == 0)
+            return flw;
+
+        for (int & ed = ht[u]; ed; ed = nx[ed]) {
+            int v = to[ed];
+            if (fl[ed] >= cp[ed] || seen[v] != turn || dist[v]+1 != dist[u])
+                continue;
+            if (num ret = dfs(v, min(flw, cp[ed] - fl[ed]))) {
+                fl[ed] += ret;
+                fl[ed^1] -= ret;
+                return ret;
             }
         }
+
         return 0;
     }
 
-    ll run () {
-        ll res = 0;
-        while (bfs())
-            while (ll loc = dfs(src, INT_MAX))
-                res += loc;
+
+    num maxflow () {
+        num res = 0;
+        while (bfs()) {
+            for (int i = 0; i < n; i++)
+                ht[i] = hd[i];
+            while (num val = dfs(src, LLONG_MAX ))
+                res += val;
+        }
         return res;
     }
 };
 
-dinic flow;
 int n, m, x;
+dinic flow;
+int a[N], b[N], c[N];
 
-bool solve (double qt) {
-    flow.reset(qt);
-    if (flow.run() >= x)
-        return 1;
-    return 0;
+bool solve (double val) {
+    flow.reset();
+    flow.n = n;
+    flow.src = 0;
+    flow.snk = n-1;
+    for (int i = 0; i < m; i++) {
+        flow.connect(a[i], b[i], min(num(double(c[i])/val), 100000ll));
+    }
+
+    return (flow.maxflow() >= x);
 }
 
 int main () {
-    scanf("%d %d %d", &n, &m, &x);   
-    flow.clear(n);
+    clock_t relo = clock();
+    scanf("%d %d %d", &n, &m, &x);
+
     for (int i = 0; i < m; i++) {
-        int a, b, c;
-        scanf("%d %d %d", &a, &b, &c);
-        a--; b--;
-        flow.connect(a, b, c);
+        scanf("%d %d %d", a+i, b+i, c+i);
+        a[i]--; b[i]--;
     }
 
-    double lo = 0.;
+    double lo = 1e-6;
     double hi = 1000007.;
-    while (hi - lo > eps) {
+    while (double(clock()-relo)/CLOCKS_PER_SEC < 1.9) {
         double mid = .5*(lo+hi);
         if (solve(mid))
             lo = mid;
@@ -124,5 +126,6 @@ int main () {
             hi = mid;
     }
 
-    printf("%.20f\n", lo*x);
+    printf("%.20f\n", lo*double(x));
 }
+
