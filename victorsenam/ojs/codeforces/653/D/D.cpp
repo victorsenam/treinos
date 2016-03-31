@@ -3,14 +3,14 @@
 using namespace std;
 
 typedef long long int num;
-const int N = 200;
-const int M = 4007;
+const int N = 2000;
+const int M = 10007;
 
 struct dinic {
     int hd[N], nx[M], to[M], ht[M], es;
     num fl[M], cp[M];
     int n, src, snk;
-    int dist[N], seen[N], visi[N], turn;
+    int dist[N], seen[N], turn;
     int qi, qf, qu[N];
 
     inline void init () // antes de montar o grafo
@@ -21,7 +21,6 @@ struct dinic {
         memset(hd, 0, sizeof hd);
         memset(fl, 0, sizeof fl);
         memset(seen, 0, sizeof seen);
-        memset(visi, 0, sizeof visi);
     }
 
     inline void connect (int i, int j, num cap) {
@@ -39,10 +38,6 @@ struct dinic {
 
         while (qi < qf) {
             int u = qu[qi++];
-
-            if (visi[u] == turn)
-                continue;
-            visi[u] = turn;
 
             for (int ed = hd[u]; ed; ed = nx[ed]) {
                 if (cp[ed^1] == fl[ed^1])
