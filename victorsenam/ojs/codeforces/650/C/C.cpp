@@ -11,7 +11,7 @@ typedef int num;
 #define DEBUG(...) {}
 #endif
 
-const int N = 1000007;
+const int N = 2000007;
 
 int n, m;
 int mat[N];
@@ -48,53 +48,51 @@ int main () {
     }
     es = 2;
 
+    int acc = 0;
     for (int i = 0; i < n; i++) {
         for (int j = 0; j < m; j++)
-            ord[j] = j + i*m;
-        sort(ord,ord+m,cmp_t);
+            ord[acc+j] = j + i*m;
+        sort(ord+acc,ord+acc+m,cmp_t);
 
         for (int j = 1; j < m; j++)
-            if (mat[ord[j]] == mat[ord[j-1]])
-                join(ord[j], ord[j-1]);
+            if (mat[ord[acc+j]] == mat[ord[acc+j-1]])
+                join(ord[acc+j], ord[acc+j-1]);
+        acc += m;
     }
     for (int j = 0; j < m; j++) {
         for (int i = 0; i < n; i++)
-            ord[i] = i*m + j;
-        sort(ord,ord+n,cmp_t);
+            ord[acc+i] = i*m + j;
+        sort(ord+acc,ord+acc+n,cmp_t);
 
         for (int i = 1; i < n; i++)
-            if (mat[ord[i]] == mat[ord[i-1]])
-                join(ord[i], ord[i-1]);
+            if (mat[ord[acc+i]] == mat[ord[acc+i-1]])
+                join(ord[acc+i], ord[acc+i-1]);
+        acc += n;
     }
     
+    acc = 0;
     for (int i = 0; i < n; i++) {
-        for (int j =0; j < m; j++)
-            ord[j] = j + i*m;
-        sort(ord, ord+m, cmp_t);
-
         for (int j = 1; j < m; j++) {
-            if (mat[ord[j]] == mat[ord[j-1]])
+            if (mat[ord[acc+j]] == mat[ord[acc+j-1]])
                 continue;
 
-            int a = find(ord[j-1]); int b = find(ord[j]);
+            int a = find(ord[acc+j-1]); int b = find(ord[acc+j]);
 
             deg[b]++;
             nx[es] = hd[a]; hd[a] = es; to[es] = b; es++;
         }
+        acc += m;
     }
     for (int j = 0; j < m; j++) {
-        for (int i = 0; i < n; i++)
-            ord[i] = i*m + j;
-        sort(ord,ord+n,cmp_t);
-
         for (int i = 1; i < n; i++) {
-            if (mat[ord[i]] == mat[ord[i-1]])
+            if (mat[ord[acc+i]] == mat[ord[acc+i-1]])
                 continue;
 
-            int a = find(ord[i-1]); int b = find(ord[i]);
+            int a = find(ord[acc+i-1]); int b = find(ord[acc+i]);
             deg[b]++;
             nx[es] = hd[a]; hd[a] = es; to[es] = b; es++;
         }
+        acc += n;
     }
 
     for (int i = 0; i < n*m; i++) {
