@@ -37,7 +37,7 @@ ll dfs (int fr) {
     int tp = ss++;
     s[tp].clear();
     sh[tp].dm = sh[tp].ln = 0;
-    s[tp].insert(sh[tp]); // by luck, it's just a null guy
+    s[tp].insert(sh[tp]); // it's just a null guy
 
     ll res = 0;
     for (int ed = hd[u]; ed; ed = nx[ed]) {
@@ -48,7 +48,6 @@ ll dfs (int fr) {
 
         sh[tp+1].dm += dm[ed];
         sh[tp+1].ln += ln[ed];
-        DEBUG("%d (%d,%d) looking at %d (%d,%d)\n", u+1, sh[tp].dm, sh[tp].ln, to[ed]+1, sh[tp+1].dm, sh[tp+1].ln);
 
         aux.dm = m - sh[tp+1].dm;
         aux.ln = LLONG_MIN;
@@ -58,15 +57,13 @@ ll dfs (int fr) {
             swap(sh[tp], sh[tp+1]);
         }
 
-        for (it = s[tp+1].begin(); it != s[tp+1].end() && it->dm + sh[tp+1].dm + sh[tp].dm <= m; ++it) {
+        for (it = s[tp+1].begin(); it != s[tp+1].end(); ++it) {
             aux.dm = m - sh[tp].dm - sh[tp+1].dm - it->dm;
             aux.ln = LLONG_MIN;
 
             jt = s[tp].upper_bound(aux);
             if (jt != s[tp].begin()) {
                 --jt;
-                DEBUG("%d Found (%d,%d)\n", u+1, sh[tp].dm + sh[tp+1].dm + it->dm + jt->dm, sh[tp].ln + sh[tp+1].ln + it->ln + jt->ln);
-                DEBUG("Union of (%d,%d) and (%d,%d)\n", it->dm+sh[tp].dm, it->ln+sh[tp].ln, jt->dm+sh[tp+1].dm, jt->ln+sh[tp+1].ln);
                 res = max(sh[tp].ln + sh[tp+1].ln + it->ln + jt->ln, res);
             }
         }
@@ -81,7 +78,7 @@ ll dfs (int fr) {
             if (jt != s[tp].begin()) {
                 --jt;
                 if (jt->ln >= aux.ln) {
-                    DEBUG("(%d,%d) useless\n", aux.dm, aux.ln);
+                 //   DEBUG("(%d,%d) useless\n", aux.dm, aux.ln);
                     continue;
                 }
                 ++jt;
@@ -94,7 +91,7 @@ ll dfs (int fr) {
                 tmp = jt;
                 ++jt;
                 if (tmp->ln <= aux.ln) {
-                    DEBUG("(%d,%d) covers (%d,%d)\n", aux.dm, aux.ln, tmp->dm, tmp->ln);
+                 //   DEBUG("(%d,%d) covers (%d,%d)\n", aux.dm, aux.ln, tmp->dm, tmp->ln);
                     s[tp].erase(tmp);
                 } else
                     break;
@@ -105,17 +102,8 @@ ll dfs (int fr) {
 
     DEBUG("%d  (%d,%d)\n", u+1, sh[tp].dm, sh[tp].ln);
     //for (it = s[tp].begin(); it != s[tp].end(); ++it) {
-      //  DEBUG("(%d,%d)\n", it->dm+sh[tp].dm, it->ln+sh[tp].ln);
+    //    DEBUG("(%d,%d)\n", it->dm+sh[tp].dm, it->ln+sh[tp].ln);
     //}
-
-    aux.dm = m - sh[tp].dm;
-    aux.ln = LLONG_MIN;
-
-    it = s[tp].upper_bound(aux);
-    if (it != s[tp].begin()){ 
-        --it;
-        res = max(res, it->ln);
-    }
 
     return res;
 }
