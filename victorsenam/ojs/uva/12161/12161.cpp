@@ -4,49 +4,140 @@ using namespace std;
 typedef unsigned long long int ull;
 typedef long long int ll;
 
+#define ONLINE_JUDGE
 #ifndef ONLINE_JUDGE
 #define DEBUG(...) {fprintf(stderr, __VA_ARGS__);}
 #else
 #define DEBUG(...) {}
 #endif
 
-const int N = 70007;
+struct point {
+    ll dm, ln;
 
-int n, md;
-int hd[N], nx[N], to[N], d[N], l[N], es;
-int ds[N], ord, op[N], cl[N], p[N];
-map<int, int> par[N];
-
-void preproc (int fr, int d) {
-    int u = to[fr];
-    op[u] = ord++;
-    ds[u] = d;
-    for (int ed = hd[u]; ed; ed = nx[ed]) {
-        if ((ed|1) != (fr|1)) continue;
-        preproc(ed, d+l[ed]);
+    bool operator < (const point & ot) const{
+        if (dm == ot.dm)
+            return ln > ot.ln;
+        return dm < ot.dm;
     }
-    cl[u] = ord;
-}
+};
 
-bool cmp_t (int i, int j)
-{ return op[i] < op[j]; }
+const int N = 70007;
+int hd[N], to[N], nx[N], es;
+ll dm[N], ln[N];
+int n, m;
+int ts;
+set<point> s[N];
+set<point>::iterator it, jt, tmp;
+point sh[N], aux;
+int ss;
 
-int main () {
-    scanf("%d", &t);
-    while (t--) {
-        scanf("%d %d", &n, &md);
-        memset(hd, 0, sizeof hd);
-        es = 2;
+ll dfs (int fr) {
+    int u = to[fr];
 
-        for (int i = 1; i < n; i++) {
-            scanf("%d %d %d %d", to[es], to[es+1], d[es], l[es]);
-            d[es+1] = d[es]; l[es+1] = l[es];
-            nx[es] = hd[to[es^1]]; hd[to[es^1]] = es; es++;
-            nx[es] = hd[to[es^1]]; hd[to[es^1]] = es; es++;
-            p[i] = i;
+    int tp = ss++;
+    s[tp].clear();
+    sh[tp].dm = sh[tp].ln = 0;
+    s[tp].insert(sh[tp]); // by luck, it's just a null guy
+
+    ll res = 0;
+    for (int ed = hd[u]; ed; ed = nx[ed]) {
+        if ((ed|1) == (fr|1))
+            continue;
+
+        res = max(res, dfs(ed));
+
+        sh[tp+1].dm += dm[ed];
+        sh[tp+1].ln += ln[ed];
+        DEBUG("%d (%d,%d) looking at %d (%d,%d)\n", u+1, sh[tp].dm, sh[tp].ln, to[ed]+1, sh[tp+1].dm, sh[tp+1].ln);
+
+        aux.dm = m - sh[tp+1].dm;
+        aux.ln = LLONG_MIN;
+
+        if (s[tp].size() < s[tp+1].size()) {
+            s[tp].swap(s[tp+1]);
+            swap(sh[tp], sh[tp+1]);
         }
 
-        preproc(0, 0);
-        sort(p, p+n, cmp_t);
+        for (it = s[tp+1].begin(); it != s[tp+1].end() && it->dm + sh[tp+1].dm + sh[tp].dm <= m; ++it) {
+            aux.dm = m - sh[tp].dm - sh[tp+1].dm - it->dm;
+            aux.ln = LLONG_MIN;
+
+            jt = s[tp].upper_bound(aux);
+            if (jt != s[tp].begin()) {
+                --jt;
+                DEBUG("%d Found (%d,%d)\n", u+1, sh[tp].dm + sh[tp+1].dm + it->dm + jt->dm, sh[tp].ln + sh[tp+1].ln + it->ln + jt->ln);
+                DEBUG("Union of (%d,%d) and (%d,%d)\n", it->dm+sh[tp].dm, it->ln+sh[tp].ln, jt->dm+sh[tp+1].dm, jt->ln+sh[tp+1].ln);
+                res = max(sh[tp].ln + sh[tp+1].ln + it->ln + jt->ln, res);
+            }
+        }
+
+        for (it = s[tp+1].begin(); it != s[tp+1].end(); ++it) {
+            aux = *it;
+            aux.dm += sh[tp+1].dm - sh[tp].dm;
+            aux.ln += sh[tp+1].ln - sh[tp].ln;
+
+            jt = s[tp].upper_bound(aux);
+
+            if (jt != s[tp].begin()) {
+                --jt;
+                if (jt->ln >= aux.ln) {
+                    DEBUG("(%d,%d) useless\n", aux.dm, aux.ln);
+                    continue;
+                }
+                ++jt;
+            }
+            s[tp].insert(jt, aux); // c++11
+            // s[tp].insert(jt, aux); // c++98
+            // ++jt; // c++98
+
+            while (jt != s[tp].end()) {
+                tmp = jt;
+                ++jt;
+                if (tmp->ln <= aux.ln) {
+                    DEBUG("(%d,%d) covers (%d,%d)\n", aux.dm, aux.ln, tmp->dm, tmp->ln);
+                    s[tp].erase(tmp);
+                } else
+                    break;
+            }
+        }
+        ss--;
+    }
+
+    DEBUG("%d  (%d,%d)\n", u+1, sh[tp].dm, sh[tp].ln);
+    //for (it = s[tp].begin(); it != s[tp].end(); ++it) {
+      //  DEBUG("(%d,%d)\n", it->dm+sh[tp].dm, it->ln+sh[tp].ln);
+    //}
+
+    aux.dm = m - sh[tp].dm;
+    aux.ln = LLONG_MIN;
+
+    it = s[tp].upper_bound(aux);
+    if (it != s[tp].begin()){ 
+        --it;
+        res = max(res, it->ln);
+    }
+
+    return res;
+}
+
+int main () {
+    scanf("%d", &ts);
+    for (int tt = 1; tt <= ts; tt++) {
+        scanf("%d %d", &n, &m);
+        es = 2;
+        memset(hd, 0, sizeof hd);
+
+        for (int i = 1; i < n; i++) {
+            scanf("%d %d %d %d", &to[es], &to[es+1], &dm[es], &ln[es]);
+            to[es]--; to[es+1]--;
+            dm[es+1] = dm[es]; ln[es+1] = ln[es];
+            nx[es] = hd[to[es^1]]; hd[to[es^1]] = es; es++;
+            nx[es] = hd[to[es^1]]; hd[to[es^1]] = es; es++;
+        }
+
+        to[0] = 0;
+        ss = 0;
+
+        printf("Case %d: %lld\n", tt, dfs(0));
     }
 }
