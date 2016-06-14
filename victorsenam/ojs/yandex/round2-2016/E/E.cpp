@@ -18,38 +18,13 @@ using GNU::ordered_set;
 
 const int N = 400007;
 
-struct bit {
-    int v[N];
-    int n;
-
-    void build (int siz) {
-        n = siz;
-    }
-
-    void insert (int i, int x) {
-        for (i += 2; i <= n+3; i++) {
-            v[i] += x;
-        }
-    }
-
-    int get (int i) {
-        int res = 0;
-        for (i += 2; i > 0; i--) {
-            res += v[i];
-        }
-        return res;
-    }
-}
-
-ordered_set s;
+ordered_set s[N], ss;
 int n;
 int v[N];
 int a, b;
-int hd[N], to[N], nx[N], es, deg[N], fr[N];
+int hd[N], to[N], nx[N], es, deg[N], fr[N], ref[N];
 int qu[N], qi, qf;
 int siz[N];
-
-int dfs (
 
 int main () {
     scanf("%d", &n);
@@ -58,7 +33,7 @@ int main () {
         scanf("%d", v+i);
     }
 
-    es = 1;
+    es = ss = 1;
     for (int i = 1; i < n; i++) {
         scanf("%d %d", &a, &b);
         a--; b--;
@@ -76,5 +51,9 @@ int main () {
         int u = qu[qi++];
 
         for (fr[u] = hd[u]; fr[u] && deg[fr[u]] > 1; fr[u] = nx[fr[u]]);
+
+        addTo(ref[u], v[u]);
+
+        
     }
 }
