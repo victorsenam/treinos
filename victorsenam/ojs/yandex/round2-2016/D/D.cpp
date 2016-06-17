@@ -14,28 +14,48 @@ typedef long long int ll;
 
 const int N = 400007;
 
-template<typename Key, // Key type
- typename Mapped, // Mapped-policy
- typename Cmp_Fn = less<Key>, // Key comparison functor
- typename Tag = rb_tree_tag, // Specifies which underlying data structure to use
- template<
- typename Const_Node_Iterator,
- typename Node_Iterator,
- typename Cmp_Fn_,
- typename Allocator_>
- class Node_Update = null_node_update, // A policy for updating node invariants
- typename Allocator = std::allocator<char> > // An allocator type
- class tree;
+using namespace __gnu_pbds;
+template<
+    typename Key, // Key type
+    typename Mapped, // Mapped-policy
+    typename Cmp_Fn = std::less<Key>, // Key comparison functor
+    typename Tag = rb_tree_tag, // Specifies which underlying data structure to use
+    template<
+        typename Const_Node_Iterator,
+        typename Node_Iterator,
+        typename Cmp_Fn_,
+        typename Allocator_
+    > class Node_Update = null_node_update, // A policy for updating node invariants
+    typename Allocator = std::allocator<char> 
+> class tree;
 
 typedef tree<int, null_type, less<int>, rb_tree_tag, tree_order_statistics_node_update> ordered_set;
+using namespace std;
 
 ordered_set mp[N];
+int optre[N];
 int curr[N], cs;
 int hd[N], to[N], nx[N], val[N], es;
 int deg[N];
 int a[N];
 int qu[N], qi, qf;
 int pai[N];
+int memo[N];
+int visi[N];
+
+int pd (int fr) {
+    int & me = memo[fr];
+    if (fr && visi[fr])
+        return me;
+    visi[fr] = 1;
+
+    me = 0;
+    for (int ed = hd[to[fr]]; ed; ed = nx[ed]) {
+        if ((fr|1) == (ed|1)) continue;
+        me += pd(to[ed]) + val[ed];
+    }
+    return me;
+}
 
 void insert (int u, int x) {
     if (curr[u] == 0)
@@ -94,15 +114,31 @@ int main () {
 
         for (pai[u] = hd[u]; pai[u] && deg[pai[u]] == 0; pai[u] = nx[pai[u]]);
 
-        val[pai[u]^1] = curr[u].order_of_key(a[pai[u]]);
-
-        join(pai[u], u);
-
-        val[pai[u]] = a[i]-1;
+        if (pai[u]) {
+            val[pai[u]^1] = curr[u].order_of_key(a[pai[u]]);
+            join(pai[u], u);
+            val[pai[u]] = a[i]-1;
+        }
 
         for (int ed = hd[u]; ed; ed = nx[ed]) {
-            if (ed == pai[u]) continue;
-            val[pai[u]] -= val[ed];
+            if (pai[u]) {
+                if (ed == pai[u]) continue;
+                val[pai[u]] -= val[ed];
+            }
+
+            deg[to[ed]]--;
+            if (deg[to[ed]] == 1)
+                qu[qf++] = to[ed];
         }
     }
+
+    int mini = 0;
+
+    for (int i = 0; i < n; i++) {
+        to[0] = i;
+        optre[i] = pd(0);
+        if (optre[i] < optre[mini])
+            mini = i;
+    }
+    printf("%d %d\n", mini+1, optre[mini]);
 }
