@@ -1,3 +1,4 @@
+// spoj.com/problems/HORRIBLE
 #include <bits/stdc++.h>
 
 using namespace std;
