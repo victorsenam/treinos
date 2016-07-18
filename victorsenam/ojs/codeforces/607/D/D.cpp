@@ -28,22 +28,22 @@ struct seg {
     }
 
     void refresh (int u) {
-        ll aux = lz[u];
         v[u] = (v[u]*lz[u])%MOD;
-        lz[u] = 1ll;
-        if (l[u] + 1 == r[u])
-            return;
-        lz[2*u] = (lz[2*u]*aux)%MOD;
-        lz[2*u+1] = (lz[2*u+1]*aux)%MOD;
+        if (l[u] + 1 != r[u]) {
+            lz[2*u] = (lz[2*u]*lz[u])%MOD;
+            lz[2*u+1] = (lz[2*u+1]*lz[u])%MOD;
+        }
+        lz[u] = 1;
     }
 
     void add (int u, int p, ll x) {
         refresh(u);
-        if (l[u] > p || r[u] <= p) return;
         if (l[u] + 1 == r[u] && l[u] == p) {
             v[u] = (v[u]+x)%MOD;
+            assert(v[u] == x);
             return;
         }
+        if (l[u] > p || r[u] <= p) return;
         add(2*u, p, x);
         add(2*u+1, p, x);
         v[u] = (v[2*u] + v[2*u+1])%MOD;
@@ -58,6 +58,7 @@ struct seg {
         refresh(u);
         if (l[u] >= lo && r[u] <= hi) {
             lz[u] = (lz[u]*x)%MOD;
+            assert(lz[u] == x);
             refresh(u);
             return;
         }
@@ -142,7 +143,7 @@ int main () {
         int u = q[i].u;
         if (q[i].t == 1) {
             sz[qt] = 1ll;
-            tree.times(ord[u][0], ord[u][1]+1, ((sz[u]+1ll)*inv(sz[u]))%MOD);
+            tree.times(ord[u][0], ord[u][1], ((sz[u]+1ll)*inv(sz[u]))%MOD);
             sz[u]++;
             ll s = tree.query(ord[u][0], ord[u][0]+1);
             s = (s*inv(v[u]))%MOD;
@@ -153,7 +154,7 @@ int main () {
             ll s = 1ll;
             s = (inv(tree.query(ord[u][0], ord[u][0]+1))*v[u])%MOD;
             s = (s*sz[u])%MOD;
-            s = (s*tree.query(ord[u][0], ord[u][1]+1))%MOD;
+            s = (s*tree.query(ord[u][0], ord[u][1]))%MOD;
             printf("%lld\n", s);
         }
     }

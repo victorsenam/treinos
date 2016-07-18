@@ -1,107 +1,100 @@
-// INCOMPLETO
 #include <bits/stdc++.h>
 
 using namespace std;
+typedef unsigned long long int ull;
+typedef long long int ll;
 
-const int N = 100000;
-const int M = 100000;
+#ifndef ONLINE_JUDGE
+#define DEBUG(...) {fprintf(stderr, __VA_ARGS__);}
+#else
+#define lld I64d
+#define DEBUG(...) {}
+#endif
 
+const int N = 1000;
+const int M = 2000;
+
+int m[2], n;
+int q[2][2];
 int hd[N], to[M], nx[M], es;
-int na, nb, m;
-int a[2], b[2];
-int open[N], clse[N], turn;
-int pre[N], low[N], cnt;
-int cmp[N], cs;
+int ts;
+int pre[N], ret[N], os;
+int visi[N], turn;
 int st[N], ss;
-
-inline void connect (int a, int b)
-{ nx[es] = hd[a]; hd[a] = es; to[es] = b; es++; }
-
-void conds (int a1, int a2, int b1, int b2) {
-    connect(a1^1, a2);
-    connect(a1^1, b1);
-}
+int comp[N], cs;
 
 int dfs (int u) {
-    if (clse[u] == turn)
-        return INT_MAX;
-    if (open[u] == turn)
+    if (visi[u] == turn)
         return pre[u];
-
-    open[u] = turn;
-    pre[u] = low[u] = cnt++;
+    if (visi[u] == turn+1)
+        return INT_MAX;
+    visi[u] = turn;
+    pre[u] = ret[u] = os++;
     st[ss++] = u;
-    
-    for (int ed = hd[u]; ed != -1; ed = nx[ed])
-        low[u] = min(low[u], dfs(to[ed]));
+    for (int ed = hd[u]; ed; ed = nx[ed])
+        ret[u] = min(dfs(to[ed]), ret[u]);
+    visi[u] = turn+1;
 
-    clse[u] = turn;
-
-    if (pre[u] == low[u]) {
-        while (st[ss] != u) {
-            cmp[st[--ss]] = cs;
-        }
+    if (pre[u] == ret[u]) {
+        while (ss && pre[st[ss-1]] >= ret[u])
+            comp[st[--ss]] = cs;
         cs++;
     }
+    
+    return ret[u];
+}
 
-    return low[u];
+void addor (int x, int y) {
+    nx[es] = hd[x^1]; to[es] = y; hd[x^1] = es++;
+    nx[es] = hd[y^1]; to[es] = x; hd[y^1] = es++;
 }
 
 int main () {
-    int t;
-    scanf("%d", &t);
-    while (t--) {
-        memset(hd, -1, sizeof hd);
+    scanf("%d", &ts);
 
-        scanf("%d %d %d", &na, &nb, &m);
-        
-        for (int i = 0; i < m; i++) {
+    while (ts--) {
+        turn += 2;
+        scanf("%d %d %d", m, m+1, &n);
+
+        es = 2;
+        cs = ss = os = 0;
+        memset(hd, 0, sizeof hd);
+        for (int i = 0; i < n; i++) {
             for (int k = 0; k < 2; k++) {
-                scanf("%d %d", a+k, b+k);
-                a[k]--; b[k] += na - 1;
-                a[k] <<= 1; b[k] <<= 1;
+                for (int l = 0; l < 2; l++) {
+                    scanf("%d", &q[k][l]);
+                    q[k][l]--;
+                    if (l)
+                        q[k][l] += m[0];
+                    q[k][l] *= 2;
+                }
             }
-            
-            if (a[0] < a[1])
-            { b[0] ^= 1; b[1] ^= 1; }
 
-            if (b[0] < b[1])
-            { a[0] ^= 1; a[1] ^= 1; }
+            for (int l = 0; l < 2; l++)
+                if (q[0][l] > q[1][l])
+                    for (int k = 0; k < 2; k++)
+                        q[k][!l]++;
 
+            // se for necessario algum movimento naquele sentido, alguma das vias deve estar correta
+            for (int l = 0; l < 2; l++)
+                if (q[0][l] != q[1][l])
+                    addor(q[0][!l], q[1][!l]);
 
-            if (a[0] == a[1]) {
-                connect(a[0]^1, a[0]);
-            } else if (b[0] == b[1]) {
-                connect(b[0]^1, b[0]);
-            } else {
-                conds(a[0], a[1], b[0], b[1]);
-                conds(a[1], a[0], b[1], b[0]);
-                conds(b[0], b[1], a[0], a[1]);
-                conds(b[1], b[0], a[1], a[0]);
-            }
+            // tanto na entrada quanto na saida, pelo menos uma rua deve estar correta
+            for (int k = 0; k < 2; k++)
+                addor(q[k][0], q[k][1]);
         }
 
-/*
-        for (int i = 0; i < (na+nb)<<1; i++) {
-            printf("%d:", i);
-            for (int ed = hd[i]; ed != -1; ed = nx[ed])
-                printf(" %d", to[ed]);
-            printf("\n");
-        }
-*/
-
-        cnt = cs = ss = 0;
-        cs++;
-        turn++;
-        for (int i = 0; i < (na+nb)<<1; i++)
+        //printf("%d + %d\n", m[0], m[1]);
+        for (int i = 0; i < 2*(m[0]+m[1]); i++) {
             dfs(i);
-        
-        bool ok = 1;
-        for (int i = 0; (ok|1) && i < (na+nb)<<1; i += 2) {
-            if (cmp[i] == cmp[i+1])
-                ok = 0;
+            //printf("[%d]%d : %d\n", i%2, i/2, comp[i]);
         }
 
+        bool ok = 1;
+        for (int i = 0; i < 2*(m[0]+m[1]) && ok; i += 2) {
+            ok = (comp[i] != comp[i+1]);
+        }
         if (ok)
             printf("Yes\n");
         else
