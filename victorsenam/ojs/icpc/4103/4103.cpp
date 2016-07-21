@@ -15,6 +15,7 @@ const int mv[4][2] = {
 };
 
 
+int finstage;
 char mat[N][N];
 int val[N][N];
 ll visi[N][N];
@@ -41,51 +42,36 @@ struct point {
     }
 
     bool isblank () {
-        if (!isval() || val() > 0) return 0;
+        if (!isval() || val()) return 0;
+        if (finstage) return 1;
         for (int k = 0; k < 4; k++) {
             point p(i+mv[k][0],j+mv[k][1]);
-            if (p.isval() && p.val() > 0)
+            if (p.isval() && p.val())
                 return 1;
         }
         return 0;
     }
 
     bool blankok () {
-        if (!isblank()) return 1;
-        for (int k = 0; k < 4; k++) {
-            bool ok = 0;
-            for (int l = 0; !ok && l < 2; l++) {
-                point p(i+mv[(k+l)%4][0], j+mv[(k+l)%4][1]);
-                if (!p.isblank())
-                    ok = 1;
+        for (int l = 0; l < 2; l++)
+            for (int c = 0; c < 2; c++) {
+                point p(i+l,j+c);
+                if (!p.isval() || !p.isblank())
+                    return 1;
             }
-            point p(i+mv[k][0]+mv[(k+1)%4][0], j+mv[k][1]+mv[(k+1)%4][1]);
-            if (!p.isblank())
-                ok = 1;
-            if (!ok)
-                return 0;
-        }
-        return 1;
+        return 0;
     }
 
     bool put (vector<point> v, int sh) {
         qt++;
         for (point q : v) {
             point p(i+q.i-v[sh].i, j+q.j-v[sh].j);
-            if (!p.isval() || p.val() != 0 || p.isblank()) 
+            if (!p.isval() || p.val() || p.isblank()) 
                 return 0;
         }
         for (point q : v) {
             point p(i+q.i-v[sh].i, j+q.j-v[sh].j);
             p.val() = qt;
-        }
-        for (point q : v) {
-            point p(i+q.i-v[sh].i, j+q.j-v[sh].j);
-            for (int k = 0; k < 4; k++) {
-                point c(p.i+mv[k][0], p.j+mv[k][1]);
-                if (!c.blankok())
-                    return 0;
-            }
         }
         return 1;
     }
@@ -100,14 +86,14 @@ struct point {
     }
 };
 
-bool dfs (point p) {
+int dfs (point p) {
     if (!p.isval() || p.val() || visi[p.i][p.j] == turn) return 0;
     visi[p.i][p.j] = turn;
 
-    bool res = p.isblank();
+    int res = p.isblank();
     for (int k = 0; k < 4; k++) {
         point q(p.i+mv[k][0], p.j+mv[k][1]);
-        res |= dfs(q);
+        res += dfs(q);
     }
     return res;
 }
@@ -116,13 +102,15 @@ bool iscon () {
     turn++;
     point p(0,0);
     int cnt = 0;
+    int tot = 0;
     for (p.i = 0; p.i < n; p.i++) {
         for (p.j = 0; p.j < m; p.j++) {
-            cnt += dfs(p);
-            if (cnt > 1) return 0;
+            cnt = max(dfs(p), cnt);
+            tot += p.isblank();
+            if (!p.blankok()) return 0;
         }
     }
-    return 1;
+    return (cnt == tot);
 }
 
 set<vector<point> > s[N];
@@ -165,11 +153,16 @@ bool bt (point p) {
             p.i++;
             p.j = 0;
         } else if (p.i == n) {
-            for (p.i = 0; p.i < n; p.i++)
+            finstage = 1;
+            for (p.i = 2; p.i < n; p.i++)
                 for (p.j = 0; p.j < m; p.j++)
-                    if ((p.val() == 0 && (p.mat() != '.' || !p.isblank())) || !p.blankok())
+                    if (!p.blankok()) {
                         return 0;
-            return iscon();
+                    }
+            if (!iscon()) {
+                return 0;
+            }
+            return 1;
         } else {
             p.j++;
         }
@@ -184,6 +177,7 @@ bool bt (point p) {
         for (int j = 0; j < sz; j++) {
             if (p.put(v, j) && iscon() && bt(nx))
                 return 1;
+            finstage = 0;
             p.unput(v, j);
         }
     }
@@ -208,7 +202,8 @@ int main () {
             }
         }
 
-        bt(point(0,0));
+        finstage = 0;
+        assert(bt(point(0,0)));
 
         for (int i = 0; i < n; i++) {
             for (int j = 0; j < m; j++) {
