@@ -4,7 +4,6 @@ using namespace std;
 typedef unsigned long long int ull;
 typedef long long int ll;
 
-
 const int N = (2e5)+7;
 const int M = 3*N;
 clock_t t;
@@ -114,6 +113,9 @@ int main () {
         }
     }
 
+    for (int i = 2; i < es; i++)
+        pd(i);
+
     int res = 0;
     ll rval = LLONG_MAX;
     for (int i = 0; i < n; i++) {
@@ -127,3 +129,4 @@ int main () {
 
     printf("%d %lld\n", res+1, rval);
 }
+
