@@ -26,44 +26,6 @@ int main () {
         if (n < 0) n = -n;
         if (m < 0) m = -m;
 
-        if (n == 0) {
-            printf("%lld\n", m);
-            continue;
-        }
-        if (m == 0) {
-            printf("%lld\n", n);
-            continue;
-        }
-
-        res = 0;
-
-/*
-        for (ll i = 2; i*i <= n && i*i <= m; i++) {
-            qtd = 1;
-            while (n%i == 0 && m%i == 0) {
-                n /= i;
-                m /= i;
-                qtd++;
-            }
-            res *= qtd;
-        }
-        if (n > 1 && m%n == 0) res++;
-        if (m > 1 && n%m == 0) res++;
-*/
-
-/*
-        a = gcd(n, m);
-
-        for (ll i = 2; i*i <= a; i++) {
-            qtd = 1;
-            while (a%i == 0) {
-                a /= i;
-                qtd++;
-            }
-            res *= qtd;
-        }
-        if (a > 1) res *= 2ll;
-*/
-        printf("%lld\n", res);
+        printf("%lld\n", gcd(n, m) + 1);
     }
 }
