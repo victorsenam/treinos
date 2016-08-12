@@ -25,7 +25,7 @@ db triang (db piv, db h, db curr, db a, db b, db lim) {
     db c = piv - curr;
     db r = piv - b*c/a;
     
-    if (r - piv < eps)
+    if (r < piv)
         return min(r, lim);
     return max(r, lim);
 }
@@ -36,32 +36,28 @@ db pd (int i, bool s) {
     visi[i][s] = turn;
     me = 1./0.;
 
-    if (i == n-1) {
+    if (i == n-1 && cd[i][1] > cd[n][1] && cd[n][2] > cd[i][2])
         me = abs(cd[i][0] - cd[n][0]);
-    }
 
     db lo = cd[i+1][1];
     db hi = cd[i+1][2];
 
     int j;
-    for (j = i+1; j < n && lo - hi < -eps && lo - cd[j][2] < -eps && cd[j][1] - hi < -eps; j++) {
-        if (lo - cd[j][1] < -eps) {
-            DEBUG("(%d,%d) pra (%d,%d)\n", i, s, j, 0);
+    for (j = i+1; j < n && lo <= hi && lo <= cd[j][2] && cd[j][1] <= hi; j++) {
+        if (lo <= cd[j][1])
             me = min(me, pd(j, 0) + dist(cd[i][1+s], cd[i][0], cd[j][1], cd[j][0]));
-        }
-        if (cd[j][2] - hi < -eps) {
-            DEBUG("(%d,%d) pra (%d,%d)\n", i, s, j, 1);
+        if (cd[j][2] <= hi)
             me = min(me, pd(j, 1) + dist(cd[i][1+s], cd[i][0], cd[j][2], cd[j][0]));
-        }
 
         lo = triang(cd[i][1+s], cd[i][0], lo, cd[j][0], cd[j+1][0], cd[j+1][1]);
         hi = triang(cd[i][1+s], cd[i][0], hi, cd[j][0], cd[j+1][0], cd[j+1][2]);
     }
 
-    if (j == n && lo - hi < -eps && lo - cd[j][2] < -eps && cd[j][1] - hi < -eps) {
-        DEBUG("(%d,%d) pro final [%.2f,%.2f]\n", i, s, max(lo, cd[n][1]), min(hi, cd[n][2]));
+    if (j == n && lo <= hi && lo <= cd[j][2] && cd[j][1] <= hi) {
         me = min(me, dist(cd[i][1+s], cd[i][0], max(lo, cd[n][1]), cd[n][0]));
         me = min(me, dist(cd[i][1+s], cd[i][0], min(hi, cd[n][2]), cd[n][0]));
+        if (lo <= cd[i][1+s] && cd[i][1+s] <= hi)
+            me = abs(cd[i][0] - cd[n][0]);
     }
 
     return me;
