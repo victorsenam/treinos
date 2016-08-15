@@ -25,6 +25,7 @@ int main () {
 
     for (int j = 0; j <= n; j++)
         memo[n&1][j] = inf*(!!j);
+<<<<<<< HEAD
     
     for (int i = n-1; i >= 0; i--) {
         for (int j = 0; j <= n; j++) {
@@ -68,7 +69,9 @@ int main () {
 
                     me = min(me, loc + memo[!(i&1)][mj]);
                 }
-            //}
+
+                me = min(me, loc + memo[!(i&1)][mj]);
+            }
         }
     }
 

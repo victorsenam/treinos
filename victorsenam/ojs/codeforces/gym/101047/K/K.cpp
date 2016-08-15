@@ -12,8 +12,11 @@ double v[N], a[N];
 int t, n;
 double res;
 
-inline double calc (double a, double b, double c)
-{ return sqrt((b*b-c*c+a*a)/2.*a + b*b)*a/2.; }
+inline double calc (double a, double b, double c) {
+    double x = (a*a+b*b-c*c)/(2.*a);
+    double h = sqrt(b*b-x*x);
+    return (h*a)/2.;
+}
 
 int main () {
     scanf("%d", &t);
@@ -27,21 +30,16 @@ int main () {
             scanf("%lf", a+i);
         }
         sort(a, a+n);
-        for (int i = 0; i < n; i++) {
-            for (int j = 0; j < n; j++) {
-                if (i == j) continue;
-                int lb = upper_bound(a+j, a+n, a[i]-a[j]) - a;
-                while (lb == i || lb == j) lb++;
-                if (lb >= n) continue;
-                DEBUG("%.2f %.2f %.2f\n", a[i], a[j], a[lb]);
-                if (a[i] + a[j] <= a[lb]) continue;
-                if (a[lb] + a[i] <= a[j]) continue;
-                res = min(res, calc(a[i], a[lb], a[j]));
+        for (int i = 1; i < n; i++) { // b
+            for (int j = i+1; j < n; j++) { // a
+                int c = upper_bound(a, a+i, a[j]-a[i]) - a;
+                if (c >= i) continue;
+                res = min(res, calc(a[j], a[i], a[c]));
             }
         }
         if (res == 1./0.)
             printf("-1\n");
         else
-        printf("%.20f\n", res);
+            printf("%.20f\n", res);
     }
 }
