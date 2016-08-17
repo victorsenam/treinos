@@ -9,19 +9,13 @@ typedef long long int ll;
 const int N = 15007;
 
 int t;
-int a, b, c, n;
 int vs[N], tr;
 int q[6];
 int p;
-bool ch;
 
 bool move (int k) {
-    if (vs[p + k] == tr) return 0;
-    if(p + k < 0 || p + k > n) return 0;
-    if(q[abs(k)]-- <= 0) return 0;
-    ch = 0;
     printf("%d ", p);
-    vs[p] = tr;
+    q[abs(k)]--;
     p += k;
     return 1;
 }
@@ -33,24 +27,60 @@ int main () {
 
     while (t--) {
         tr++;
+        p = 0;
 
         for (int i = 1; i <= 3; i++)
             scanf("%d", &q[i]);
 
-        while (q[3] > 3 && q[2] > 2) {
-            if (q[3] <= q[2]) {
-                move(2);
-                move(2);
+        int c = q[3];
+        if (q[3]%3 == 0) {
+            for (int i = 0; i < c/3; i++)
+                move(3);
+            move(1);
+            for (int i = 0; i < c/3; i++)
                 move(-3);
-                move(2);
-                move(2);
-            } else {
+            move(1);
+            for (int i = 0; i < c/3; i++)
                 move(3);
-                move(-2);
+        } else if (q[3]%3 == 1) {
+            for (int i = 0; i <= c/3; i++)
                 move(3);
-                move(-2);
+            move(-2);
+            for (int i = 0; i < c/3; i++)
+                move(-3);
+            move(1);
+            for (int i = 0; i < c/3; i++)
                 move(3);
-            }
+            move(2);
+        } else {
+            for (int i = 0; i <= c/3; i++)
+                move(3);
+            move(-1);
+            for (int i = 0; i < c/3; i++)
+                move(-3);
+            move(-1);
+            for (int i = 0; i <= c/3; i++)
+                move(3);
         }
+
+        while (q[1] > 1)
+            move(1);
+
+        int b = q[2];
+        if (q[2]%2 == 0) {
+            for (int i = 0; i < b/2; i++)
+                move(2);
+            move(1);
+            for (int i = 0; i < b/2; i++)
+                move(-2);
+        } else {
+            for (int i = 0; i <= b/2; i++)
+                move(2);
+            move(-1);
+            for (int i = 0; i < b/2; i++)
+                move(-2);
+        }
+
+        printf("%d\n", p);
     }
 }
