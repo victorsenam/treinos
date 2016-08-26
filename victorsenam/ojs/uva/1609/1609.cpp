@@ -8,115 +8,59 @@ typedef long long int ll;
 
 const int N = 1024+7;
 
-struct spb {
-    int w;
-    int p;
-    int a, b;
-
-    bool operator < (const spb & ot) const {
-        if (p != ot.p)
-            return p > ot.p;
-
-        if (w != ot.w)
-            return w > ot.w;
-
-        if (b - a != ot.b - ot.a)
-            return b - a < ot.b - ot.a;
-
-        if (a != ot.a)
-            return a < ot.a;
-    }
-};
-
-bitset<N> adj[N];
-bitset<N> usd;
-char str[N];
-set<spb> st;
-spb aux;
+char adj[N][N];
 int n;
-int r[N];
+vector<int> to[N];
+int p[N], ps;
+int r[N], rs;
 
-void inverse (char * s, char * t) {
-    int n = t - s;
-
-    for (int i = 0; i < n/2; i++)
-        swap(s[i], s[n-i-1]);
-}
-
-void solve (spb s) {
-    DEBUG("[%d,%d) : %d\n", s.a, s.b, s.w+1);
-    if (s.b == s.a + 1) {
-        r[s.a] = s.w;
-        return;
-    }
-
-    int t = s.b - s.a;
-
-    aux.w = s.w;
-    aux.a = s.a;
-    aux.b = (s.a + s.b)/2;
-    aux.p = s.p;
-    st.insert(aux);
-
-    bitset<N> opp = (~(usd|adj[s.w]));
-
-    for (int i = 0; i < n; i++) {
-        DEBUG("%d\n", i+1);
-        if (usd[i]) continue;
-        DEBUG("not used\n");
-        if (!adj[s.w][i]) continue;
-        int cnt = (adj[i] & opp).count();
-        DEBUG("achiavable %d on %d\n", cnt, t);
-        if (cnt < t/4 || cnt >= t/2) continue;
-        DEBUG("good\n");
-
-        adj[i] &= opp;
-        usd[i] = 1;
-        aux.w = i;
-        aux.a = (s.a + s.b)/2;
-        aux.b = s.b;
-        aux.p = s.p+1;
-        st.insert(aux);        
-        break;
-    }
+bool cmp_t (int i, int j) {
+    return to[i].size() > to[j].size();
 }
 
 int main () {
     while (scanf("%d", &n) != EOF) {
         for (int i = 0; i < n; i++) {
-            str[i] = '0';
-            r[i] = -1;
+            scanf(" %s", adj[i]);
+            to[i].clear();
         }
-        usd = bitset<N>(str);
-        usd[0] = 1;
+
+        ps = 0;
         for (int i = 0; i < n; i++) {
-            scanf(" %s", str);
-            inverse(str, str+n);
-            adj[i] = bitset<N>(str);
+            if (adj[0][i] == '1') {
+                p[ps++] = i;
+            } else {
+                for (int j = 0; j < n; j++) {
+                    if (adj[0][j] == '1' && adj[j][i] == '1') {
+                        to[j].push_back(i);
+                        break;
+                    }
+                }
+            }
         }
         
-        st.clear();
-        aux.w = aux.a = 0;
-        aux.b = n;
-        aux.p = 0;
-        st.insert(aux);
+        sort(p, p+ps);
 
-        while (st.size()) {
-            aux = *(st.begin());
-            st.erase(st.begin());
+        rs = 0;
 
-            solve(aux);
+        r[rs++] = 0;
+        for (int _i = 0; _i < ps; _i++) {
+            int i = p[_i];
+
+            r[rs++] = i;
+            for (int j : to[i])
+                r[rs++] = j;
+            for (int j = to[i].size() + 1; __builtin_popcount(j) != 1; j++)
+                r[rs++] = p[--ps];
         }
 
-        int l = 0;
 
-        for (int i = 0; i < n; i++) {
-            if (r[i] == -1) {
-                while (usd[l] || !(adj[0][l])) l++;
-                r[i] = l++;
+        for (int j = 1; j < n; j *= 2) {
+            for (int i = 0; i < n; i += 2*j) {
+                printf("%d %d\n", r[i]+1, r[i+j]+1);
+                if (adj[r[i]][r[i+j]] == '0')
+                    swap(r[i], r[i+j]);
             }
-            printf("%d ", r[i]+1);
         }
-        printf("\n");
     }
 }
