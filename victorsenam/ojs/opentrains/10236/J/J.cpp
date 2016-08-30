@@ -6,118 +6,90 @@ typedef long long int ll;
 
 #define DEBUG(...) {fprintf(stderr, __VA_ARGS__);}
 
+const int N = 1e6+7;
+
 struct node {
-    int k;
-    int i;
     ll x;
+    ll i;
+    ll k;
 
     bool operator < (const node & ot) const {
-        if (x != ot.x)
-            return x < ot.x;
-        if (i != ot.i)
-            return i < ot.i;
-        return k < ot.k;
+        return x < ot.x;
     }
 };
 
-int n, t;
-ll cost, res;
-int rs, rind, cnt;
-int qs;
+ll n, t, opt;
 priority_queue<node> pq;
-node aux, att;
-vector<node> r;
-vector<int> v;
+node res[N], rs;
+int p[N];
 
-ll brute (int i, int k, int n) {
+bool cmp_t (int a, int b) {
+    return res[a].i < res[b].i;
+}
+
+ll brute (int n, ll x, ll k) {
     if (n == 0) return 0;
-    return min(brute(i+k+1, k, n-1) + i, brute(1+k+2, k+1, n-1) + 1 + t);
+    return min(brute(n-1, 1+k+1, k+1) + 1 + t, brute(n-1, x+k, k) + x);
+}
+
+ll go (ll qt) {
+    while (!pq.empty()) pq.pop();
+
+    ll cost = 0;
+    ll mini = (n*n);
+    for (ll k = 1, st = 0; st < qt && (pq.size() < n || pq.top().x != 1); k++, st++) {
+        for (ll x = 1; x <= t+1 && st < qt; x += k, st++) {
+            if (pq.size() == n) {
+                node rm = pq.top();
+                pq.pop();
+
+                cost -= rm.x;
+            }
+            
+            node aux;
+            aux.x = x;
+            aux.i = st;
+            aux.k = k;
+            pq.push(aux);
+
+            cost += aux.x;
+            if (pq.size() == n && cost < mini) {
+                opt = st;
+                mini = cost;
+            }
+        }
+        cost += t;
+    }
+    return mini;
 }
 
 int main () {
-    while(true) {
-        scanf("%d %d", &n, &t);
-        //n = rand() % 20 + 1, t = rand() % (n + 10);
-        r.clear();
-        v.clear();
-        while (pq.size()) pq.pop();
-        qs = rs = rind = cnt = cost = res = 0;
+    while (scanf("%lld %lld", &n, &t) != EOF) {
+        ll sol = go(n*n);
+        go(opt+1);
+        //assert(sol == go(opt+1));
 
-        rind = cost = res = 0;
-        bool ok  =1;
-        for (int k = 1; ok && (k <= t || qs < n); k++) {
-            cnt = 1;
-            for (int i = 1; i <= t+1; i += k) {
-                cost += i;
-                aux.k = k;
-                aux.i = cnt++;
-                aux.x = i;
-                pq.push(aux);
+        printf("%lld\n", sol);
 
-                if (qs < n) {
-                    qs++;
-                    if (qs == n) {
-                        res = cost;
-                        rind = r.size();
-                    }
-                } else {
-                    att = pq.top();
-                    pq.pop();
-                    r.push_back(att);
-                    cost -= att.x;
-                    if (cost < res) {
-                        res = cost;
-                        rind = r.size();
-                    }
-                }
-            }
-            cost += t;
-            aux.i = cnt-1;
-            r.push_back(aux);
+        int rss = 0;
+        while (!pq.empty()) {
+            p[rss] = rss;
+            res[rss++] = pq.top();
+            pq.pop();
         }
 
-        ll acc = 0;
-        int maxi = 0;
+        sort(p, p+n, cmp_t);
 
-        for (int i = 0; i < rind; i++) {
-            if (r[i].k - 1 >= v.size())
-                v.push_back(r[i].i);
-            else
-                v[r[i].k-1] = r[i].i;
-        }
+        int k = 0, cnt = 0;
+        for (int i = 1; i < n; i++)
+            if (res[p[i]].k != res[p[i-1]].k)
+                cnt++;
 
-        
-        //printf("%lld\n", brute(1, 0, n));
-        printf("%lld\n%d\n", res, int(v.size()));
-        vector<int> p;
-        for (int i = 0; i < v.size(); i++) {
-            acc += v[i];
-            p.push_back(acc);
-            printf("%lld ", acc);
-        }
+        printf("%d\n", cnt);
+
+        for (int i = 1; i < n; i++)
+            if (res[p[i]].k != res[p[i-1]].k)
+                printf("%d ", i);
         printf("\n");
-
-        int k = 0;
-        int vl = 1;
-        ll ans = 0;
-        int l = 0;
-        for (int i = 0; i < n; i++) {
-            ans += vl;
-            if (l < p.size() && i + 1 == p[l]) {
-                ans += t;
-                k++;
-                vl = 1;
-                l++;
-            } else {
-                vl += k+1;
-            }
-        }
-
-        if (res != ans) {
-            printf("FODEU %d %d %lld\n", n, t, ans);
-        }
-        assert(res == ans);
     }
-        
-
 }
