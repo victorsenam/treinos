@@ -22,6 +22,7 @@ ll n, t, opt;
 priority_queue<node> pq;
 node res[N], rs;
 int p[N];
+ll ls[N];
 
 bool cmp_t (int a, int b) {
     return res[a].i < res[b].i;
@@ -67,29 +68,26 @@ int main () {
     while (scanf("%lld %lld", &n, &t) != EOF) {
         ll sol = go(n*n);
         go(opt+1);
-        //assert(sol == go(opt+1));
 
         printf("%lld\n", sol);
 
-        int rss = 0;
+        for (int i = 0; i < n; i++)
+            ls[i] = 0;
+
+        ll cnt = 0;
         while (!pq.empty()) {
-            p[rss] = rss;
-            res[rss++] = pq.top();
+            ll kk = pq.top().k;
+            ls[kk]++;
+            cnt = max(cnt, kk);
             pq.pop();
         }
 
-        sort(p, p+n, cmp_t);
-
-        int k = 0, cnt = 0;
-        for (int i = 1; i < n; i++)
-            if (res[p[i]].k != res[p[i-1]].k)
-                cnt++;
-
-        printf("%d\n", cnt);
-
-        for (int i = 1; i < n; i++)
-            if (res[p[i]].k != res[p[i-1]].k)
-                printf("%d ", i);
+        printf("%lld\n", cnt-1);
+        ll acc = 0;
+        for (int i = 1; i < cnt; i++) {
+            acc += ls[i];
+            printf("%lld ", acc);
+        }
         printf("\n");
     }
 }
