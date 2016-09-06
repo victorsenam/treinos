@@ -2,7 +2,7 @@
 
 using namespace std;
 typedef unsigned long long int ull;
-typedef long long int ll;
+typedef int64_t ll;
 
 #define DEBUG(...) {fprintf(stderr, __VA_ARGS__);}
 
