@@ -68,6 +68,6 @@ int main () {
         assert(stp == res);
         str[stp] = 0;
         if (cr && sum()) printf("1");
-        printf("%s%c%s\n", ip, ".\0"[stp == 0], str);
+        printf("%s%s%s\n", ip, "."+(stp == 0), str);
     }
 }
