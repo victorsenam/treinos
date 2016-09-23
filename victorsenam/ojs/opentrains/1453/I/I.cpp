@@ -1,10 +1,11 @@
+
 #include <bits/stdc++.h>
 
 using namespace std;
 typedef unsigned long long int ull;
-typedef long long int ll;
+typedef int64_t ll;
 
-#define debug(...) {fprintf(stderr, __VA_ARGS__);}
+#define DEBUG(...) {fprintf(stderr, __VA_ARGS__);}
 
 int main () {
 }
