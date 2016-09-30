@@ -36,9 +36,8 @@ struct node {
 	}
 };
 
-int hd[N], nx[M], to[M], es;
+vector<pair<int, ll> > adj[N];
 int s[4];
-ll wg[M];
 int n, m;
 priority_queue<node> pq;
 map<string, int> mp;
@@ -61,12 +60,18 @@ int main () {
 			int a = mp[str];
 			scanf(" %s", str);
 			int b = mp[str];
-			scanf("%lld", &wg[es]);
-			wg[es+1] = wg[es];
 
-			to[es] = b; nx[es] = hd[a]; hd[a] = es++;
-			to[es] = a; nx[es] = hd[b]; hd[b] = es++;
+            pair<int, ll> ed;
+            scanf("%lld", &ed.second);
+
+            ed.first = b;
+            adj[a].push_back(ed);
+            ed.first = a;
+            adj[b].push_back(ed);
 		}
+
+        for (int i = 0; i < n; i++)
+            sort(adj[i].begin(), adj[i].end());
 
 		node stt;
 		for (int i = 0; i < 4; i++) {
@@ -84,6 +89,11 @@ int main () {
 			pq.pop();
 
 			if (curr.seen() == turn)
+                continue;
+            curr.seen() = turn;
+
+            int p[4] = {0, 0, 0, 0};
+
 		}
 	}
 }
