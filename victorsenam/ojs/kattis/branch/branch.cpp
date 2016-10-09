@@ -49,21 +49,17 @@ void djs (int r) {
         att = pq.top();
         pq.pop();
 
-        debug("(%d,%d) : %lld\n", att.t, att.u+1, att.d);
         if (seen[att.t][att.u]) continue;
         seen[att.t][att.u] = 1;
-        debug("ok\n");
 
 
         for (int ed = hd[att.u]; ed; ed = nx[ed]) {
             if ((ed^att.t)&1) continue;
-            debug("%d -> %d [%lld]\n", att.u+1, to[ed]+1, wg[ed]);
             node nex = att;
-            nex.u = to[es];
+            nex.u = to[ed];
             nex.d += wg[ed];
             
             if (!visi[nex.t][nex.u]) {
-                debug("initialize (%d,%d)\n", nex.t, nex.u+1);
                 visi[nex.t][nex.u] = 1;
                 dist[nex.t][nex.u] = nex.d + 1;
             }
@@ -81,8 +77,9 @@ void solve (int a, int b, int l, int r) {
     int c = (a+b)/2;
 
     int x = min(l, c-1);
+    memo[w&1][c] = (acc[c] - acc[x])*ll(c-x-1) + memo[!(w&1)][x];
     for (int i = x; i <= r && i < c; i++) {
-        ll loc = acc[c] - acc[i] + memo[!(w&1)][c];
+        ll loc = (acc[c] - acc[i])*ll(c-i-1) + memo[!(w&1)][i];
         if (i == x || loc < memo[w&1][c]) {
             x = i;
             memo[w&1][c] = loc;
@@ -108,18 +105,21 @@ int main () {
     }
 
     djs(q);
+    for (int i = 0; i < q; i++) {
+        v[i] = dist[0][i] + dist[1][i];
+    }
 
     swap(v[0], v[q]);
+    sort(v+1, v+q+1);
+
     acc[0] = 0;
     for (int i = 1; i <= q; i++) {
-        v[i] = dist[0][i] + dist[1][i];
         acc[i] = acc[i-1] + v[i];
     }
-    sort(v+1, v+q+1);
 
     memo[0][0] = 0;
     for (int i = 1; i <= q; i++)
-        memo[0][i] = memo[0][i-1] + acc[i-1] + v[i]*ll(i-1);
+        memo[0][i] = acc[i]*ll(i-1);
 
     for (w = 1; w < k; w++) {
         solve(1, q, 0, q);
