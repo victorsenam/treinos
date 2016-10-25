@@ -4,7 +4,8 @@ using namespace std;
 typedef unsigned long long int ull;
 typedef int64_t ll;
 
-#define debug(...) {fprintf(stderr, __VA_ARGS__);}
+//#define debug(...) {fprintf(stderr, __VA_ARGS__);}
+#define debug(...) {}
 
 const int N = 5e4+7;
 const int K = 33;
@@ -13,6 +14,8 @@ int mrg[K][N];
 int qrl, qrr;
 int n, q;
 int p[N];
+int re[N];
+int siz;
 
 void build (int k, int l, int r) {
 	if (l + 1 == r) {
@@ -29,67 +32,114 @@ void build (int k, int l, int r) {
 			mrg[k][ps++] = mrg[k+1][q[cr]++];
 		}
 
-		debug("%d[%d,%d):", k, l, r);
-		for (int i = l; i < r; i++)
-			debug(" %d", mrg[k][i]);
-		debug("\n");
 	}
 }
 
 int query (int k, int l, int r, int x) {
-	if (qrl <= l && qrr >= r)
-		return upper_bound(mrg[k]+l, mrg[k]+r, x) - mrg[k]-l;
-	else if (qrl >= r || qrr <= l)
+	if (qrl <= l && qrr >= r) {
+		int loc = upper_bound(mrg[k]+l, mrg[k]+r, x) - mrg[k]-l;
+		return loc;
+	} else if (qrl >= r || qrr <= l)
 		return 0;
 	else
 		return query(k+1, l, (l+r)/2, x) + query(k+1, (l+r)/2, r, x);
 }
 
+int get_best (int i, int j) {
+    int a = query(0, 0, n, i);
+    int b = query(0, 0, n, j);
+
+    a = abs(a + a - siz);
+    b = abs(b + b - siz);
+
+    if (a < b || (a == b && i < j)) return i;
+    return j;
+}
+
 int solve () {
-	int lo = 0;
-	int hi = n;
-	int siz = qrr - qrl;
+    int res = 1;
+    siz = qrr - qrl;
 
-	while (lo < hi) {
-		int mid = (lo + hi)/2;
-		int loc = query(0, 0, n, mid);
+    int lo = 1;
+    int hi = n;
 
-		if (loc + loc >= siz)
-			hi = mid;
-		else
-			lo = mid + 1;
-	}
+    while (lo < hi) {
+        int mid = (lo+hi)/2;
+        int a = query(0, 0, n, mid);
+        if (a + a <= siz)
+            lo = mid + 1;
+        else
+            hi = mid;
+    }
 
-	if (lo == 0) return lo;
+    debug("[%d]\n", lo);
+    int sx = query(0, 0, n, lo-1);
+    res = get_best(res, lo);
 
-	int aval = query(0, 0, n, lo);
-	int bval = query(0, 0, n, lo-1);
 
-	if (abs(aval + aval - siz) > abs(bval + bval - siz)) return lo;
+    lo = 1;
+    hi = n;
+    while (lo < hi) {
+        int mid = (lo+hi)/2;
+        int a = query(0, 0, n, mid);
+        if (a >= sx)
+            hi = mid;
+        else
+            lo = mid+1;
+    }
+    debug("[%d]\n", lo);
 
-	lo = 0;
-	hi = n;
-	
-	while (lo < hi) {
-		int mid = (lo + hi)/2;
-		int loc = query(0, 0, n, mid);
-		
-		if (loc >= bval)
-			hi = mid;
-		else
-			lo = mid + 1;
-	}
+    res = get_best(res, lo);
 
-	return lo;
+	return res;
+}
+
+int dfs (int u) {
+    if (re[u] != -1) return re[u];
+    re[u] = u;
+    return re[u] = dfs(p[u]);
+}
+
+int get_val (int u) {
+    if (re[u] == u) return u;
+    return min(u, get_val(p[u]));
+}
+
+int reach (int u) {
+    if (re[u] == u) return mrg[K-1][u];
+    re[u] = u;
+    return mrg[K-1][u] = min(u, reach(p[u]));
 }
 
 int main () {
+    memset(re, -1, sizeof re);
 	scanf("%d %d", &n, &q);
 
 	for (int i = 0; i < n; i++) {
 		scanf("%d", &p[i]);
-		mrg[K-1][i] = p[i];
+        debug("%2d ", p[i]);
+        p[i]--;
 	}
+    debug("\n");
+
+    for (int i = 0; i < n; i++) {
+        dfs(i);
+        debug("%2d ", re[i]+1);
+    }
+    debug("\n");
+
+    for (int i = 0; i < n; i++)
+        if (re[i] == i)
+            mrg[K-1][i] = get_val(p[i]);
+
+    for (int i = 0; i < n; i++) {
+        reach(i);
+    }
+    for (int i = 0; i < n; i++) {
+        mrg[K-1][i]++;
+        debug("%2d ", mrg[K-1][i]);
+    }
+    debug("\n");
 
 	build(0, 0, n);
 	
@@ -98,6 +148,5 @@ int main () {
 		qrl--;
 
 		printf("%d\n", solve());
-
 	}
 }
