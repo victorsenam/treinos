@@ -4,10 +4,9 @@ using namespace std;
 typedef unsigned long long int ull;
 typedef long long int ll;
 
-//#define debug(...) {fprintf(stderr, __VA_ARGS__);}
-#define debug(...) {}
+#define debug(...) {fprintf(stderr, __VA_ARGS__);}
 
-const int N = 1123456;
+const int N = 3e4+7;
 
 char str[N];
 int n;
@@ -21,7 +20,6 @@ int lt[N];
 bool leaf(int u) { return lim[u][0] == lim[u][1]; }
 
 void printalista (int u) {
-    return;
     if (lim[u][0] == lim[u][1]) {
         debug("%c", str[lim[u][0]]);
     } else {
@@ -40,6 +38,7 @@ char solve (int u) {
     if (lim[u][0] == lim[u][1]) {
         return str[lim[u][0]];
     }
+    printf("EU %02d\n", u);
     bool ok = 1;
 
     while (adj[u].size() > 1 && ok) {
@@ -59,18 +58,13 @@ char solve (int u) {
             ok = 0;
         } else if (vv == 'B') {
             if (adj[u].size() >= 3) {
-                int x = adj[u].front();
-                adj[u].pop_front();
-                int y = adj[u].front();
-                adj[u].pop_front();
-                int z = adj[u].front();
-                adj[u].pop_front();
+                adj[es].push_front(adj[u].back());
+                adj[u].pop_back();
 
-                adj[es].push_back(y);
-                adj[es].push_back(z);
+                adj[es].push_front(adj[u].back());
+                adj[u].pop_back();
 
-                adj[u].push_front(es);
-                adj[u].push_front(x);
+                adj[u].push_back(es);
 
                 lim[es++][0] = -1;
                 res++;
@@ -79,16 +73,18 @@ char solve (int u) {
             }
         } else if (vv == 'C') {
             if (adj[u].size() >= 3) {
-                int x = adj[u].front();
-                adj[u].pop_front();
-                int y = adj[u].front();
-                adj[u].pop_front();
-                int z = adj[u].front();
-                adj[u].pop_front();
+                int z = adj[u].back();
+                adj[u].pop_back();
+                int y = adj[u].back();
+                adj[u].pop_back();
 
-                adj[u].push_front(y);
-                adj[u].push_front(z);
-                adj[u].push_front(x);
+                adj[es].swap(adj[u]);
+
+                adj[u].push_back(es);
+                adj[u].push_back(y);
+
+                adj[es].push_back(z);
+                lim[es++][0] = -1;
 
                 res++;
             } else {
@@ -96,10 +92,7 @@ char solve (int u) {
             }
         } else if (vv == 'K') {
             if (adj[u].size() >= 2) {
-                int v = adj[u].front();
-                adj[u].pop_front();
-                adj[u].pop_front();
-                adj[u].push_front(v);
+                adj[u].pop_back();
 
                 res++;
             } else {
@@ -130,10 +123,6 @@ char solve (int u) {
 }
 
 int main () {
-#ifdef ONLINE_JUDGE
-    freopen("combinator.in", "r", stdin);
-    freopen("combinator.out", "w", stdout);
-#endif
     int i;
     scanf(" %s", str);
     n = strlen(str);
