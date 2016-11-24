@@ -42,9 +42,8 @@ void tira (int x) {
 
 void rm (int i) {
     it = s.lower_bound(i);
-    if (!i || *it != i) {
+    if (!i || *it != i)
         return;
-    }
     s.erase(it++);
 
     int r = *it;
@@ -56,17 +55,15 @@ void rm (int i) {
 }
 
 void update (int i) {
-    if (!i) return;
-
     it = s.lower_bound(i);
+    if (!i || *it == i) return;
+
     int r = *it;
-    assert(*it != i);
     --it;
     int l = *it;
 
     bool isc = 0;
     if (l == i-1) {
-        debug("[%d] : %lld %lld\n", i, getval(i), getval(i-1));
         if (getval(i) - getval(i-1) == 0)
             isc = 1;
     } else {
@@ -86,6 +83,7 @@ void update (int i) {
 }
 
 void pp () {
+    printf("== ");
     for (int x : s) {
         printf("%d ", x);
     }
@@ -127,9 +125,11 @@ int main () {
         ll d;
         scanf("%d %d %lld", &l, &r, &d);
         l--; r--;
+        debug("[%d %d]\n", l, r);
 
         rm(l); rm(l+1);
         rm(r); rm(r+1);
+        pp();
 
         add(r, d);
         add(l-1, -d);
@@ -138,7 +138,7 @@ int main () {
         update(r); update(r+1);
         pp();
 
-        printf("%lld\n", *pq.rbegin());
+        printf("%d\n", *pq.rbegin());
     }
 
 }
