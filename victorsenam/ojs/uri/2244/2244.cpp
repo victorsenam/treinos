@@ -11,7 +11,14 @@ const int N = 1e5+6;
 struct num {
     ll a, b;
 
-    num (ll x, ll y) : a(x), b(y) {}
+    num (ll x, ll y) {
+        if (y < 0) {
+            x = -x;
+            y = -y;
+        }
+        a = x;
+        b = y;
+    }
     num () {}
 
     bool operator < (const num & ot) const {
@@ -37,11 +44,12 @@ struct line {
     { return a*x + b; }
 
     num inter (line & x) {
-        if (a == x.a)
+        if (a == x.a) {
             if (b <= x.b)
                 return num(-1, 0);
             else
                 return num(1, 0);
+        }
         return num(x.b-b, a-x.a);
     }
 
@@ -62,11 +70,19 @@ struct cvx {
         return st[i].inter(st[i-1]);
     }
 
-    void add (line & ot) {
+    int add (line & ot) {
         st[ss] = ot;
         while (ss > 1 && !(getst(ss-1) < getst(ss)))
             swap(st[ss], st[--ss]);
         st[ss++] = ot;        
+        return ss-1;
+    }
+
+    void print () {
+        debug("%d", st[0].idx);
+        for (int i = 1; i < ss; i++)
+            debug(" [%f] %d", double(getst(i)), i);
+        debug("\n");
     }
 };
 
@@ -93,6 +109,10 @@ int main () {
         for (int k = 0; k < 2; k++) {
             v[k][i].idx = i;
             scanf("%lld %lld", &v[k][i].b, &v[k][i].a);
+            if (k) {
+                v[k][i].b = -v[k][i].b;
+                v[k][i].a = -v[k][i].a;
+            }
         }
     }
 
@@ -101,11 +121,12 @@ int main () {
         sort(p, p+n, cmp_t);
 
         for (int i = 0; i < n; i++) {
-            ps[k][p[i]] = trk[k].ss;
-            trk[k].add(v[k][p[i]]);
+            debug("== %lld %lld\n", v[k][p[i]].a, v[k][p[i]].b);
+            ps[k][p[i]] = trk[k].add(v[k][p[i]]);
             if (i && v[k][p[i]] == v[k][p[i-1]])
                 ps[k][p[i]] = -1;
         }
+        trk[k].print();
     }
 
     int res = 0;
@@ -115,20 +136,24 @@ int main () {
         num ma = num(1,0);
 
         for (int k = 0; k < 2; k++) {
+            debug("%d ", ps[k][i]);
             if (ps[k][i] == -1) ok = 0;
             else if (trk[k].st[ps[k][i]].idx != i) ok = 0;
             else {
                 num a = trk[k].getst(ps[k][i]);
                 num b = trk[k].getst(ps[k][i]+1);
+                debug("(%f %f) ", double(a), double(b));
 
-                if (a < mi) mi = a;
-                if (ma < b) ma = b;
+                if (mi < a) mi = a;
+                if (b < ma) ma = b;
             }
         }
 
-        if (!ok) continue;
-
-        res += (mi < ma);
+        if (ok && mi < ma) {
+            debug("[%d] : (%f %f)", i, double(mi), double(ma));
+            res++;
+        }
+        debug("\n");
     }
     printf("%d\n", res);
 }
