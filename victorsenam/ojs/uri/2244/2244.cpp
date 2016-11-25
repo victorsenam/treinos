@@ -1,88 +1,62 @@
 #include <bits/stdc++.h>
 
 using namespace std;
-typedef unsigned long long int ull;
 typedef long long int ll;
+typedef double cood;
 
 #define debug(...) {fprintf(stderr, __VA_ARGS__);}
 
 const int N = 1e5+6;
-
-struct num {
-    ll a, b;
-
-    num (ll x, ll y) : a(x), b(y) {}
-    num () {}
-
-    bool operator < (const num & ot) const {
-        if (ot.b == 0 && b == 0)
-            return a < ot.a;
-        return a*ot.b < ot.a*b;
-    }
-    operator double () const
-    { return double(a)/double(b); }
-};
+const cood eps = 1e-9;
 
 struct line {
-    ll a, b;
-    int idx;
+    cood a, b;
+    int id;
 
-    line (ll x, ll y, int i) : a(x), b(y), idx(i) {}
-    line () {}
+    line() {}
 
-    bool operator == (const line & ot) const
-    { return (a == ot.a) && (b == ot.b); }
-
-    ll get (ll x) 
-    { return a*x + b; }
-
-    num inter (line & x) {
-        if (a == x.a)
-            if (b <= x.b)
-                return num(-1, 0);
-            else
-                return num(1, 0);
-        return num(x.b-b, a-x.a);
+    double bests (line & ot) {
+        if (a == ot.a) {
+            if (b >= ot.b)
+                return -1./0.;
+            assert(false);
+        }
+        return (b-ot.b)/(ot.a-a);
     }
-
-    ll comp (line & x, line & y)
-    { return inter(x) < inter(y); }
-
-    bool ang_comp (const num & ot) const
-    { return a < ot.a; }
 };
 
 struct cvx {
-    line st[N];
-    int ss;
+    line v[N];
+    int n;
 
-    num getst (int i) {
-        if (i == 0) return num(-1, 0);
-        if (i == ss) return num(1, 0);
-        return st[i].inter(st[i-1]);
+    cvx() {
+        n = 0;
     }
 
-    void add (line & ot) {
-        st[ss] = ot;
-        while (ss > 1 && !(getst(ss-1) < getst(ss)))
-            swap(st[ss], st[--ss]);
-        st[ss++] = ot;        
+    int insert (line & x) {
+        v[n] = x;
+
+        while (n > 1 && v[n].bests(v[n-1]) < v[n-1].bests(v[n-2]))
+            swap(v[n], v[--n]);
+
+        return n++;
     }
 };
 
 int n;
-line v[2][N];
-int ps[2][N];
-int p[N];
-int cmp_a;
+int k;
+line v[N][2];
+cood rs[N][2];
+int vs[N];
 cvx trk[2];
+int p[N];
 
 bool cmp_t (int i, int j) {
-    if (v[cmp_a][i].a != v[cmp_a][j].a)
-        return v[cmp_a][i].a > v[cmp_a][j].a;
-    if (v[cmp_a][i].b != v[cmp_a][j].b)
-        return v[cmp_a][i].b < v[cmp_a][j].b;
-    return v[cmp_a][i].idx < v[cmp_a][j].idx;
+    if (v[i][k].a != v[j][k].a)
+        return v[i][k].a < v[j][k].a;
+    if (v[i][k].b != v[j][k].b)
+        return v[i][k].b < v[j][k].b;
+    return i < j;
 }
 
 int main () {
@@ -90,45 +64,43 @@ int main () {
 
     for (int i = 0; i < n; i++) {
         p[i] = i;
-        for (int k = 0; k < 2; k++) {
-            v[k][i].idx = i;
-            scanf("%lld %lld", &v[k][i].b, &v[k][i].a);
+        for (k = 0; k < 2; k++) {
+            scanf("%lf %lf", &v[i][k].b, &v[i][k].a);
+            if (k) {
+                v[i][k].a = -v[i][k].a;
+                v[i][k].b = -v[i][k].b;
+            }
         }
+        rs[i][0] = -1./0.;
+        rs[i][1] = 1./0.;
     }
 
-    for (int k = 0; k < 2; k++) {
-        cmp_a = k;
+    for (k = 0; k < 2; k++) {
         sort(p, p+n, cmp_t);
 
-        for (int i = 0; i < n; i++) {
-            ps[k][p[i]] = trk[k].ss;
-            trk[k].add(v[k][p[i]]);
-            if (i && v[k][p[i]] == v[k][p[i-1]])
-                ps[k][p[i]] = -1;
+        for (int _i = 0; _i < n; _i++) {
+            int i = p[_i];
+            trk[k].insert(v[i][k]);
+            
+            if (_i && v[p[_i]] == v[p[_i-1]]) {
+                vs[p[_i]]--;
+                vs[p[_i-1]]--;
+            }
+        }
+        
+        vs[trk[k].v[0].id]++;
+        for (int j = 1; j < trk[k].n; j++) {
+            vs[trk[k].v[j-1].id]++;
+            rs[trk[k].v[j-1].id][1] = min(rs[trk[k].v[j-1].id][1], trk[k].v[j].bests(trk[k].v[j-1]));
+            rs[trk[k].v[j].id][0] = max(rs[trk[k].v[j].id][0], trk[k].v[j].bests(trk[k].v[j-1]));
         }
     }
 
     int res = 0;
     for (int i = 0; i < n; i++) {
-        bool ok = 1;
-        num mi = num(0,1);
-        num ma = num(1,0);
-
-        for (int k = 0; k < 2; k++) {
-            if (ps[k][i] == -1) ok = 0;
-            else if (trk[k].st[ps[k][i]].idx != i) ok = 0;
-            else {
-                num a = trk[k].getst(ps[k][i]);
-                num b = trk[k].getst(ps[k][i]+1);
-
-                if (a < mi) mi = a;
-                if (ma < b) ma = b;
-            }
-        }
-
-        if (!ok) continue;
-
-        res += (mi < ma);
+        if (vs[i] != 2) continue;
+        if (rs[i][0] + eps < rs[i][1])
+            res++;
     }
     printf("%d\n", res);
 }
