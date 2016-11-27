@@ -1,140 +1,131 @@
 #include <bits/stdc++.h>
 
 using namespace std;
-typedef long long ll;
-typedef double num;
+typedef long long int ll;
+typedef double cood;
 
-const int N = 1e5+7;
-
+//#define ONLINE_JUDGE
 #ifndef ONLINE_JUDGE
-#define DEBUG(...) {}/*{fprintf(stderr, "%3d| ", __LINE__); fprintf(stderr, __VA_ARGS__); }*/
+#define debug(...) {} {fprintf(stdout, __VA_ARGS__); }
 #else
-#define DEBUG(...) {}
+#define debug(...) {}
 #endif
 
-struct cvx {
-    num sa[N], sb[N], st[N], id[N];
-    int ss;
-    int lsi;
+const int N = 1e5+6;
+const cood eps = 1e-9;
 
-    inline num numdiv (num a, num b)
-    { return a/b; }
+struct line {
+    cood a, b;
+    int id;
 
-    inline num inter (int i) {
-        if (!i)
-            return -1./0.; // MIN: LLONG_MAX
+    line() {}
 
-        return numdiv(sb[i]-sb[i-1], sa[i-1]-sa[i]);
+    bool operator == (line & ot) {
+        return (a == ot.a) && (b == ot.b);
     }
 
-    void insert (num a, num b, int idx) {
-        if (ss && sa[ss-1] == a) {
-            if (sb[ss-1] >= b) // MIN: <=
-                return;
-
-            ss--;
+    cood bests (line & ot) {
+        if (a == ot.a) {
+            if (b >= ot.b)
+                return -1./0.;
+            assert(false);
         }
-
-        sa[ss] = a;
-        sb[ss] = b;
-        id[ss] = idx;
-        st[ss] = inter(ss);
-
-        while (ss && st[ss] <= st[ss-1]) { // MIN: >=
-            sa[ss-1] = sa[ss];
-            sb[ss-1] = sb[ss];
-            id[ss-1] = id[ss];
-            ss--;
-            st[ss] = inter(ss);
-        }
-
-        DEBUG("insert (%lld,%lld) at %lld\n", a, b, st[ss]);
-        ss++;
-    }
-
-    inline void reset()
-    { ss = 0; }
-
-    num get (num x) { // da pra deixar linear se os x forem ordenados
-        int l = upper_bound(st, st+ss, x) - st - 1; // MIN: comparar decrescente
-        lsi = id[l];
-        DEBUG("get %d (%lld,%lld) for %lld\n", l, sa[l], sb[l], x);
-        return sa[l]*x + sb[l];
+        return (b-ot.b)/(ot.a-a);
     }
 };
 
-cvx v[2];
+struct cvx {
+    line v[N];
+    int n;
+
+    cvx() {
+        n = 0;
+    }
+
+    cood getst (int i) {
+        if (i == 0) return -1./0.;
+        return v[i].bests(v[i-1]);
+    }
+
+    int insert (line & x) {
+        v[n] = x;
+
+        while (n && getst(n) <= getst(n-1)) {
+            swap(v[n], v[n-1]);
+            n--;
+        }
+
+        return n++;
+    }
+};
+
 int n;
-num inp[N][4];
+int k;
+line v[N][2];
+cood rs[N][2];
+int vs[N];
+cvx trk[2];
 int p[N];
-int cmp_k;
-set<int> s;
-double pr;
 
 bool cmp_t (int i, int j) {
-    for (int k = 0; k < 4; k++) {
-        int nk = (k+cmp_k)%4;
-        if (inp[i][nk] != inp[j][nk])
-            return inp[i][nk] < inp[j][nk];
-    }
-    return 0;
-}
-
-bool iseq (int i, int j) {
-    for (int k = 0; k < 2; k++) {
-        int nk = (k+cmp_k)%4;
-        if (inp[i][nk] != inp[j][nk])
-            return 0;
-    }
-    return 1;
-}
-
-void go (int i, num x) {
-    if (x < 0) return;
-    if (inp[i][0]*x + inp[i][1] != v[0].get(x)) return;
-    if (inp[i][2]*x + inp[i][3] != v[1].get(x)) return;
-    s.insert(i);
+    if (v[i][k].a != v[j][k].a)
+        return v[i][k].a > v[j][k].a;
+    if (v[i][k].b != v[j][k].b)
+        return v[i][k].b < v[j][k].b;
+    return i < j;
 }
 
 int main () {
-    srand(time(NULL)); rand(); rand();
     scanf("%d", &n);
 
     for (int i = 0; i < n; i++) {
         p[i] = i;
-        for (int j = 0; j < 4; j++)
-            scanf("%lf", &inp[i][j]);
-        inp[i][2] = -inp[i][2];
-        inp[i][3] = -inp[i][3];
+        for (k = 0; k < 2; k++) {
+            scanf("%lf %lf", &v[i][k].b, &v[i][k].a);
+            if (k) {
+                v[i][k].a = -v[i][k].a;
+                v[i][k].b = -v[i][k].b;
+            }
+            v[i][k].id = i;
+        }
+        rs[i][0] = 0.;
+        rs[i][1] = 1./0.;
+        vs[i] = 0;
     }
 
-    for (cmp_k = 0; cmp_k < 4; cmp_k += 2) {
+    for (k = 0; k < 2; k++) {
+        debug("== %d ==\n", k);
         sort(p, p+n, cmp_t);
 
         for (int _i = 0; _i < n; _i++) {
             int i = p[_i];
-
-            v[cmp_k/2].insert(inp[i][cmp_k], inp[i][cmp_k+1], i);              
-
-            if (_i) {
-                if (iseq(i, p[_i-1])) {
-                    s.insert(i);
-                    s.insert(p[_i-1]);
-                }
+            trk[k].insert(v[i][k]);
+            
+            if (_i && v[p[_i]][k] == v[p[_i-1]][k]) {
+                vs[p[_i]]--;
+                vs[p[_i-1]]--;
             }
         }
-    }
-
-    int hc = s.size();
-    for (int j = 0; j < 2; j++) {
-        bool ok = 1;
-        for (int i = 1; i < v[j].ss; i++) {
-            if (v[j].st[i] <= 0.) continue;
-            pr = double(rand())/double(INT_MAX);
-            go(v[j].id[i-1], pr*(v[j].st[i] + max(0., v[j].st[i-1])));
+        
+        for (int j = 0; j < trk[k].n; j++) {
+            debug("%d[%f] ", trk[k].v[j].id, trk[k].getst(j));
+            if (j)
+                rs[trk[k].v[j-1].id][1] = min(rs[trk[k].v[j-1].id][1], trk[k].getst(j));
+            rs[trk[k].v[j].id][0] = max(rs[trk[k].v[j].id][0], trk[k].getst(j));
+            vs[trk[k].v[j].id]++;
         }
-        go(v[j].id[v[j].ss-1], max(v[j].st[v[j].ss-1], 0.) + 1.);
+        debug("\n");
     }
 
-    printf("%d\n", int(s.size()) - hc);
+    debug("== = ==\n");
+    int res = 0;
+    for (int i = 0; i < n; i++) {
+        debug("%d(%d) [%f,%f]\n", i, vs[i], rs[i][0], rs[i][1]);
+        if (vs[i] != 2) continue;
+        if (rs[i][0] + eps <= rs[i][1]) {
+            res++;
+        }
+    }
+
+    printf("%d\n", res);
 }
