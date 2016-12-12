@@ -1,130 +1,107 @@
 #include <bits/stdc++.h>
 
 using namespace std;
+typedef unsigned long long int ull;
 typedef long long int ll;
-typedef double cood;
 
-//#define ONLINE_JUDGE
-#ifndef ONLINE_JUDGE
-#define debug(...) {} {fprintf(stdout, __VA_ARGS__); }
-#else
-#define debug(...) {}
-#endif
+#define debug(...) {fprintf(stderr, __VA_ARGS__);}
 
-const int N = 1e5+6;
-const cood eps = 1e-9;
+const int N = 1e5+7;
+const double eps = 1e-7;
 
-struct line {
-    cood a, b;
-    int id;
-
-    line() {}
-
-    bool operator == (line & ot) {
-        return (a == ot.a) && (b == ot.b);
-    }
-
-    cood bests (line & ot) {
-        if (a == ot.a) {
-            if (b >= ot.b)
-                return -1./0.;
-            assert(false);
-        }
-        return (b-ot.b)/(ot.a-a);
-    }
-};
+ll a[2][N], b[2][N];
+int p[N];
+int vs[N];
+int n;
+int anc;
+double r[N][2];
 
 struct cvx {
-    line v[N];
-    int n;
+    double st[N];
+    int id[N], ss;
+    int ty;
 
-    cvx() {
-        n = 0;
-    }
+    double bests (int i, int j) {
+        if (j == -1) return 0.;
+        i = id[i]; j = id[j];
 
-    cood getst (int i) {
-        if (i == 0) return -1./0.;
-        return v[i].bests(v[i-1]);
-    }
-
-    int insert (line & x) {
-        v[n] = x;
-
-        while (n && getst(n) <= getst(n-1)) {
-            swap(v[n], v[n-1]);
-            n--;
+        if (a[ty][i] == a[ty][j]) {
+            if (b[ty][i] >= b[ty][j]) return 0.;
+            assert(false);
+            return 1./0.;
         }
 
-        return n++;
+        if (a[ty][i] < a[ty][j]) {
+            assert(false);
+            return 1./0.;
+        }
+
+        return double(b[ty][j] - b[ty][i])/double(a[ty][i] - a[ty][j]);
+    }
+
+    void add (int i) {
+        id[ss] = i;
+        st[ss] = 0.;
+
+        while (ss && (st[ss] = bests(ss, ss-1)) <= st[ss-1] + eps) {
+            id[ss-1] = id[ss];
+            ss--;
+        }
+        ss++;
     }
 };
 
-int n;
-int k;
-line v[N][2];
-cood rs[N][2];
-int vs[N];
 cvx trk[2];
-int p[N];
 
 bool cmp_t (int i, int j) {
-    if (v[i][k].a != v[j][k].a)
-        return v[i][k].a > v[j][k].a;
-    if (v[i][k].b != v[j][k].b)
-        return v[i][k].b < v[j][k].b;
-    return i < j;
+    if (a[anc][i] != a[anc][j]) return a[anc][i] < a[anc][j];
+    return b[anc][i] < b[anc][j];
 }
 
 int main () {
     scanf("%d", &n);
-
+    
     for (int i = 0; i < n; i++) {
-        p[i] = i;
-        for (k = 0; k < 2; k++) {
-            scanf("%lf %lf", &v[i][k].b, &v[i][k].a);
-            if (k) {
-                v[i][k].a = -v[i][k].a;
-                v[i][k].b = -v[i][k].b;
+        for (int j = 0; j < 2; j++) {
+            scanf("%lld %lld", &b[j][i], &a[j][i]);
+            if (j) {
+                b[j][i] = -b[j][i];
+                a[j][i] = -a[j][i];
             }
-            v[i][k].id = i;
         }
-        rs[i][0] = 0.;
-        rs[i][1] = 1./0.;
+        p[i] = i;
+        r[i][0] = 0.;
+        r[i][1] = 1./0.;
         vs[i] = 0;
     }
 
-    for (k = 0; k < 2; k++) {
-        debug("== %d ==\n", k);
+    for (anc = 0; anc < 2; anc++) {
         sort(p, p+n, cmp_t);
-
-        for (int _i = 0; _i < n; _i++) {
-            int i = p[_i];
-            trk[k].insert(v[i][k]);
-            
-            if (_i && v[p[_i]][k] == v[p[_i-1]][k]) {
-                vs[p[_i]]--;
-                vs[p[_i-1]]--;
-            }
-        }
+        trk[anc].ty = anc;
+        trk[anc].ss = 0;
         
-        for (int j = 0; j < trk[k].n; j++) {
-            debug("%d[%f] ", trk[k].v[j].id, trk[k].getst(j));
-            if (j)
-                rs[trk[k].v[j-1].id][1] = min(rs[trk[k].v[j-1].id][1], trk[k].getst(j));
-            rs[trk[k].v[j].id][0] = max(rs[trk[k].v[j].id][0], trk[k].getst(j));
-            vs[trk[k].v[j].id]++;
+        for (int i = 0; i < n; i++) {
+            if (i && a[anc][p[i]] == a[anc][p[i-1]] && b[anc][p[i]] == b[anc][p[i-1]]) {
+                vs[i]--;
+                vs[i-1]--;
+            }
+
+            trk[anc].add(p[i]);
         }
-        debug("\n");
+
+        for (int i = 0; i < trk[anc].ss; i++) {
+            int id = trk[anc].id[i];
+            vs[id]++;
+            r[id][0] = max(r[id][0], trk[anc].st[i]);
+            if (i + 1 < trk[anc].ss)
+                r[id][1] = min(r[id][1], trk[anc].st[i+1]);
+        }
     }
 
-    debug("== = ==\n");
     int res = 0;
     for (int i = 0; i < n; i++) {
-        debug("%d(%d) [%f,%f]\n", i, vs[i], rs[i][0], rs[i][1]);
-        if (vs[i] != 2) continue;
-        if (rs[i][0] + eps <= rs[i][1]) {
-            res++;
-        }
+        if (vs[i] < 2) continue;
+        if (r[i][0] + eps < r[i][1]) res++;
     }
 
     printf("%d\n", res);
