@@ -1,10 +1,9 @@
 #include <bits/stdc++.h>
+#define debug(...) {fprintf(stderr, __VA_ARGS__);}
 
 using namespace std;
-typedef unsigned long long int ull;
 typedef long long int ll;
-
-#define debug(...) {fprintf(stderr, __VA_ARGS__);}
+typedef double db;
 
 int main () {
 }
