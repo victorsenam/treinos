@@ -30,6 +30,8 @@ template<typename cood=ll> struct vect {
     { return vect<cood>(x + ot.x, y + ot.y); }
     inline vect<cood> flip () const
     { return vect<cood>(y, x); }
+    inline vect<cood> mirror () const
+    { return vect<cood>(-y, x); }
 
     // math
     inline cood operator * (const vect<cood> & ot) const // cross
@@ -45,21 +47,14 @@ template<typename cood=ll> struct vect {
     inline int clockwise (const vect<cood> & a, const vect<cood> & b, cood eps = 0) const // clockwise comparsion (to the right means greater)
     { cood o = area(a, b); return (o > eps) - (o < -eps); }
 
-    // position of vector relative to convex polygon
-    // poly : convex polygon given by sequence of vectors ordered by angle
-    //        (clockwise or counter-clockwise)
-    // return -1 if strictly outside
-    // return 0 if on the border
-    // return 1 if strictly inside
-    int position (const vector<vect<cood> > & poly, cood eps = 0) const {
+    int inside (const vector<vect<cood> > & poly, cood eps = 0) const {
         int n = poly.size();
         int anc = poly[n-1].clockwise(*this, poly[0], eps);
-        if (anc == 0) return 0;
+        if (!anc) return 0;
 
         for (int i = 0; i < n-1; i++) {
             int loc = poly[i].clockwise(*this, poly[i+1], eps);
-            if (loc == 0) return 0;
-            if (loc != anc) return -1;
+            if (loc != anc) return 0;
         }
 
         return 1;
@@ -89,17 +84,23 @@ struct line {
     line<cood> (vect<cood> a, vect<cood> b) : s(a), t(b)
     {  if (t < s) swap(s,t); }
 
-    inline line<cood> flip ()
+    inline line<cood> flip () const
     { return line<cood>(s.flip(), t.flip()); }
+    inline vect<cood> dir () const
+    { return t-s; }
 
-    inline cood sq_dist (const line<cood> & ot) const // squared distance to another segment
-    { return min{s.sq(ot.s), s.sq(ot.t), t.sq(ot.s), t.sq(ot.t)}; }
+    inline cood sq_dist (const vect<cood> & ot) const // squared distance to a vector
+    { return min(s.sq(ot), t.sq(ot)); }
 
+    // XXX: this breaks if s = t
     bool intersects (const line<cood> & ot, cood eps = 0) const {
         int a = s.clockwise(t, ot.s, eps); int b = s.clockwise(t, ot.t, eps);
 
-        if (a == 0 && b == 0) // colinear corner
-            return (sq_dist(ot) < s.sq(t) + eps);
+        if (a == 0 && b == 0) { // colinear corner
+            if (line<cood>(s, (s + dir().mirror())).intersects(ot)) return 1;
+            if (line<cood>(t, (t + dir().mirror())).intersects(ot)) return 1;
+            return 0;
+        }
 
         if (a == b) return 0;
         if (ot.s.clockwise(ot.t, s, eps) == ot.s.clockwise(ot.t, t, eps)) return 0;
