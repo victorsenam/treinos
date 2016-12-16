@@ -1,11 +1,14 @@
 #include <bits/stdc++.h>
-#define debug(...) {fprintf(stdout, __VA_ARGS__);}
+//#define debug(...) {fprintf(stdout, __VA_ARGS__);}
+#define debug(...) {}
 
 using namespace std;
 typedef long long int ll;
 typedef double db;
-//typedef ll cood;
 
+// if a lib function uses eps, it should be passed as a parameter
+// passing a positive eps favours the higher valued answers (booleans returning true, for example)
+// if you want to favour lower valued answers, pass a negative eps
 const db eps = 1e-8;
 
 template<typename cood=ll> struct vect {
@@ -69,14 +72,11 @@ struct interval {
     }
     interval<cood> (cood x) : a(x), b(x) {}
 
-    inline bool intersects (const interval & ot) {
-        if (a < ot.a) return b > ot.a;
-        if (b > ot.b) return a < ot.b;
-        return 1;        
-    }
+    inline bool contains (const interval & ot, cood eps = 0) const
+    { return a - eps <= ot.a && ot.b <= b + eps; }
 
-    inline bool contains (const interval & ot)
-    { return a <= ot.a && b >= ot.b; }
+    inline bool intersects (const interval & ot, cood eps = 0) const
+    { return contains(ot.a, eps) || contains(ot.b, eps) || ot.contains(*this, eps); }
 };
 
 template<typename cood=ll>
@@ -91,19 +91,21 @@ struct line {
     inline line<cood> flip ()
     { return line<cood>(s.flip(), t.flip()); }
 
-    double slope () const {
-        if (s.x == t.x) return double(s.y != t.y)/0.;
+    double slope (cood eps = 0) const {
+        if (abs(s.x - t.x) < eps) {
+            assert(false);
+            return double(abs(s.y - t.y) > eps)/0.;
+        }
         return double(t.y - s.y)/double(t.x - s.x);
     }
-    double intersept (double a) const
-    { return s.y - a*s.x; }
-    double intersept () const
-    { return intersept(slope()); }
     
-    double get (double x) {
-        if (s.x == t.x)
+    double get (double x, cood eps = 0) const {
+        if (abs(s.x - t.x) < eps) {
+            assert(false);
             return 0./0.;
-        return x*slope() + intersept();
+        }
+        double a = slope(eps);
+        return (x - double(s.x))*a + double(s.y);
     }
 };
 
@@ -117,9 +119,12 @@ int main () {
     for (int i = 0; i < n; i++) {
         scanf("%lld %lld", &v.s.x, &v.s.y);
         scanf("%lld %lld", &v.t.x, &v.t.y);
+        v = line<ll>(v.s, v.t);
 
         scanf("%lld %lld", &a[0].x, &a[0].y);
         scanf("%lld %lld", &a[2].x, &a[2].y);
+        if (a[0].x > a[2].x) swap(a[0].x, a[2].x);
+        if (a[0].y > a[2].y) swap(a[0].y, a[2].y);
 
         a[1].x = a[0].x;
         a[1].y = a[2].y;
@@ -127,23 +132,28 @@ int main () {
         a[3].x = a[2].x;
         a[3].y = a[0].y;
 
+        debug("%d", i);
         bool ok = 0;
         if (v.s.inside({a[0], a[1], a[2], a[3]}) || v.t.inside({a[0], a[1], a[2], a[3]})) {
+            debug("i");
             ok = 1;
         } else if (v.s.x == v.t.x) {
+            debug("v");
             if (interval<ll>(a[0].x, a[2].x).contains(v.s.x) &&
                 interval<ll>(a[0].y, a[2].y).intersects(interval<ll>(v.s.y, v.t.y)) )
                     ok = 1;
         } else if (v.s.y == v.t.y) {
+            debug("h");
             if (interval<ll>(a[0].y, a[2].y).contains(v.s.y) &&
                 interval<ll>(a[0].x, a[2].x).intersects(interval<ll>(v.s.x, v.t.x)) )
                     ok = 1;
         } else {
-            if (interval<double>(a[0].x-eps, a[2].x+eps).contains(v.flip().get(a[0].y))) ok = 1;
-            if (interval<double>(a[0].x-eps, a[2].x+eps).contains(v.flip().get(a[2].y))) ok = 1;
+            debug("s");
+            if (interval<double>(a[0].x, a[2].x).contains(v.flip().get(a[0].y), eps)) ok = 1;
+            if (interval<double>(a[0].x, a[2].x).contains(v.flip().get(a[2].y), eps)) ok = 1;
 
-            if (interval<double>(a[0].y-eps, a[2].y+eps).contains(v.get(a[0].x))) ok = 1;
-            if (interval<double>(a[0].y-eps, a[2].y+eps).contains(v.get(a[2].x))) ok = 1;
+            if (interval<double>(a[0].y, a[2].y).contains(v.get(a[0].x), eps)) ok = 1;
+            if (interval<double>(a[0].y, a[2].y).contains(v.get(a[2].x), eps)) ok = 1;
         }
 
         if (!ok)
