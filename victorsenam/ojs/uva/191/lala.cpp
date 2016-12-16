@@ -6,9 +6,9 @@ using namespace std;
 typedef long long int ll;
 typedef double db;
 
-// eps is the size of a point
-// if you want points to be considered as existant, eps should be positive
-// otherwise, eps should be negative
+// if a lib function uses eps, it should be passed as a parameter
+// passing a positive eps favours the higher valued answers (booleans returning true, for example)
+// if you want to favour lower valued answers, pass a negative eps
 const db eps = 1e-8;
 
 template<typename cood=ll> struct vect {
@@ -39,23 +39,22 @@ template<typename cood=ll> struct vect {
     { return (*this)^(*this); }
     inline cood norm () const // 2-norm
     { return sqrt(sq()); }
-    inline cood area (const vect<cood> & a, const vect<cood> & b) const // oriented area
+    inline cood orient (const vect<cood> & a, const vect<cood> & b) const // oriented area
     { return (a-(*this))*(b-(*this)); }
-    inline int orient (const vect<cood> & a, const vect<cood> & b, cood eps = 0) const {
-        cood o = area(a, b);
-        return (o > eps) - (o < -eps);
-    }
 
     // position of vector relative to convex polygon
     // poly : convex polygon given by sequence of vectors ordered by angle
     //        (clockwise or counter-clockwise)
     // return 1 if strictly inside and 0 if not
-    bool inside (const vector<vect<cood> > & poly, cood eps = 0) const {
+    bool inside (const vector<vect<cood> > & poly) const {
         int n = poly.size();
-        int anc = poly[n-1].orient(*this, poly[0], eps);
+        cood anc = poly[n-1].orient(*this, poly[0]);
+        if (anc > 0) anc = 1;
+        else if (anc < 0) anc = -1;
+        else return 0;
 
         for (int i = 0; i < n-1; i++) {
-            int rel = anc*poly[i].orient(*this, poly[i+1], eps);
+            cood rel = anc*poly[i].orient(*this, poly[i+1]);
             if (rel <= 0) return 0;
         }
 
@@ -92,12 +91,6 @@ struct line {
     inline line<cood> flip ()
     { return line<cood>(s.flip(), t.flip()); }
 
-    bool intersects (const line<cood> & ot, cood eps = 0) const {
-        if (s.orient(t, ot.s, eps)*s.orient(t, ot.t, eps) > 0) return 0;
-        if (ot.s.orient(ot.t, s, eps)*ot.s.orient(ot.t, t, eps) > 0) return 0;
-        return 1;
-    }
-
     double slope (cood eps = 0) const {
         if (abs(s.x - t.x) < eps) {
             assert(false);
@@ -105,6 +98,7 @@ struct line {
         }
         return double(t.y - s.y)/double(t.x - s.x);
     }
+    
     double get (double x, cood eps = 0) const {
         if (abs(s.x - t.x) < eps) {
             assert(false);
@@ -113,8 +107,6 @@ struct line {
         double a = slope(eps);
         return (x - double(s.x))*a + double(s.y);
     }
-
-    
 };
 
 int n;
@@ -140,8 +132,10 @@ int main () {
         a[3].x = a[2].x;
         a[3].y = a[0].y;
 
+        debug("%d", i);
         bool ok = 0;
         if (v.s.inside({a[0], a[1], a[2], a[3]}) || v.t.inside({a[0], a[1], a[2], a[3]})) {
+            debug("i");
             ok = 1;
         } else if (v.s.x == v.t.x) {
             debug("v");
@@ -154,9 +148,12 @@ int main () {
                 interval<ll>(a[0].x, a[2].x).intersects(interval<ll>(v.s.x, v.t.x)) )
                     ok = 1;
         } else {
-            for (int j = 0; j < 4; j++)
-                if (v.intersects(line<ll>(a[j], a[(j+1)%4]))) 
-                    ok = 1;
+            debug("s");
+            if (interval<double>(a[0].x, a[2].x).contains(v.flip().get(a[0].y), eps)) ok = 1;
+            if (interval<double>(a[0].x, a[2].x).contains(v.flip().get(a[2].y), eps)) ok = 1;
+
+            if (interval<double>(a[0].y, a[2].y).contains(v.get(a[0].x), eps)) ok = 1;
+            if (interval<double>(a[0].y, a[2].y).contains(v.get(a[2].x), eps)) ok = 1;
         }
 
         if (!ok)
