@@ -97,9 +97,9 @@ struct line {
         int a = s.clockwise(t, ot.s, eps); int b = s.clockwise(t, ot.t, eps);
 
         if (a == 0 && b == 0) { // colinear corner
-            if (line<cood>(s, (s + dir().mirror())).intersects(ot)) return 1;
-            if (line<cood>(t, (t + dir().mirror())).intersects(ot)) return 1;
-            return 0;
+            if (!interval<cood>(s.x, t.x).intersects(interval<cood>(ot.s.x, ot.t.x), eps)) return 0;
+            if (!interval<cood>(s.y, t.y).intersects(interval<cood>(ot.s.y, ot.t.y), eps)) return 0;
+            return 1;
         }
 
         if (a == b) return 0;
