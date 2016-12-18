@@ -111,5 +111,7 @@ struct line {
     }
 };
 
+int n;
+
 int main () {
 }
