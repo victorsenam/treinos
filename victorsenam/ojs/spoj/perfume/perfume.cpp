@@ -11,62 +11,16 @@ typedef double db;
 // if you want points to be considered as existant, eps should be positive
 // otherwise, eps should be negative
 
-template<typename cood=ll> struct vect {
-    cood x,y;
-    
-    // constructors
-    vect<cood> () {}
-    vect<cood> (cood a, cood b) : x(a), y(b) {}
-    vect<cood> (cood a) : x(a), y(a) {}
+// ## complexity ##
+// last line in comments means complexity
+// time | space
 
-    // basics
-    inline bool operator < (const vect<cood> & ot) const // lex compare
-    { return (x < ot.x || (x == ot.x && y < ot.y)); }
+template<typename cood=ll> struct vect;
+template<typename cood=ll> struct interval;
+template<typename cood=ll> struct line;
+template<typename cood=ll> struct poly;
 
-    // transforming
-    inline vect<cood> operator - (const vect<cood> & ot) const
-    { return vect<cood>(x - ot.x, y-ot.y); }
-    inline vect<cood> operator + (const vect<cood> & ot) const
-    { return vect<cood>(x + ot.x, y + ot.y); }
-    inline vect<cood> flip () const
-    { return vect<cood>(y, x); }
-    inline vect<cood> mirror () const
-    { return vect<cood>(-y, x); }
-
-    // math
-    inline cood operator * (const vect<cood> & ot) const // cross
-    { return x * ot.y - y * ot.x; }
-    inline cood operator ^ (const vect<cood> & ot) const // inner
-    { return x * ot.x + y * ot.y; }
-    inline cood sq (const vect<cood> & ot = 0) const // squared 2-norm (and distance)
-    { return (*this)^(*this); }
-    inline cood norm (const vect<cood> & ot = 0) const // 2-norm (and distance)
-    { return sqrt(sq(ot)); }
-    inline cood area (const vect<cood> & a, const vect<cood> & b) const // oriented area (positive if b is to the right of a)
-    { return (a-(*this))*(b-(*this)); }
-    inline int clockwise (const vect<cood> & a, const vect<cood> & b, cood eps = 0) const // clockwise comparsion (to the right means greater)
-    { cood o = area(a, b); return (o > eps) - (o < -eps); }
-
-    // position of vector relative to convex polygon
-    // poly : the vertices of the polygon (ordered in any way)
-    // returns 1 if strictly inside
-    // returns 0 if on the border
-    // returns -1 if outside
-    int position (const vector<vect<cood> > & poly, cood eps = 0) const {
-        int n = poly.size();
-        int cnt[3] = {0, 0, 0};
-
-        for (int i = 0; i < n; i++)
-            cnt[poly[i].clockwise(*this, poly[(i+1)%n], eps)+1]++;
-
-        if (cnt[0] && cnt[2]) return -1;
-        if (cnt[1]) return 0;
-        return 1;
-    }
-};
-
-template<typename cood=ll>
-struct interval {
+template<typename cood> struct interval {
     cood a,b;
 
     interval<cood> () {}
@@ -80,13 +34,53 @@ struct interval {
     { return contains(ot.a, eps) || contains(ot.b, eps) || ot.contains(*this, eps); }
 };
 
-template<typename cood=ll>
-struct line {
+template<typename cood> struct vect {
+    cood x,y;
+    
+    // constructors
+    vect<cood> () {}
+    vect<cood> (cood a, cood b) : x(a), y(b) {}
+    vect<cood> (cood a) : x(a), y(a) {}
+
+    // basics
+    inline bool operator < (const vect<cood> & ot) const // lex compare
+    { return (x < ot.x || (x == ot.x && y < ot.y)); }
+    inline void print () const
+    { printf("(%f,%f)", x, y); }
+
+    // transforming
+    inline vect<cood> operator - (const vect<cood> & ot) const
+    { return vect<cood>(x - ot.x, y - ot.y); }
+    inline vect<cood> operator + (const vect<cood> & ot) const
+    { return vect<cood>(x + ot.x, y + ot.y); }
+    inline vect<cood> flip () const
+    { return vect<cood>(y, x); }
+    inline vect<cood> mirror () const
+    { return vect<cood>(-y, x); }
+
+    // math
+    inline cood operator * (const vect<cood> & ot) const // cross
+    { return y * ot.x - x * ot.y; }
+    inline cood operator ^ (const vect<cood> & ot) const // inner
+    { return x * ot.x + y * ot.y; }
+    inline cood sq (const vect<cood> & ot = 0) const // squared 2-norm (and distance)
+    { return (*this)^(*this); }
+    inline cood norm (const vect<cood> & ot = 0) const // 2-norm (and distance)
+    { return sqrt(sq(ot)); }
+    inline cood area (const vect<cood> & a, const vect<cood> & b) const // oriented area (positive if b is to the right of a)
+    { return (a-(*this))*(b-(*this)); }
+    int clockwise (const vect<cood> & a, const vect<cood> & b, cood eps = 0) const // clockwise comparsion (to the right means greater)
+    { cood o = area(a, b); return (o > eps) - (o < -eps); }
+
+};
+
+template<typename cood> struct line {
     vect<cood> s, t;
     
     line<cood> () {}
     line<cood> (vect<cood> a, vect<cood> b) : s(a), t(b)
     {  if (t < s) swap(s,t); }
+    line<cood> (vect<cood> a) : s(a), t(a) {}
 
     inline line<cood> flip () const
     { return line<cood>(s.flip(), t.flip()); }
@@ -111,7 +105,105 @@ struct line {
     }
 };
 
-int n;
+template<typename cood> struct poly {
+    vector<vect<cood> > v;
+
+    poly<cood> () {}
+    poly<cood> (const vector<vect<cood> > & inp) : v(inp) {}
+
+    // applies Graham's algorithm for convex hull
+    // returns convex hull of polygon
+    // O(n lg(n)) | O(n)
+    poly<cood> graham (cood eps = 0) const {
+        int mini = 0;
+        vector<int> p;
+        for (int i = 0; i < v.size(); i++) {
+            p.push_back(i);
+            if (v[i] < v[mini]) 
+                mini = i;
+        }
+        swap(p[0], p[mini]);
+
+        int anc = p[0];
+        sort(p.begin() + 1, p.end(), [anc, this, eps](int i, int j) -> bool { 
+            int o = v[anc].clockwise(v[i], v[j], eps);
+            if (!o)
+                return v[i] < v[j];
+            return (o == 1);
+        });
+
+        vector<vect<cood> > r;
+        for (int _i : p) {
+            vect<cood> c = v[_i];
+            while (r.size() > 1 && r[r.size()-2].clockwise(r[r.size()-1], c, eps) != 1)
+                r.pop_back();
+            r.push_back(c);
+        }
+
+        return poly<cood>(r);
+    }
+
+    // XXX doesn't work with non-convex, doesn't check for convexity
+    // position of vector relative to convex polygon
+    // ot : the vector
+    // returns 1 if strictly inside
+    // returns 0 if on the border
+    // returns -1 if outside
+    // O(lg(n)) | O(1)
+    int position (const vect<cood> & ot, cood eps = 0) const {
+        int n = v.size();
+        if (n == 1) 
+            return -(ot.norm(v[0]) > eps);
+        else if (n == 2)
+            return line<cood>(v[0], v[1]).intersects(line<cood>(ot), eps) - 1;
+
+        int lo = 0; int hi = n-1;
+
+        while (lo < hi) {
+            int mid = lo+(hi-lo+1)/2; 
+            
+            if (v[0].clockwise(v[mid], ot, eps) >= 0)
+                lo = mid;
+            else
+                hi = mid-1;
+        }
+
+        if (lo == n-1 && v[n-2].clockwise(v[n-1], ot, eps) == -1) return -1;
+        return v[lo].clockwise(v[(lo+1)%n], ot, eps);
+    }
+};
+
+
+int t;
+int n, q;
+vector<vect<double> > v;
+vect<double> a;
+poly<double> pl;
 
 int main () {
+    scanf("%d", &t);
+    
+    while (t--) {
+        scanf("%d", &n);
+
+        v.clear();
+        for (int i = 0; i < n; i++) {
+            scanf("%lf %lf", &a.x, &a.y);
+            v.push_back(a);
+        }
+
+        pl = poly<double>(v).graham();
+
+        scanf("%d", &q);
+
+        while (q--) {
+            scanf("%lf %lf", &a.x, &a.y);
+            if (pl.position(a, 1e-8) >= 0)
+                printf("Yes\n");
+            else
+                printf("No\n");
+        }
+        if (t)
+            printf("\n");
+    }
 }

@@ -11,7 +11,16 @@ typedef double db;
 // if you want points to be considered as existant, eps should be positive
 // otherwise, eps should be negative
 
-template<typename cood=ll> struct vect {
+// ## complexity ##
+// last line in comments means complexity
+// time | space
+
+template<typename cood=ll> struct vect;
+template<typename cood=ll> struct interval;
+template<typename cood=ll> struct line;
+template<typename cood=ll> struct poly;
+
+template<typename cood> struct vect {
     cood x,y;
     
     // constructors
@@ -22,10 +31,12 @@ template<typename cood=ll> struct vect {
     // basics
     inline bool operator < (const vect<cood> & ot) const // lex compare
     { return (x < ot.x || (x == ot.x && y < ot.y)); }
+    inline void print () const
+    { printf("(%lld,%lld)", x, y); }
 
     // transforming
     inline vect<cood> operator - (const vect<cood> & ot) const
-    { return vect<cood>(x - ot.x, y-ot.y); }
+    { return vect<cood>(x - ot.x, y - ot.y); }
     inline vect<cood> operator + (const vect<cood> & ot) const
     { return vect<cood>(x + ot.x, y + ot.y); }
     inline vect<cood> flip () const
@@ -35,7 +46,7 @@ template<typename cood=ll> struct vect {
 
     // math
     inline cood operator * (const vect<cood> & ot) const // cross
-    { return x * ot.y - y * ot.x; }
+    { return y * ot.x - x * ot.y; }
     inline cood operator ^ (const vect<cood> & ot) const // inner
     { return x * ot.x + y * ot.y; }
     inline cood sq (const vect<cood> & ot = 0) const // squared 2-norm (and distance)
@@ -44,25 +55,35 @@ template<typename cood=ll> struct vect {
     { return sqrt(sq(ot)); }
     inline cood area (const vect<cood> & a, const vect<cood> & b) const // oriented area (positive if b is to the right of a)
     { return (a-(*this))*(b-(*this)); }
-    inline int clockwise (const vect<cood> & a, const vect<cood> & b, cood eps = 0) const // clockwise comparsion (to the right means greater)
+    int clockwise (const vect<cood> & a, const vect<cood> & b, cood eps = 0) const // clockwise comparsion (to the right means greater)
     { cood o = area(a, b); return (o > eps) - (o < -eps); }
 
-    int inside (const vector<vect<cood> > & poly, cood eps = 0) const {
-        int n = poly.size();
-        int anc = poly[n-1].clockwise(*this, poly[0], eps);
-        if (!anc) return 0;
+    // XXX doesn't work with non-convex, doesn't check for convexity
+    // position of vector relative to convex polygon
+    // poly : the vertices of the polygon (ordered in any way)
+    // returns 1 if strictly inside
+    // returns 0 if on the border
+    // returns -1 if outside
+    // O(n) | O(1)
+    int position (const poly<cood> & pl, cood eps = 0) const {
+        int n = pl.v.size();
+        int lo = 0; int hi = n-1;
 
-        for (int i = 0; i < n-1; i++) {
-            int loc = poly[i].clockwise(*this, poly[i+1], eps);
-            if (loc != anc) return 0;
+        while (lo < hi) {
+            int mid = lo+(hi-lo+1)/2; 
+            
+            if (pl.v[0].clockwise(pl.v[mid], *this, eps) >= 0)
+                lo = mid;
+            else
+                hi = mid-1;
         }
 
-        return 1;
+        if (lo == n-1 && pl.v[n-2].clockwise(pl.v[n-1], *this, eps) == -1) return -1;
+        return pl.v[lo].clockwise(pl.v[(lo+1)%n], *this, eps);
     }
 };
 
-template<typename cood=ll>
-struct interval {
+template<typename cood> struct interval {
     cood a,b;
 
     interval<cood> () {}
@@ -76,8 +97,7 @@ struct interval {
     { return contains(ot.a, eps) || contains(ot.b, eps) || ot.contains(*this, eps); }
 };
 
-template<typename cood=ll>
-struct line {
+template<typename cood> struct line {
     vect<cood> s, t;
     
     line<cood> () {}
@@ -92,7 +112,6 @@ struct line {
     inline cood sq_dist (const vect<cood> & ot) const // squared distance to a vector
     { return min(s.sq(ot), t.sq(ot)); }
 
-    // XXX: this breaks if s = t
     bool intersects (const line<cood> & ot, cood eps = 0) const {
         int a = s.clockwise(t, ot.s, eps); int b = s.clockwise(t, ot.t, eps);
 
@@ -108,6 +127,40 @@ struct line {
     }
 };
 
+template<typename cood> struct poly {
+    vector<vect<cood> > v;
+
+    poly<cood> () {}
+    poly<cood> (const vector<vect<cood> > & inp) : v(inp) {}
+
+    // applies Graham's algorithm for convex hull
+    // returns convex hull of polygon
+    // O(n lg(n)) | O(n)
+    poly<cood> graham (cood eps = 0) const {
+        int mini = 0;
+        vector<int> p;
+        for (int i = 0; i < v.size(); i++) {
+            p.push_back(i);
+            if (v[i] < v[mini]) 
+                mini = i;
+        }
+        swap(p[0], p[mini]);
+
+        int anc = p[0];
+        sort(p.begin() + 1, p.end(), [anc, this](int i, int j) -> bool { (v[anc].clockwise(v[i], v[j], 0) == 1); });
+
+        vector<vect<cood> > r;
+        for (int _i : p) {
+            vect<cood> c = v[p[_i]];
+            while (r.size() > 1 && !r[r.size()-2].clockwise(r[r.size()-1], c, eps) != 1)
+                r.pop();
+            r.push_back(c);
+        }
+        
+        return r;
+    }
+};
+
 int n;
 vect<ll> v[4];
 line<ll> l;
@@ -116,15 +169,20 @@ int main () {
     scanf("%d", &n);
 
     while (n--) {
-        scanf("%d %d %d %d", &l.s.x, &l.s.y, &l.t.x, &l.t.y);
-        scanf("%d %d", &v[0].x, &v[0].y);
-        scanf("%d %d", &v[2].x, &v[2].y);
+        scanf("%lld %lld %lld %lld", &l.s.x, &l.s.y, &l.t.x, &l.t.y);
+        scanf("%lld %lld", &v[0].x, &v[0].y);
+        scanf("%lld %lld", &v[2].x, &v[2].y);
 
-        v[1].x = v[0].x; v[1].y = v[2].y;
-        v[3].x = v[2].x; v[3].y = v[0].y;
+        if (v[0].x > v[2].x) swap(v[0].x, v[2].x);
+        if (v[0].y < v[2].y) swap(v[0].y, v[2].y);
+
+        v[1].x = v[2].x; v[1].y = v[0].y;
+        v[3].x = v[0].x; v[3].y = v[2].y;
+
+        assert(v[0].clockwise(v[1], v[2]));
 
         bool ok = 0;
-        if (l.s.inside({v[0], v[1], v[2], v[3]}) || l.t.inside({v[0], v[1], v[2], v[3]}))
+        if (l.s.position(poly<ll>({v[0], v[1], v[2], v[3]})) >= 0 || l.t.position(poly<ll>({v[0], v[1], v[2], v[3]})) >= 0)
             ok = 1;
         else {
             for (int j = 0; j < 4; j++)
