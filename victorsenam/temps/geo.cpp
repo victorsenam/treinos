@@ -15,8 +15,8 @@ typedef double db;
 // last line in comments means complexity
 // time | space
 
-template<typename cood=ll> struct vect;
 template<typename cood=ll> struct interval;
+template<typename cood=ll> struct vect;
 template<typename cood=ll> struct line;
 template<typename cood=ll> struct poly;
 
@@ -64,14 +64,13 @@ template<typename cood> struct vect {
     inline cood operator ^ (const vect<cood> & ot) const // inner
     { return x * ot.x + y * ot.y; }
     inline cood sq (const vect<cood> & ot = 0) const // squared 2-norm (and distance)
-    { return (*this)^(*this); }
-    inline cood norm (const vect<cood> & ot = 0) const // 2-norm (and distance)
+    { return ((*this)-ot)^((*this)-ot); }
+    inline double norm (const vect<cood> & ot = 0) const // 2-norm (and distance)
     { return sqrt(sq(ot)); }
     inline cood area (const vect<cood> & a, const vect<cood> & b) const // oriented area (positive if b is to the right of a)
     { return (a-(*this))*(b-(*this)); }
     int clockwise (const vect<cood> & a, const vect<cood> & b, cood eps = 0) const // clockwise comparsion (to the right means greater)
-    { cood o = area(a, b); return (o > eps) - (o < -eps); }
-
+    { cood o = area(a, b); return (o > -eps) - (o < eps); }
 };
 
 template<typename cood> struct line {
@@ -153,12 +152,9 @@ template<typename cood> struct poly {
     int position (const vect<cood> & ot, cood eps = 0) const {
         int n = v.size();
         if (n == 1) 
-            return -(ot.norm(v[0]) > eps);
-        if (n == 2)
-            return line<cood>(v[0], v[1]).intersects(line<cood>(ot), eps) - 1;
+            return - 1 + (ot.norm(v[0]) <= eps);
 
         int lo = 0; int hi = n-1;
-
         while (lo < hi) {
             int mid = lo+(hi-lo+1)/2; 
 
@@ -167,12 +163,9 @@ template<typename cood> struct poly {
             else
                 hi = mid-1;
         }
-
-
-        if (lo == n-1 && v[n-2].clockwise(v[n-1], ot, eps) == -1)  {
-            return -1;
-        }
+        
+        if (lo == 0 || lo == n-1)
+            return -1 + line<cood>(v[lo], v[(lo+1)%n]).intersects(line<cood>(ot,ot), eps);
         return v[lo].clockwise(v[(lo+1)%n], ot, eps);
     }
 };
-
