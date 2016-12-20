@@ -114,33 +114,33 @@ template<typename cood> struct poly {
     // applies Graham's algorithm for convex hull
     // returns convex hull of polygon
     // O(n lg(n)) | O(n)
-    poly<cood> graham (cood eps = 0) const {
+    void graham (cood eps = 0) {
         int mini = 0;
-        vector<int> p;
         for (int i = 0; i < v.size(); i++) {
-            p.push_back(i);
             if (v[i] < v[mini]) 
                 mini = i;
         }
-        swap(p[0], p[mini]);
+        swap(v[0], v[mini]);
 
-        int anc = p[0];
-        sort(p.begin() + 1, p.end(), [anc, this, eps](int i, int j) -> bool { 
-            int o = v[anc].clockwise(v[i], v[j], eps);
+        vect<cood> anc = v[0];
+        sort(v.begin() + 1, v.end(), [anc, eps](vect<cood> i, vect<cood> j) -> bool { 
+            int o = anc.clockwise(i, j, eps);
             if (!o)
-                return v[i] < v[j];
+                return i < j;
             return (o == 1);
         });
-
-        vector<vect<cood> > r;
-        for (int _i : p) {
-            vect<cood> c = v[_i];
-            while (r.size() > 1 && r[r.size()-2].clockwise(r[r.size()-1], c, eps) != 1)
-                r.pop_back();
-            r.push_back(c);
+        v.push_back(v[0]);
+        
+        int m = 0;
+        for (int i = 0; i < v.size(); i++) {
+            while (m >= 2 + (i == v.size() - 1) && v[m-2].clockwise(v[m-1], v[i], eps) < 1)
+                m--;
+            swap(v[m], v[i]);
+            m++;
         }
-
-        return poly<cood>(r);
+        m--;
+        while (v.size() > m)
+            v.pop_back();
     }
 
     // XXX doesn't work with non-convex, doesn't check for convexity
@@ -154,21 +154,24 @@ template<typename cood> struct poly {
         int n = v.size();
         if (n == 1) 
             return -(ot.norm(v[0]) > eps);
-        else if (n == 2)
+        if (n == 2)
             return line<cood>(v[0], v[1]).intersects(line<cood>(ot), eps) - 1;
 
         int lo = 0; int hi = n-1;
 
         while (lo < hi) {
             int mid = lo+(hi-lo+1)/2; 
-            
+
             if (v[0].clockwise(v[mid], ot, eps) >= 0)
                 lo = mid;
             else
                 hi = mid-1;
         }
 
-        if (lo == n-1 && v[n-2].clockwise(v[n-1], ot, eps) == -1) return -1;
+
+        if (lo == n-1 && v[n-2].clockwise(v[n-1], ot, eps) == -1)  {
+            return -1;
+        }
         return v[lo].clockwise(v[(lo+1)%n], ot, eps);
     }
 };
