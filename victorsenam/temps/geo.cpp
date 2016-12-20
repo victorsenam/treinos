@@ -14,6 +14,7 @@ typedef double db;
 // ## complexity ##
 // last line in comments means complexity
 // time | space
+// standart: O(1) | O(1)
 
 template<typename cood=ll> struct interval;
 template<typename cood=ll> struct vect;
@@ -28,8 +29,10 @@ template<typename cood> struct interval {
     { if (a > b) swap(a,b); }
     interval<cood> (cood x) : a(x), b(x) {}
 
+    // XXX assumes a <= b
     inline bool contains (const interval & ot, cood eps = 0) const
-    { return a - eps <= ot.a && ot.b <= b + eps; }
+    { return a - ot.a <= eps && ot.b - b <= eps; }
+    // XXX assumes a <= b
     inline bool intersects (const interval & ot, cood eps = 0) const
     { return contains(ot.a, eps) || contains(ot.b, eps) || ot.contains(*this, eps); }
 };
@@ -142,7 +145,7 @@ template<typename cood> struct poly {
             v.pop_back();
     }
 
-    // XXX doesn't work with non-convex, doesn't check for convexity
+    // XXX assumes convexity
     // position of vector relative to convex polygon
     // ot : the vector
     // returns 1 if strictly inside
@@ -167,5 +170,23 @@ template<typename cood> struct poly {
         if (lo == 0 || lo == n-1)
             return -1 + line<cood>(v[lo], v[(lo+1)%n]).intersects(line<cood>(ot,ot), eps);
         return v[lo].clockwise(v[(lo+1)%n], ot, eps);
+    }
+
+    // XXX assumes convexity
+    // O(n*m + n log(m) + m log(n)) | O(1)
+    bool intersects (const poly<cood> & ot, cood eps = 0) const {
+        for (int i = 0; i < v.size(); i++)
+            if (ot.position(v[i]) >= 0)
+                return 1;
+        for (int i = 0; i < ot.v.size(); i++)
+            if (position(ot.v[i]) >= 0)
+                return 1;
+
+        for (int i = 0; i < v.size(); i++)
+            for (int j = 0; j < ot.v.size(); j++)
+                if (line<cood>(v[i], v[(i+1)%v.size()]).intersects(line<cood>(ot.v[j], ot.v[(j+1)%ot.v.size()]), eps))
+                    return 1;
+
+        return 0;
     }
 };
