@@ -199,3 +199,89 @@ template<typename cood> struct poly {
         return 0;
     }
 };
+
+const int N = 1e2+7;
+
+int n;
+poly<ll> pl;
+vect<ll> aux;
+interval<ll> base;
+
+double f (double x) {
+    debug("avail at %.6f", x);
+    vector<double> y;
+
+    for (int i = 0; i < pl.v.size(); i++) {
+        line<ll> l(pl.v[i], pl.v[(i+1)%pl.v.size()]);
+
+        if (l.s.x > x || l.t.x < x)
+            continue;
+        if (l.s.x == l.t.x) {
+            y.push_back(l.s.y);
+            y.push_back(l.t.y);
+        } else {
+            double a = double(l.t.y - l.s.y)/double(l.t.x - l.s.x);
+            double b = double(l.s.y) - a * double(l.s.x);
+
+            y.push_back(a * x + b);
+        }
+    }
+
+    sort(y.begin(), y.end());
+
+    double ans = 0.;
+    for (int i = 0; i + 1 < y.size(); i += 2) {
+        if (y[i] + 1e-8 > y[i+1]) {
+            i--;
+            continue;
+        }
+        debug(" [%.6f %.6f]", y[i], y[i+1]);
+        ans += y[i+1] - y[i];
+    }
+    debug("\n");
+
+    return ans * x;
+}
+
+double simpson (double a, double b) {
+    return (f(a) + 4*f(.5*(a+b)) + f(b))*(b-a)/6.;
+}
+
+double integrate (double a, double b, double eps) {
+    double m = .5*(a+b);
+    if (b-a < eps) {
+        double l = simpson(a,m), r = simpson(m,b), tot = simpson(a,b);
+        if (fabs(l+r-tot) < eps) 
+            return tot;
+    }
+    return integrate(a,m,eps) + integrate(m,b,eps);
+}
+
+int main () {
+    scanf("%d", &n);
+
+    base.a = 2e3;
+    base.b = -2e3;
+
+    for (int i = 0; i < n; i++) {
+        scanf("%lld %lld", &aux.x, &aux.y);
+        pl.v.push_back(aux);
+ 
+        if (aux.y == 0) {
+            base.a = min(base.a, aux.x);
+            base.b = max(base.b, aux.x);
+        }
+    }
+
+    double s = abs(pl.area());
+    double t = integrate(-2e3, 2e3, 1);
+    
+    printf("%.6f %.6f\n", s, t);
+
+    interval<double> res;
+
+    res.a = double(t - base.a * s)/double(base.a - pl.v[0].x);
+    res.b = double(t - base.b * s)/double(base.b - pl.v[0].x);
+
+    printf("%.6f %.6f\n", res.a, res.b);
+}
