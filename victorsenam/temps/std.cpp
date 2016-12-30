@@ -3,7 +3,6 @@
 
 using namespace std;
 typedef long long int ll;
-typedef double db;
 
 int main () {
 }
