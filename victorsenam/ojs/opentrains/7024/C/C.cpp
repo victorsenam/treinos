@@ -1,9 +1,13 @@
 #include <bits/stdc++.h>
 #define debug(...) {fprintf(stdout, __VA_ARGS__);}
+#define fst first
+#define snd second
 
 using namespace std;
 typedef long long int ll;
 typedef double db;
+
+const double eps = 1e-3;
 
 // ## about eps ##
 // many functions recieve an optional parameter eps
@@ -207,54 +211,18 @@ poly<ll> pl;
 vect<ll> aux;
 interval<ll> base;
 
-double f (double x) {
-    debug("avail at %.6f", x);
-    vector<double> y;
+pair<ll, ll> cent () {
+    ll cx = 0;
+    ll dx = 0;
+    for (int i = 1; i < pl.v.size()-1; i++) {
+        ll loc = pl.v[0].area(pl.v[i], pl.v[i+1]);
+        ll cen = (pl.v[0].x + pl.v[i].x + pl.v[i+1].x);
 
-    for (int i = 0; i < pl.v.size(); i++) {
-        line<ll> l(pl.v[i], pl.v[(i+1)%pl.v.size()]);
-
-        if (l.s.x > x || l.t.x < x)
-            continue;
-        if (l.s.x == l.t.x) {
-            y.push_back(l.s.y);
-            y.push_back(l.t.y);
-        } else {
-            double a = double(l.t.y - l.s.y)/double(l.t.x - l.s.x);
-            double b = double(l.s.y) - a * double(l.s.x);
-
-            y.push_back(a * x + b);
-        }
+        cx += loc*cen;
+        dx += loc*3ll;
     }
 
-    sort(y.begin(), y.end());
-
-    double ans = 0.;
-    for (int i = 0; i + 1 < y.size(); i += 2) {
-        if (y[i] + 1e-8 > y[i+1]) {
-            i--;
-            continue;
-        }
-        debug(" [%.6f %.6f]", y[i], y[i+1]);
-        ans += y[i+1] - y[i];
-    }
-    debug("\n");
-
-    return ans * x;
-}
-
-double simpson (double a, double b) {
-    return (f(a) + 4*f(.5*(a+b)) + f(b))*(b-a)/6.;
-}
-
-double integrate (double a, double b, double eps) {
-    double m = .5*(a+b);
-    if (b-a < eps) {
-        double l = simpson(a,m), r = simpson(m,b), tot = simpson(a,b);
-        if (fabs(l+r-tot) < eps) 
-            return tot;
-    }
-    return integrate(a,m,eps) + integrate(m,b,eps);
+    return pair<ll,ll>(cx, dx);
 }
 
 int main () {
@@ -267,21 +235,61 @@ int main () {
         scanf("%lld %lld", &aux.x, &aux.y);
         pl.v.push_back(aux);
  
-        if (aux.y == 0) {
+        if (aux.y == 0.) {
             base.a = min(base.a, aux.x);
             base.b = max(base.b, aux.x);
         }
     }
 
-    double s = abs(pl.area());
-    double t = integrate(-2e3, 2e3, 1);
-    
-    printf("%.6f %.6f\n", s, t);
+    pair<ll, ll> ct = cent();
+    if (ct.snd < 0) {
+        ct.fst = -ct.fst;
+        ct.snd = -ct.snd;
+    }
 
-    interval<double> res;
+    if ((ct.fst < base.a * ct.snd && pl.v[0].x <= base.a) || 
+        (ct.fst > base.b * ct.snd && pl.v[0].x >= base.b)) {
+        printf("unstable\n");
+    } else {
+        ll lim[2];
+        if (ct.fst >= pl.v[0].x * ct.snd) {
+            base.a = -base.a;
+            base.b = -base.b;
+            swap(base.a, base.b);
+            ct.fst = -ct.fst;
+            pl.v[0].x = -pl.v[0].x;
+        }
 
-    res.a = double(t - base.a * s)/double(base.a - pl.v[0].x);
-    res.b = double(t - base.b * s)/double(base.b - pl.v[0].x);
+        ll lo = 0;
+        ll hi = 4e14;
 
-    printf("%.6f %.6f\n", res.a, res.b);
+        while (lo < hi) {
+            ll mid = lo + (hi-lo)/2;
+
+            if (ct.fst + 6ll * pl.v[0].x * mid > base.a * (ct.snd + 6ll * mid)) {
+                hi = mid;
+            } else {
+                lo = mid + 1;
+            }
+        }
+        lim[0] = lo;
+
+        if (pl.v[0].x <= base.b) {
+            printf("%lld .. inf\n", lim[0]);
+        } else {
+            lo = 0;
+            hi = 4e14;
+            while (lo < hi) {
+                ll mid = lo + (hi-lo+1)/2;
+                if (ct.fst + 6ll * pl.v[0].x * mid < base.b * (ct.snd + 6ll * mid)) {
+                    lo = mid;
+                } else {
+                    hi = mid - 1;
+                }
+            }
+            lim[1] = lo+1;
+
+            printf("%lld .. %lld\n", lim[0], lim[1]);
+        }
+    }
 }
