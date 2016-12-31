@@ -202,7 +202,7 @@ template<typename cood> struct poly {
 
 int t;
 int n;
-const double eps = 1e-8;
+const double eps = 0;
 
 inline int cond(bool b, bool x, bool y) {
     if ((b&y)^x) return 1;
@@ -239,6 +239,12 @@ int main () {
 
         for (int i = 0; i < n; i++)
             scanf("%lf %lf", &v[i].x, &v[i].y);
+
+        if ((v[0].clockwise(v[1], v[2]) == v[0].clockwise(v[1], v[3])) ||
+            (v[2].clockwise(v[3], v[0]) == v[2].clockwise(v[3], v[1]))) {
+            printf("POSSIBLE\n");
+            continue;
+        }
 
         if (solve(v, 0) || solve(v, 1)) {
             printf("POSSIBLE\n");
