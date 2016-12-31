@@ -225,6 +225,11 @@ pair<ll, ll> cent () {
     return pair<ll,ll>(cx, dx);
 }
 
+int cmp (ll p, ll q, ll x) {
+    if (q < 0) return cmp(-p, -q, x);
+    return (p > q * x) - (p < q * x);
+}
+
 int main () {
     scanf("%d", &n);
 
@@ -247,26 +252,32 @@ int main () {
         ct.snd = -ct.snd;
     }
 
-    if ((ct.fst < base.a * ct.snd && pl.v[0].x <= base.a) || 
-        (ct.fst > base.b * ct.snd && pl.v[0].x >= base.b)) {
+    if (cmp(ct.fst, ct.snd, pl.v[0].x) > 0) {
+        base.a = -base.a;
+        base.b = -base.b;
+        swap(base.a, base.b);
+        ct.fst = -ct.fst;
+        pl.v[0].x = -pl.v[0].x;
+    }
+
+    if (cmp(ct.fst, ct.snd, pl.v[0].x) == 0) {
+        if (pl.v[0].x < base.a || pl.v[0].x > base.b) {
+            printf("unstable\n");
+        } else {
+            printf("0 .. inf\n");
+        }
+    } else if ((pl.v[0].x <= base.a) || (cmp(ct.fst, ct.snd, base.b) > 0)) {
         printf("unstable\n");
     } else {
         ll lim[2];
-        if (ct.fst >= pl.v[0].x * ct.snd) {
-            base.a = -base.a;
-            base.b = -base.b;
-            swap(base.a, base.b);
-            ct.fst = -ct.fst;
-            pl.v[0].x = -pl.v[0].x;
-        }
 
         ll lo = 0;
-        ll hi = 4e14;
+        ll hi = 2e11;
 
         while (lo < hi) {
             ll mid = lo + (hi-lo)/2;
 
-            if (ct.fst + 6ll * pl.v[0].x * mid > base.a * (ct.snd + 6ll * mid)) {
+            if (cmp(ct.fst + 6ll * pl.v[0].x * mid, ct.snd + 6ll * mid, base.a) >= 0) {
                 hi = mid;
             } else {
                 lo = mid + 1;
@@ -278,10 +289,10 @@ int main () {
             printf("%lld .. inf\n", lim[0]);
         } else {
             lo = 0;
-            hi = 4e14;
+            hi = 2e11;
             while (lo < hi) {
                 ll mid = lo + (hi-lo+1)/2;
-                if (ct.fst + 6ll * pl.v[0].x * mid < base.b * (ct.snd + 6ll * mid)) {
+                if (cmp(ct.fst + 6ll * pl.v[0].x * mid, ct.snd + 6ll * mid, base.b) < 0) {
                     lo = mid;
                 } else {
                     hi = mid - 1;
