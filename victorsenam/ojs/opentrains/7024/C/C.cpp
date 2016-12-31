@@ -1,13 +1,9 @@
 #include <bits/stdc++.h>
 #define debug(...) {fprintf(stdout, __VA_ARGS__);}
-#define fst first
-#define snd second
 
 using namespace std;
 typedef long long int ll;
 typedef double db;
-
-const double eps = 1e-3;
 
 // ## about eps ##
 // many functions recieve an optional parameter eps
@@ -204,103 +200,99 @@ template<typename cood> struct poly {
     }
 };
 
-const int N = 1e2+7;
-
-int n;
-poly<ll> pl;
-vect<ll> aux;
-interval<ll> base;
-
-pair<ll, ll> cent () {
-    ll cx = 0;
-    ll dx = 0;
-    for (int i = 1; i < pl.v.size()-1; i++) {
-        ll loc = pl.v[0].area(pl.v[i], pl.v[i+1]);
-        ll cen = (pl.v[0].x + pl.v[i].x + pl.v[i+1].x);
-
-        cx += loc*cen;
-        dx += loc*3ll;
-    }
-
-    return pair<ll,ll>(cx, dx);
-}
+const int N = 1e3+7;
+const int M = 2e3;
+const ll L = 2e14;
 
 int cmp (ll p, ll q, ll x) {
     if (q < 0) return cmp(-p, -q, x);
-    return (p > q * x) - (p < q * x);
+    return (p > q*x) - (p < q*x);
 }
+
+int n;
+vect<ll> v[N];
+ll bs[2];
 
 int main () {
     scanf("%d", &n);
 
-    base.a = 2e3;
-    base.b = -2e3;
+    bs[0] = M;
+    bs[1] = -M;
 
     for (int i = 0; i < n; i++) {
-        scanf("%lld %lld", &aux.x, &aux.y);
-        pl.v.push_back(aux);
- 
-        if (aux.y == 0.) {
-            base.a = min(base.a, aux.x);
-            base.b = max(base.b, aux.x);
+        scanf("%lld %lld", &v[i].x, &v[i].y);
+
+        if (v[i].y == 0) {
+            bs[0] = min(bs[0], v[i].x);
+            bs[1] = max(bs[1], v[i].x);
         }
     }
 
-    pair<ll, ll> ct = cent();
-    if (ct.snd < 0) {
-        ct.fst = -ct.fst;
-        ct.snd = -ct.snd;
+    ll p = 0;
+    ll q = 0;
+
+    for (int i = 1; i + 1 < n; i++) {
+        ll wei = v[0].area(v[i], v[i+1]);
+        ll val = (v[0].x + v[i].x + v[i+1].x);
+
+        p += wei*val;
+        q += wei*3ll;
     }
 
-    if (cmp(ct.fst, ct.snd, pl.v[0].x) > 0) {
-        base.a = -base.a;
-        base.b = -base.b;
-        swap(base.a, base.b);
-        ct.fst = -ct.fst;
-        pl.v[0].x = -pl.v[0].x;
+    if (q < 0) {
+        p = -p;
+        q = -q;
     }
 
-    if (cmp(ct.fst, ct.snd, pl.v[0].x) == 0) {
-        if (pl.v[0].x < base.a || pl.v[0].x > base.b) {
+    if (cmp(p, q, v[0].x) > 0) {
+        bs[0] = -bs[0];
+        bs[1] = -bs[1];
+        swap(bs[0], bs[1]);
+        v[0].x = -v[0].x;
+        p = -p;
+    }
+
+    if (cmp(p, q, v[0].x) == 0) {
+        if (v[0].x < bs[0] && v[0].x > bs[1]) {
             printf("unstable\n");
         } else {
             printf("0 .. inf\n");
         }
-    } else if ((pl.v[0].x <= base.a) || (cmp(ct.fst, ct.snd, base.b) > 0)) {
+    } else if ((cmp(p, q, bs[1]) > 0) || (v[0].x <= bs[0])) {
         printf("unstable\n");
     } else {
-        ll lim[2];
+        ll rs[2];
 
-        ll lo = 0;
-        ll hi = 2e11;
+        ll lo = 1;
+        ll hi = L;
 
         while (lo < hi) {
             ll mid = lo + (hi-lo)/2;
 
-            if (cmp(ct.fst + 6ll * pl.v[0].x * mid, ct.snd + 6ll * mid, base.a) >= 0) {
+            if (cmp(p + mid * 6ll * v[0].x, q + mid * 6ll, bs[0]) > 0)
                 hi = mid;
-            } else {
+            else
                 lo = mid + 1;
-            }
         }
-        lim[0] = lo;
 
-        if (pl.v[0].x <= base.b) {
-            printf("%lld .. inf\n", lim[0]);
+        rs[0] = lo-1;
+
+        if (v[0].x <= bs[1]) {
+            printf("%lld .. inf\n", rs[0]);
         } else {
-            lo = 0;
-            hi = 2e11;
+            ll lo = 0;
+            ll hi = L;
+
             while (lo < hi) {
                 ll mid = lo + (hi-lo+1)/2;
-                if (cmp(ct.fst + 6ll * pl.v[0].x * mid, ct.snd + 6ll * mid, base.b) < 0) {
-                    lo = mid;
-                } else {
-                    hi = mid - 1;
-                }
-            }
-            lim[1] = lo+1;
 
-            printf("%lld .. %lld\n", lim[0], lim[1]);
+                if (cmp(p + mid * 6ll * v[0].x, q + mid * 6ll, bs[1]) < 0)
+                    lo = mid;
+                else
+                    hi = mid - 1;
+            }
+
+            printf("%lld .. %lld\n", rs[0], lo+1);
         }
     }
 }
