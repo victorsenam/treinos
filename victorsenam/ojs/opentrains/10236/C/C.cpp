@@ -67,7 +67,7 @@ template<typename cood> struct vect {
     inline vect<cood> mirror () const
     { return vect<cood>(-y, x); }
     inline vect<double> rotate (double ang) const // clockwise
-    { return vect<double>(cos(ang) * x + sen(ang) * y, - sen(ang) * x + cos(ang) * y; }
+    { return vect<double>(cos(ang) * x + sin(ang) * y, - sin(ang) * x + cos(ang) * y); }
 
     // math
     inline cood operator * (const vect<cood> & ot) const // cross
@@ -207,3 +207,31 @@ template<typename cood> struct poly {
         return 0;
     }
 };
+
+int n;
+vect<double> rect, pivo, posi;
+double ang;
+double scale;
+
+int main () {
+    scanf("%d", &n);
+
+    for (int i = 1; i <= n; i++) {
+        scanf("%lf %lf %lf %lf %lf %lf %lf %lf",
+            &rect.x, &rect.y,
+            &pivo.x, &pivo.y,
+            &posi.x, &posi.y,
+            &ang, &scale);
+
+        double inp = ang;
+        ang = (360. - ang) * pi / 180.0;
+
+        //vect<double> tp = posi + (rect * 0.5 - pivo).rotate(ang) * scale - rect * 0.5;
+        vect<double> tp = ( (rect * 0.5 - pivo).rotate(ang)) * scale - rect * .5 * scale + posi;
+        printf(".item%d { width: %.1fpx; height: %.1fpx; left: %.1fpx; top: %.1fpx; transform: rotate(%.1fdeg); }\n", i,
+            rect.x * scale, rect.y * scale,
+            tp.x, tp.y,
+            inp
+        );
+    }
+}
