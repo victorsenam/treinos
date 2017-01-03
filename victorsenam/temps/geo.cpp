@@ -67,7 +67,7 @@ template<typename cood> struct vect {
     inline vect<cood> mirror () const
     { return vect<cood>(-y, x); }
     inline vect<double> rotate (double ang) const // clockwise
-    { return vect<double>(cos(ang) * x + sen(ang) * y, - sen(ang) * x + cos(ang) * y; }
+    { return vect<double>(cos(ang) * x + sin(ang) * y, - sin(ang) * x + cos(ang) * y); }
 
     // math
     inline cood operator * (const vect<cood> & ot) const // cross
