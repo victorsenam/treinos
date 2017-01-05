@@ -1,5 +1,6 @@
 #include <bits/stdc++.h>
-#define debug(...) {fprintf(stdout, __VA_ARGS__);}
+//#define debug(...) {fprintf(stdout, __VA_ARGS__);}
+#define debug(...) {}
 
 using namespace std;
 typedef long long int ll;
@@ -235,3 +236,115 @@ template<typename cood> struct circ {
         return (d < -eps) - (d > eps);
     }
 };
+
+const int N = 52;
+const double eps = 1e-8;
+
+double w, h;
+circ<double> v[N];
+int n, tc;
+
+inline double sq (double a)
+{ return a * a; }
+
+bool solve (double s, vect<double> p) {
+    if (s - p.x > eps || p.x + s - w > eps ||
+        s - p.y > eps || p.y + s - h > eps )
+        return 0;
+
+    for (int i = 0; i < n; i++)
+        if (v[i].expand(s).position(p, eps) == 1)
+            return 0;
+    return 1;
+}
+
+vect<double> inte (bool k, double x, circ<double> p) {
+    double a = 1.;
+    double b = - 2. * p.c.y;
+    double c = sq(p.c.x - x) + sq(p.c.y) - sq(p.r);
+    
+    double d = sqrt(b*b - 4.*a*c);
+    
+    if (isnan(d))
+        return vect<double>(x, p.c.y);
+
+    if (k)
+        d = -d;
+
+    return vect<double>(x, (-b + d) * (.5 / a));
+}
+
+bool solve (double s) {
+    debug("corners\n");
+    if (solve(s, vect<double>(s, s)) ||
+        solve(s, vect<double>(w - s, s)) ||
+        solve(s, vect<double>(w - s, h - s)) ||
+        solve(s, vect<double>(s, h - s)))
+        return 1;
+
+    for (int i = 0; i < n; i++) {
+        debug("ball %d with walls\n", i);
+        for (int k = 0; k < 2; k++) {
+            if (solve(s, inte(k, s, v[i].expand(s))) ||
+                solve(s, inte(k, w - s, v[i].expand(s))) ||
+                solve(s, inte(k, s, v[i].flip().expand(s)).flip()) ||
+                solve(s, inte(k, h - s, v[i].flip().expand(s)).flip()) )
+                return 1;
+        }
+
+        for (int j = i+1; j < n; j++) {
+            debug("ball %d with ball %d\n", i, j);
+
+            vect<double> u = (v[j].c - v[i].c);
+
+            double ca = (sq(v[i].r + s) + u.sq() - sq(v[j].r + s)) / (2. * (v[i].r + s) * u.norm());
+            double sa = 1. - sq(ca);
+            
+            u = u * (1. / u.norm());
+
+            if (sa < 0. || isnan(ca) || isnan(sa)) {
+                ca = 1.;
+                sa = 0.;
+            }
+
+            sa = sqrt(sa);
+
+            for (int k = 0; k < 2; k++) {
+                sa = -sa;
+
+                vect<double> a(ca * u.x + sa * u.y, - sa * u.x + ca * u.y);
+                a = a * (v[i].r + s) + v[i].c;
+
+                if (solve(s, a))
+                    return 1;
+            }
+        }
+    }
+
+    //return 1;
+    return 0;
+}
+
+int main () {
+    scanf("%d", &tc);
+    while (tc--) {
+        scanf("%lf %lf", &w, &h);
+        scanf("%d", &n);
+        for (int i = 0; i < n; i++)
+            scanf("%lf %lf %lf", &v[i].c.x, &v[i].c.y, &v[i].r);
+
+        double lo = 0.;
+        double hi = 1e6+7;
+
+        while (hi - lo > eps) {
+            double mid = .5*(lo+hi);
+
+            if (solve(mid))
+                lo = mid;
+            else
+                hi = mid;
+        }
+
+        printf("%.20f\n", lo);
+    }
+}
