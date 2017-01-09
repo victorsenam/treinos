@@ -235,3 +235,48 @@ template<typename cood> struct circ {
         return (d < -eps) - (d > eps);
     }
 };
+
+int n;
+vect<double> v, c, o, l;
+double p;
+const double eps = 1e-6;
+
+int main () {
+    scanf("%d", &n);
+
+    c.x = c.y = o.x = 50.;
+    o.y = 0.;
+    for (int i = 0; i < n; i++) {
+        scanf("%lf %lf %lf", &p, &v.x, &v.y);
+        v.y = 100. - v.y;
+        printf("Case #%d: ", i+1);
+        
+        bool bl = 0;
+        if (p == 0.) {
+            bl = 0;
+        } else if (v.norm(c) - 50. <= eps) {
+            l = (o-c).rotate(2. * pi * p / 100.) + c;
+            
+            int cur = c.clockwise(o, v, eps);
+            int por = c.clockwise(o, l, eps);
+            int rel = c.clockwise(v, l, eps);
+
+            if (cur == 0 && v.y - 50. <= eps) {
+                bl = 1;                
+            } else if (por == 0 && l.y - 50. <= eps) {
+                bl = 0;
+            } else if (por > cur) {
+                bl = 1;
+            } else if (por < cur) {
+                bl = 0;
+            } else {
+                bl = (rel <= 0);
+            }
+        }
+
+        if (bl)
+            printf("black\n");
+        else
+            printf("white\n");
+    }
+}
