@@ -236,27 +236,11 @@ template<typename cood> struct circ {
     }
 };
 
-const int N = 6;
+const int N = 507;
 
-poly<double> pl;
-vect<double> v;
-vect<double> dr;
-int in[N];
+int n, m;
+vect<double> v[N];
 
 int main () {
-    dr = vect<double>(1., 0.);
-        
-    
-    for (int i = 0; i < N; i++)
-        scanf("%d", &in[i]);
+    scanf("%d %d", &n, &m);
 
-    for (int i = 0; i < N; i++) {
-        pl.v.push_back(v);
-        v = v + dr * double(in[i]);
-        dr = dr.rotate(2. * pi / 6.);
-    }
-
-    double ar = abs(pl.area());
-
-    printf("%d\n", int(2. * ar / sqrt(3.) + 0.1));
-}

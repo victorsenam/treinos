@@ -1,88 +1,68 @@
-// CLARAMENTE INCOMPLETO
-
 #include <bits/stdc++.h>
+#define debug(...) {fprintf(stdout, __VA_ARGS__);}
 
 using namespace std;
+typedef long long int ll;
 
-typedef long long int num;
+const int N = 2e3+7;
+const ll MOD = 1e9+7;
+const int M = 2e5+7;
 
-const int N = 2007;
-const num MOD = 1000000007;
+ll h, w;
+int n;
+ll v[N][2];
 
-num mod (num a)
-{ return ((a%MOD + MOD)%MOD); }
+ll fat[M], ift[M];
 
-int n, m, q;
-int l[N], c[N], ls, cs;
-pair<int, int> p[N];
+ll memo[N];
+int visi[N];
 
-num memo[N][N];
-bool visi[N][N];
-num exp[N];
-bool vexp[N];
-num fat[N];
-
-num finv (num a) {
-    if (vexp[a])
-        return exp[a];
-    vexp[a] = 1;
-
-    num r = 1;
-    num e = MOD-2;
+ll fexp (ll a, ll e) {
+    ll r = 1;
     while (e) {
-        a = mod(a*a);
-        if (e&1)
-            r = mod(r*a);
-        e >= 1;
+        if (e & 1) r = (r * a)%MOD;
+        a = (a * a)%MOD;
+        e >>= 1;
     }
-    return exp[a] = r;
+    return r;
 }
 
-num choose (num n, num k) {
-    num res = fat[n];
-    res = mod(res*finv(fat[k]));
-    res = mod(res*finv(fat[k]));
-    return res;
+ll ways (ll a, ll b) {
+    if (a < 0 || b < 0 || (!a && !b)) return 0;
+    return (fat[a+b] * ((ift[a] * ift[b])%MOD))%MOD;
 }
 
-num pd (int i, int j) {
-    if (i >= ls || j >= cs)
-        return 0;
-    if (i == ls - 1 && j == cs - 1)
-        return 1;
+ll pd (int i) {
+    ll & me = memo[i];
+    if (visi[i]) return me;
+    visi[i] = 1;
 
-    if (visi[i][j])
-        return memo[i][j];
-    visi[i][j] = 1;
-    num & me = memo[i][j];
-    me = 0;
+    me = ways(h - v[i][0], w - v[i][1]);
+    for (int j = 0; j <= n; j++) {
+        ll loc = ways(v[j][0] - v[i][0], v[j][1] - v[i][1]);
+        if (!loc) continue;
+        loc = (loc * pd(j))%MOD;
+        me = ((me-loc)%MOD + MOD)%MOD;
+    }
 
-    num x = 
+    return me;
 }
 
 int main () {
-    scanf("%d %d %d", &n, &m, &q);
-
-    fat[0] = fat[1] = 1;
-    for (num i = 2; i < N; i++)
-        fat[i] = mod(fat[i-1]*i);
-
-    p[0] = make_pair(0, 0);
-    for (int i = 1; i <= q; i++) {
-        scanf("%d %d", l+i, c+i);
-        l[i]--; c[i]--;
-        p[i] = make_pair(l[i], c[i]);
+    fat[0] = 1;
+    for (ll i = 1; i < M; i++) {
+        fat[i] = (fat[i-1] * i)%MOD;
     }
-    l[q] = n;
-    c[q] = m;
-    p[q++] = make_pair(n, m);
+    ift[M-1] = fexp(fat[M-1], MOD-2);
+    for (ll i = M-2; i >= 0; i--) {
+        ift[i] = (ift[i+1] * (i+1))%MOD;
+    }
 
-    sort(l, l+q);
-    sort(c, c+q);
-    sort(p, p+q);
+    scanf("%lld %lld %d", &h, &w, &n);
 
-    ls = unique(l, l+q) - l;
-    cs = unique(c, c+q) - c;
+    v[0][0] = v[0][1] = 1;
+    for (int i = 1; i <= n; i++)
+        scanf("%lld %lld", &v[i][0], &v[i][1]);
 
-    printf("%d\n", pd(0,0));
+    printf("%lld\n", pd(0));
 }
