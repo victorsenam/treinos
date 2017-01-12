@@ -81,8 +81,36 @@ template<typename cood> struct vect {
     { return sqrt(sq(ot)); }
     inline cood area (const vect<cood> & a, const vect<cood> & b) const // oriented area (positive if b is to the right of a)
     { return (a-(*this))*(b-(*this)); }
-    int clockwise (const vect<cood> & a, const vect<cood> & b, cood eps = 0) const // clockwise comparsion (to the right means greater)
+
+    // XXX: not a full comparsion operator, use compare for ordering
+    // clockwise comparsion (to the right means greater)
+    // returns -1 if a < b [a->b is clockwise]
+    // returns 0 if a == b [colinear]
+    // returns 1 if a > b [a->b is counter-clockwise]
+    int clockwise (const vect<cood> & a, const vect<cood> & b, cood eps = 0) const
     { cood o = area(a, b); return (o > -eps) - (o < eps); }
+
+    // compare auxiliary function
+    // returns 0 if a is to the right (greater x), straight up or is equal
+    // returns 1 otherwise
+    inline bool compare_getside (const vect<cood> & a, cood eps = 0) const
+    { if (abs(a.x - x) > eps) return a.x < x; return a.y - y < -eps; }
+
+    // full comparsion
+    // orders by clockwise order starting from the (0,-1) direction (upwards)
+    // settles draws by proximity to this point
+    bool compare (const vect<cood> & a, const vect<cood> & b, cood eps = 0) const {
+        bool s[2] = {compare_getside(a), compare_getside(b)};
+        if (s[0] == s[1]) {
+            int pr = clockwise(a, b, eps);
+            if (pr)
+                return (pr < 0);
+
+            return sq(a) < sq(b);
+        } else {
+            return s[0] < s[1];
+        }
+    }
 };
 
 template<typename cood> struct line {

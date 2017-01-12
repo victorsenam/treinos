@@ -1,0 +1,11 @@
+#line 2 "AlphabetOrderDiv2.cpp"
+#include <bits/stdc++.h>
+using namespace std;
+
+typedef long long int ll;
+
+class AlphabetOrderDiv2 {
+    public:
+    string isOrdered(vector <string> words) {
+    }
+};
