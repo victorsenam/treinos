@@ -4,47 +4,50 @@
 using namespace std;
 typedef long long int ll;
 
+const int K = 20;
 const int N = 75;
-const int K = 23;
 const ll MOD = 1e9+7;
 
-int memo[2][(1<<K)];
+int memo[(1<<K)][N];
 char b[N+3];
+int nx[N+3];
 int n;
 
-ll pd (int msk, int i, bool calc = 0) {
-    if (!calc) return memo[i&1][msk];
+ll pd (int msk, int i) {
+    if (memo[msk][i] != -1)
+        return memo[msk][i];
+
     ll me = 0;
 
-    for (int j = 1; j <= K && !me; j++)
-        me += (msk == ((1<<j)-1));
+    if (!msk && i < n)
+        me = pd(0, i+1);
 
-    ll cr = 0;
-    for (int j = i; j < n; j++) {
-        cr *= 2;
-        cr += b[j]-'0';
+    for (int k = 1; k < (1<<K); k = (k + k + 1))
+        if (msk == k)
+            me++;
 
-        if (!cr) continue;
+    int cr = 0;
+    for (int j = nx[i]; j < n; j++) {
+        cr = (cr + cr + b[j] - '0');
         if (cr > K) break;
-        
-        me = (ll(me) + pd((msk|(1<<(cr-1))), j+1))%MOD;
+        me = (me + pd(msk|(1<<(cr-1)), j+1))%MOD;
     }
-    return memo[i&1][msk] = me;
+    
+    memo[msk][i] = me;
+    return me;
 }
 
 int main () {
+    memset(memo, -1, sizeof memo);
     scanf("%d", &n);
-    for (int i = 0; i < n; i++)
-        scanf(" %s", &b[i]);
+    scanf(" %s", b);
 
-    ll res = 0;
-    for (int i = n; i >= 0; i--) {
-        for (int msk = 0; msk < (1<<K); msk++) {
-            ll loc = pd(msk, i, 1);
-            if (!msk)
-                res = (res + loc)%MOD;
-        }
-    }
-    
-    printf("%lld\n", res);
+    nx[n] = n;
+    for (int i = n-1; i >= 0; i--)
+        if (b[i] != '0')
+            nx[i] = i;
+        else
+            nx[i] = nx[i+1];
+
+    printf("%lld\n", pd(0, 0));
 }
