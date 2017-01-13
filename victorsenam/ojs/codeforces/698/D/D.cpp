@@ -264,17 +264,48 @@ template<typename cood> struct circ {
     }
 };
 
-const int K = 7;
+const int K = 8;
 const int N = 1e3+7;
 
 int n, k;
-vect<int> a[K], v[N];
-int to[K][N][2];
+vect<ll> a[K], v[N];
+int to[K][N];
+int hit[N];
+ll used[N];
+int p[N];
+ll turn;
+
+int solve (int u, int i) {
+    if (i >= k) return 0;
+    int w = u;
+    int r = 1;
+
+    do {
+        w = to[p[i]][w];
+    } while (w != u && used[w] == turn);
+
+    while (w != u && line<ll>(a[p[i]], v[u]).intersects(v[w])) {
+        int loc = solve(w, i+r);
+        if (!loc) return 0;
+        r += loc;
+
+        do {
+            w = to[p[i]][w];
+        } while (w != u && used[w] == turn);
+    }
+
+    used[u] = turn;
+    hit[u] = 1;
+    return r;
+}
 
 int main () {
     scanf("%d %d", &k, &n);
 
-
+    if (n == 1) {
+        printf("1\n");
+        return 0;
+    }
     for (int i = 0; i < k; i++)
         scanf("%lld %lld", &a[i].x, &a[i].y);
     for (int i = 0; i < n; i++) {
@@ -288,10 +319,23 @@ int main () {
         });
 
         for (int j = 0; j < n; j++) {
-            to[i][p[j]][0] = p[(j+n-1)%n];
-            to[i][p[j]][1] = p[(j+1)%n];
+            to[i][p[j]] = p[(j+n-1)%n];
         }
     }
-
     
+    for (int i = 0; i < k; i++)
+        p[i] = i;
+
+    for (int i = 0; i < n; i++) {
+        do {
+            ++turn;
+            solve(i, 0);
+        } while (next_permutation(p, p+k) && k > 1);
+    }
+
+    int rr = 0;
+    for (int i = 0; i < n; i++)
+        rr += hit[i];
+    
+    printf("%d\n", rr);
 }
