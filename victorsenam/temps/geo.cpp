@@ -121,20 +121,15 @@ template<typename cood> struct line {
     {  if (t < s) swap(s,t); }
     line<cood> (vect<cood> a) : s(a), t(a) {}
 
-    inline line<cood> flip () const
-    { return line<cood>(s.flip(), t.flip()); }
     inline vect<cood> dir () const
     { return t-s; }
-
-    inline cood sq_dist (const vect<cood> & ot) const // squared distance to a vector
-    { return min(s.sq(ot), t.sq(ot)); }
 
     bool intersects (const line<cood> & ot, cood eps = 0) const {
         int a = s.clockwise(t, ot.s, eps); int b = s.clockwise(t, ot.t, eps);
 
         if (a == 0 && b == 0) { // colinear corner
-            if (!interval<cood>(s.x, t.x).intersects(interval<cood>(ot.s.x, ot.t.x), eps)) return 0;
-            if (!interval<cood>(s.y, t.y).intersects(interval<cood>(ot.s.y, ot.t.y), eps)) return 0;
+            if (!inte<cood>(s.x, t.x).intersects(inte<cood>(ot.s.x, ot.t.x), eps)) return 0;
+            if (!inte<cood>(s.y, t.y).intersects(inte<cood>(ot.s.y, ot.t.y), eps)) return 0;
             return 1;
         }
 
