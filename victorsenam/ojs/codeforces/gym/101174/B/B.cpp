@@ -117,8 +117,15 @@ vect<ll> v[N];
 vect<ll> o;
 int f[2][2];
 
-vect<ll> q[4][N];
-int qs[4];
+vect<ll> q[9][N];
+int qs[9];
+
+int getclass (const vect<ll> & a) {
+    int r = ((a.y > 0) + (a.y >= 0));
+    r *= 3;
+    r += ((a.x > 0) + (a.x >= 0));
+    return r;
+}
 
 int main () {
     scanf("%d", &n);
@@ -129,41 +136,43 @@ int main () {
         scanf("%lld %lld", &v[i].x, &v[i].y);
         v[i] = v[i] - o;
 
-        if (v[i].x >= 0 && v[i].y >= 0)
-            q[0][qs[0]++] = v[i];
-        else if (v[i].x <= y && v[i].y <= 0)
-            q[2][qs[2]++] = v[i];
-        else if (v[i].x > 0 && v[i].y < 0)
-            q[3][qs[3]++] = v[i];
-        else
-            q[1][qs[1]++] = v[i];
+        q[getclass(v[i])][qs[getclass(v[i])]++] = v[i];
     }
 
     o = vect<ll>(0,0);
-
-    sort(v, v+n, [] (const vect<ll> & a, const vect<ll> & b) {
-        return a.compare(b, vect<ll>(0,1));
-    });
-
-    // separei os quadrante, só fazer
-
-    int j = 0;
-    for (int i = 0; i < n; i++) {
-        if (v[i].x > 0 || v[i].y < 0) break;
-        int lf = 0;
-        while (i + lf < n && o.left(v[i], v[i+lf]) == 0) lf++;
-        j = max(i+lf+1, j);
-        while (j < n && o.left(v[i], v[j]) < 0) j++;
-        int rg = 0;
-        while (j + rg < n && o.left(v[i], v[j+rg]) == 0) rg++;
-
-        debug("%d-%d-%d-%d\n", i, i+lf, j, j+rg);
-
-        r[0] = min(r[0], j-(i+lf)+1);
-        r[1] = min(r[1], j+rg-i+1);
-        i += lf;
-        j += rg;
+    for (int i = 0; i < 9; i++) {
+        sort(q[i], q[i]+qs[i], [] (const vect<ll> & a, const vect<ll> & b) {
+            return (o.left(a,b) == -1);
+        });
+        
+        /*
+        printf("%d:", i);
+        for (int j = 0; j < qs[i]; j++)
+            printf(" (%d,%d)", q[i][j].x, q[i][j].y);
+        printf("\n");
+        */
     }
 
-    printf("%d %d\n", r[0], r[1]);
+    int r[2] = {
+        min(qs[6]+qs[7]+qs[8], qs[2]+qs[5]+qs[8]),
+        max(qs[6]+qs[7]+qs[8]+qs[3]+qs[4]+qs[5], qs[2]+qs[5]+qs[8]+qs[1]+qs[4]+qs[7])
+    };
+
+    int j = 0;
+    for (int i = 0; i < qs[6];) {
+        int lf = 0;
+        while (i + lf < qs[6] && o.left(q[6][i+lf], q[6][i]) == 0)
+            lf++;
+        while (j < qs[2] && o.left(q[6][i], q[2][j]) == -1)
+            j++;
+        int rg = 0;
+        while (j + rg < qs[2] && o.left(q[6][i], q[2][j+rg]) == 0)
+            rg++;
+
+        r[0] = min(r[0], i+qs[2]-j-rg+qs[5]+qs[7]+qs[8]);
+        r[1] = max(r[1], i+lf+qs[2]-j+qs[5]+qs[7]+qs[8]);
+        i += lf;
+    }
+
+    printf("%d %d\n", r[0]+1, r[1]+1+qs[4]);
 }
