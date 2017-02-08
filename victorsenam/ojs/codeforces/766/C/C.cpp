@@ -34,7 +34,7 @@ ll pd (int i) {
         if (i + a[ss[j]] >= j) {
             l = min(l, i+a[ss[j]]);
         } else {
-            l = i+a[ss[j]];
+            l = j;
         }
     }
 
@@ -43,6 +43,7 @@ ll pd (int i) {
         me = (me + pd(j))%MOD;
         m2[i] = min(m2[i], m2[j]+1);
         m3[i] = max(m3[i], ll(j-i));
+        m3[i] = max(m3[i], m3[j]);
     }
 
     return me;
