@@ -12,13 +12,13 @@ typedef complex<double> cpx;
 const int N = 5e4+7;
 
 vector<cpx> aux[3];
-int p[4*N];
+vector<int> p;
 
-// XXX assumes v.size() is power of 2
-// if inv is true, runs inverse DFT
-void fft (vector<cpx> & ans, vector<cpx> & a, bool inv) {
+void fft (vector<cpx> & ans, vector<cpx> & a, vector<int> & p, bool inv) {
     int n = a.size();
     assert(!(n&(n-1)));
+    assert(n == int(ans.size()));
+    assert(n == int(p.size()));
 
     for (int i = 0; i < n; i++)
         ans[i] = a[p[i]];
@@ -54,8 +54,10 @@ int main () {
     n = strlen(str[0]);
     int sz = 2*n;
     while (sz&(sz-1)) sz += (sz&-sz); // geq power of 2
+
     v[0].resize(sz, 0);
     v[1].resize(sz, 0);
+    p.resize(sz,0);
 
     for (int i = 1; i < sz; i++)
         p[i] = (p[i >> 1] >> 1) | ((i&1) ? (sz >> 1) : 0);
@@ -65,14 +67,14 @@ int main () {
     for (char a = 'A'; a <= 'E'; a++) {
         for (int i = 0; i < n; i++)
             v[0][i] = v[0][i+n] = (str[0][i] == a);
-        fft(aux[0], v[0], 0);
+        fft(aux[0], v[0], p, 0);
         for (char b = 'a'; b <= 'e'; b++) {
             for (int i = 0; i < n; i++)
                 v[1][n-i-1] = (str[1][i] == b);
-            fft(aux[1], v[1], 0);
+            fft(aux[1], v[1], p, 0);
             for (int i = 0; i < sz; i++)
                 aux[1][i] *= aux[0][i];
-            fft(aux[2], aux[1], 1);
+            fft(aux[2], aux[1], p, 1);
 
             for (int i = 0; i < n; i++)
                 res[i][a-'A'][b-'a'] = (aux[2][i+n-1].real() + 0.2);
