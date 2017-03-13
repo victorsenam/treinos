@@ -1,5 +1,5 @@
 #include <bits/stdc++.h>
-//#define debug(...) {fprintf(stdout, __VA_ARGS__);}
+//#define debug(...) {fdebug(stdout, __VA_ARGS__);}
 #define debug(...) {}
 
 using namespace std;
@@ -7,16 +7,86 @@ typedef long long int ll;
 typedef pair<int, int> pii;
 #define pb push_back
 
-const int N = 4e6+7;
-const int K = 30;
+const int N = 1e5+7;
+const int K = 22;
+const int DEAD = INT_MAX;
 
 int n, qs;
-int hd[N], nx[N], to[N], wg[N], es; // graph
+int hd[N], nx[2*N], to[2*N], wg[2*N], es; // graph
 int pr[N], sz[N]; // rooting
-int c_pr[K][N], c_ds[K][N], c_de[N]; // centroid
+int c_pr[N][K], c_ds[N][K];
+short c_de[N]; // centroid
 
-multiset<int> fher[N], fpar[N], res; // info
-multiset<int>::reverse_iterator it;
+struct node {
+    int time;
+    int u;
+    short k;
+    int val;
+
+    inline bool operator < (const node & ot) const {
+        if (val != ot.val)
+            return val < ot.val;
+        return u < ot.u;
+    }
+};
+
+node aux[4];
+int ls[N][K][4];
+
+struct heap {
+    priority_queue<node> pq;
+    int currn;
+    short ty;
+
+    int get (int q) {
+        debug("get %d from %d[%d]\n", q, currn, ty);
+        int val = 0;
+        int i = 0;
+        while (val != DEAD && i < q) {
+            if (pq.empty()) {
+                val = DEAD;
+            } else {
+                aux[i] = pq.top();
+                pq.pop();
+                debug("\t found %d(%d) time %d/%d ", aux[i].val, aux[i].u, aux[i].time, ls[aux[i].u][aux[i].k][ty]);
+                if (aux[i].time == ls[aux[i].u][aux[i].k][ty]) {
+                    val += aux[i].val;      
+                    i++;
+                } else {
+                    debug("SKIP\n");
+                }
+                debug("\n");
+            }
+        }
+        for (int j = 0; j < i; j++) {
+            pq.push(aux[j]);
+        }
+        if (val == DEAD) {
+            debug("VAL: DEAD\n");
+        } else {
+            debug("VAL: %d\n", val);
+        }
+        return val;
+    }
+
+    inline void add (int u, short k, int val) {
+        ls[u][k][ty]++;
+        if (val == DEAD) return;
+        aux[0].time = ls[u][k][ty];
+        aux[0].k = k;
+        aux[0].u = u;
+        aux[0].val = val;
+        debug("add %d(%d) on %d[%d] time %d\n", val, u, currn, ty, ls[u][k][ty]);
+        pq.push(aux[0]);
+    }
+
+    inline void remove (int u, short k) {
+        //debug("remove (%d) from %d[%d]\n", u, currn, ty);
+        ls[u][k][ty]++;
+    }
+};
+
+heap her[N], par[N], res;
 int cr[N]; // info
 
 int root (int u, int p) {
@@ -34,8 +104,8 @@ int root (int u, int p) {
 void dfs (int u, int p, int w, int r) {
     int d = c_de[r];
 
-    c_pr[d][u] = p;
-    c_ds[d][u] = w;
+    c_pr[u][d] = p;
+    c_ds[u][d] = w;
 
     for (int ed = hd[u]; ed; ed = nx[ed]) {
         if (c_de[to[ed]] || to[ed] == p) continue;
@@ -71,94 +141,53 @@ void build (int fr, int depth) {
 }
 
 void upd (int u) {
+    debug("UPDATE %d\n", u);
     int val;
-    debug("upd %d\n", u+1);
-    for (int k = c_de[u]-1; k > 0; k--) {
-        int p = c_pr[k][u];
-        int v = c_pr[k+1][u];
-        int w = c_ds[k][u];
+    for (short k = c_de[u]-1; k > 0; k--) {
+        debug("level %d\n", k);
+        int p = c_pr[u][k];
+        int v = c_pr[u][k+1];
+        int w = c_ds[u][k];
 
-        val = 0;
-        if (fher[p].size() >= 2) {
-            it = fher[p].rbegin();
-            val += *it;
-            ++it;
-            val += *it;
-
-            debug("tirando %d do res\n", val);
-            res.erase(res.find(val));
-        }
-
-        if (fpar[v].size() >= 1) {
-            it = fpar[v].rbegin();
-
-            debug("tirando %d de validos de %d\n", *it, p+1);
-            fher[p].erase(fher[p].find(*it));
-        }
+        //res.remove(p, 0);
+        //her[p].remove(v, k);
 
         if (cr[u]) {
-            fpar[v].erase(fpar[v].find(w));
-            debug("tirando %d de %d\n", w, v+1);
+            par[v].remove(u, k);
         } else {
-            fpar[v].insert(w);
-            debug("colocando %d em %d\n", w, v+1);
+            par[v].add(u, k, w);
         }
 
-        if (fpar[v].size() >= 1) {
-            it = fpar[v].rbegin();
-            debug("colocando %d em validos de %d\n", *it, p+1);
-            fher[p].insert(*it);
-        }
-
-        val = 0;
-        if (fher[p].size() >= 2) {
-            it = fher[p].rbegin();
-            val += *it;
-            ++it;
-            val += *it;
-
-            debug("colocando %d em res\n", val);
-            res.insert(val);
-        }
+        her[p].add(v, k, par[v].get(1));
+        res.add(p, 0, her[p].get(2));
     }
 
-    val = 0;
-    if (fher[u].size() >= 2) {
-        it = fher[u].rbegin();
-        val += *it;
-        ++it;
-        val += *it;
-
-        debug("tirando %d do res\n", val);
-        res.erase(res.find(val));
-    }
-
+    debug("single\n");
+    //res.remove(u, 0);
+    
     if (cr[u]) {
-        debug("tirando %d de validos de %d\n", 0, u+1);
-        fher[u].erase(fher[u].find(0));
-        fher[u].erase(fher[u].find(0));
+        her[u].remove(u, 0);
+        her[u].remove(n, K-1);
     } else {
-        debug("colocando %d em validos de %d\n", 0, u+1);
-        fher[u].insert(0);
-        fher[u].insert(0);
+        her[u].add(u, 0, 0);
+        her[u].add(n, K-1, 0);
     }
 
-    val = 0;
-    if (fher[u].size() >= 2) {
-        it = fher[u].rbegin();
-        val += *it;
-        ++it;
-        val += *it;
-
-        debug("colocando %d em res\n", val);
-        res.insert(val);
-    }
+    res.add(u, 0, her[u].get(2));
 
     cr[u] = !cr[u];
 }
 
 int main () {
     scanf("%d", &n);
+
+    for (int i = 0; i < N; i++) {
+        her[i].ty = 0;
+        par[i].ty = 1;
+        her[i].currn = par[i].currn = i;
+    }
+    res.ty = 2;
+    res.currn = 0;
 
     es = 2;
     for (int i = 1; i < n; i++) {
@@ -181,10 +210,11 @@ int main () {
         scanf(" %c", &c);
 
         if (c == 'A') {
-            if (res.size())
-                printf("%d\n", *res.rbegin());
-            else
+            int loc = res.get(1);
+            if (loc == DEAD)
                 printf("They have disappeared.\n");
+            else
+                printf("%d\n", loc);
         } else {
             int a;
             scanf("%d", &a);
