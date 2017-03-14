@@ -18,7 +18,7 @@ void dfs (int u, int d) {
     lv[u] = d;
     for (int i = 0; i < adj[u].size(); i++)
         dfs(adj[u][i], d+1);
-    in[u][1] = ps-1;
+    in[u][1] = ps;
 }
 
 void build (int u, int l, int r) {
@@ -26,25 +26,25 @@ void build (int u, int l, int r) {
     val[u] = 0;
     sd[u][0] = l;
     sd[u][1] = r;
-    if (l == r)
+    if (l + 1 == r)
        return;
     int mid = (l+r)/2;
     build(2*u, l, mid);
-    build(2*u+1, mid+1, r);
+    build(2*u+1, mid, r);
 }
 
 int upd (int u, int i, int x) {
     assert(u < 4*N);
-    if (i < sd[u][0] || sd[u][1] < i) return val[u];
-    if (sd[u][0] == i && sd[u][1] == i) return val[u] = max(val[u], x);
+    if (i < sd[u][0] || sd[u][1] <= i) return val[u];
+    if (sd[u][0] == i && sd[u][1] == i+1) return val[u] = max(val[u], x);
     return val[u] = max(upd(2*u, i, x), upd(2*u+1, i, x));
 }
 
 int get (int u, int l, int r) {
     assert(u < 4*N);
-    if (r < sd[u][0] || sd[u][1] < l) return 0;
-    if (sd[u][0] <= l && r <= sd[u][1]) return val[u];
-    return max(upd(2*u, l, r), upd(2*u+1, l, r));
+    if (sd[u][1] <= l || sd[u][0] >= r) return 0;
+    if (l <= sd[u][0] && sd[u][1] <= r) return val[u];
+    return max(get(2*u, l, r), get(2*u+1, l, r));
 }
 
 int main () {
@@ -73,7 +73,7 @@ int main () {
 
         ps = 0;
         dfs(0, 0);
-        build(1, 0, N-1);
+        build(1, 0, N);
 
         for (int _i = 0; _i < 2*n; _i++) {
             int u = p[_i]/2;
