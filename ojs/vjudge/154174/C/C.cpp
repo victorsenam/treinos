@@ -24,14 +24,16 @@ set<pair<int, int> > s;
 int dpt[N], rmv[N];
 int res = 0;
 
-int dfs (int u, int d) {
+void dfs (int u, int d) {
+    if (rmv[u]) return;
     if (s.find(pii(dpt[u],u)) != s.end())
         s.erase(pii(dpt[u],u));
     dpt[u] = d;
     s.insert(pii(dpt[u],u));
-    
-    for (int v : adj[u])
+
+    for (int v : adj[u]) {
         dfs(v, d+1);
+    }
 }
 
 void root () {
@@ -76,12 +78,11 @@ void go (int u) {
     rmv[u] = 1;
     s.erase(pii(dpt[u], u));
     
+    go(pr[u]);
+
     for (int v : adj[u]) {
-        if (rmv[v]) continue;
         dfs(v, 1);
     }
-
-    go(pr[u]);
 }
 
 int main () {
@@ -94,6 +95,7 @@ int main () {
             hd[i] = 0;
             pr[i] = -1;
             dg[i] = 0;
+            rmv[i] = 0;
             adj[i].clear();
         }
         s.clear();
