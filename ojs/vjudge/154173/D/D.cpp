@@ -7,114 +7,187 @@
 
 using namespace std;
 typedef long long int ll;
-typedef pair<ll, ll> pii;
+typedef pair<int, int> pii;
 #define pb push_back
 
-const int N = 127;
-const int M = 1e4+7;
+const int N = 2e6+7;
+const int Q = 4e3+7;
+const ll INF = 1e12;
 
-ll res[N][N];
-stack<pii> st;
-vector<pii> adj[M];
-ll dist[M], seen[M];
-int n, m, s;
-int t;
-ll st[N][2];
-int x, y;
-int p[N];
 int ts;
 
-int djs (int u) {
-    priority_queue<pii> pq;
+ll n, m, q, cap;
+ll hd[N], to[N], nx[N], wg[N], es;
 
-    for (int i = 0; i < n; i++) {
-        dist[i] = 1e12;
-        seen[i] = 0;
+ll dist[N], visi[N];
+
+ll adj[Q][Q];
+ll vx[Q][2];
+
+struct vtx {
+    int u;
+    ll d, g;
+
+    bool operator < (const vtx & ot) const {
+        if (d != ot.d)
+            return d > ot.d;
+        if (g != ot.g)
+            return g < ot.g;
+        return u < ot.u;
     }
-    dist[u] = 0;
+};
 
-    pq.push(pii(0, u));
+struct rep {
+    int u;
+    ll g;
+
+    rep (vtx x) {
+        u = x.u;
+        g = x.g;
+    }
+
+    bool operator < (const rep & ot) const {
+        if (g != ot.g)
+            return g < ot.g;
+        return u < ot.u;
+    }
+};
+
+ll djs (int u) {
+    map<rep, ll> mp;
+    set<rep> vs;
+    priority_queue<vtx> pq;
+
+    vtx cur;
+    cur.u = u;
+    cur.g = 0;
+    cur.d = 0;
+
+    pq.push(cur);
+    mp[cur] = 0;
 
     while (!pq.empty()) {
-        int cur = pq.top().second;
-        int dst = -pq.top().first;
+        cur = pq.top();
         pq.pop();
 
-        if (seen[cur] == 1) continue;
-        seen[cur] = 1;
-        
-        for (pii ed : adj[cur]) {
-            int v = ed.first;
-            int nxt = dst + ed.second;
-            if (!seen[v] && (dist[v] == -1 || dist[v] > nxt)) {
-                dist[v] = nxt;
-                pq.push(pii(-dist[v], v));
+        if (cur.u == q-1)
+            return cur.d;
+
+        if (vs.find(cur) != vs.end())
+            continue;
+        vs.insert(cur);
+
+        //printf("(%lld,%lld) : %lld\n", vx[cur.u][0]+1, cur.g, cur.d);
+
+        for (int v = 0; v < q; v++) {
+            vtx nxt = cur;
+            nxt.u = v;
+
+            if (adj[cur.u][nxt.u] > cap)
+                continue;
+            
+            nxt.g = cap - adj[cur.u][nxt.u];
+            nxt.d = cur.d + (cap - cur.g)*vx[cur.u][1];
+            assert(nxt.d >= cur.d);
+            if (mp.find(nxt) == mp.end() || mp[nxt] > nxt.d) {
+                mp[nxt] = nxt.d;
+                pq.push(nxt);
+            }
+
+            if (adj[cur.u][nxt.u] < cur.g)
+                continue;
+
+            nxt.g = 0;
+            nxt.d = cur.d + (adj[cur.u][nxt.u] - cur.g)*vx[cur.u][1];
+            assert(nxt.d >= cur.d);
+            if (mp.find(nxt) == mp.end() || mp[nxt] > nxt.d) {
+                mp[nxt] = nxt.d;
+                pq.push(nxt);
             }
         }
     }
+
+    int c = 0;
+    while(true) c++;
 }
 
 int main () {
     scanf("%d", &ts);
+    
     while (ts--) {
-        scanf("%d %d %d %d", &n, &m, &s, &t);
+        scanf("%lld %lld %lld %lld", &n, &m, &q, &cap);
 
-        for (int i = 0; i < n; i++)
-            adj[i].clear();
+        for (int i = 0; i < n; i++) {
+            hd[i] = 0;
+        }
 
+        es = 2;
         for (int i = 0; i < m; i++) {
-            int a, b, w;
-            scanf("%d %d %d", &a, &b, &w);
+            int a, b;
+            ll w;
+            scanf("%d %d %lld", &a, &b, &w);
             a--; b--;
 
-            adj[a].push_back(pii(b, w));
-            adj[b].push_back(pii(a, w));
-        }
-        
-        for (int i = 0; i < s; i++) {
-            scanf("%d %d", &st[i][0], &st[i][1]);
-            st[i][0]--;
-            p[i] = i;
-        }
-        scanf("%d %d", &x, &y);
-        x--; y--;
-
-        p[s] = s;
-        st[s][0] = y;
-        st[s][1] = 0;
-
-        for (int _i = 0; _i <= s; _i++) {
-            int i = st[_i][0];
-            ll w = st[_i][1];
-
-            djs(i);
-
-            for (int _j = 0; _j <= s; _j++) {
-                int j = st[_j][0];
-                res[i][j] = dist[j];
-            }
+            to[es] = b; nx[es] = hd[a]; wg[es] = w; hd[a] = es++;
+            to[es] = a; nx[es] = hd[b]; wg[es] = w; hd[b] = es++;
         }
 
-        for (int _i = 0; _i < s; _i++)
-            for (int _j = 0; _j <= s; _j++)
-                printf("%d %d : %lld\n", st[_i][0]+1, st[_j][0]+1, res[st[_i][0]][st[_j][0]]);
+        for (int i = 0; i < q; i++) {
+            scanf("%lld %lld", &vx[i][0], &vx[i][1]);
+            vx[i][0]--;
+        }
 
-        sort(p, p+s, [] (int i, int j) {
-            return st[i][1] < st[j][1];
-        });
+        for (int i = 0; i < 2; i++) {
+            scanf("%lld", &vx[q][0]);
+            vx[q][0]--;
+            vx[q][1] = 100;
+            q++;
+        }
+        vx[q-1][1] = 0;
 
-        for (int _k = s-1; _k >= 0; _k--) {
-            int k = st[p[_k]][0];
+        for (int k = 0; k < q; k++) {
+            priority_queue<vtx> pq;           
             
-            for (int _i = 0; _i < s; _i++) {
-                int i = st[p[_i]][0];
-                for (int _j = 0; _j <= s; _j++) {
-                    int j = st[p[_j]][0];
-                    res[i][j] = min(res[i][j], res[i][k] + res[k][j]);
+            for (int i = 0; i < n; i++) {
+                dist[i] = INF;
+                visi[i] = 0;
+            }
+
+            vtx cur;
+            cur.u = vx[k][0];
+            cur.g = 0;
+            cur.d = 0;
+
+            dist[cur.u] = 0;
+            pq.push(cur);
+
+            while (!pq.empty()) {
+                cur = pq.top();
+                pq.pop();
+
+                if (visi[cur.u])
+                    continue;
+                visi[cur.u] = 1;
+
+                for (int ed = hd[cur.u]; ed; ed = nx[ed]) {
+                    vtx nxt = cur;
+                    nxt.u = to[ed];
+                    nxt.d += wg[ed];
+
+                    if (dist[nxt.u] <= nxt.d)
+                        continue;
+                    
+                    dist[nxt.u] = nxt.d;
+                    pq.push(nxt);
                 }
             }
+
+            for (int i = 0; i < q; i++) {
+                adj[k][i] = dist[vx[i][0]];
+                //printf("%lld %lld : %lld\n", vx[k][0]+1, vx[i][0]+1, adj[k][i]);
+            }
         }
 
-        printf("%lld\n", res[x][y]);
+        printf("%lld\n", djs(q-2));
     }
 }
