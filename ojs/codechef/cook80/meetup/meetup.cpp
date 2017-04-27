@@ -1,89 +1,142 @@
 #include <bits/stdc++.h>
+#ifndef ONLINE_JUDGE
 #define debug(...) {fprintf(stdout, __VA_ARGS__);}
+#else
+#define debug(...) {}
+#endif
 
 using namespace std;
 typedef long long int ll;
 typedef pair<int, int> pii;
 #define pb push_back
-const int N = 1e3+7;
+
+const int N = 2e3+8;
 
 int n, m, q[2];
-char str[2][N][20];
-bool adj[2][N][N];
-char eda[20], edb[20];
-int siz[2][N];
-int s[2][N];
+int mat[2][N][N];
+int qtd[2][N];
 map<string, int> mp[2];
+char nm[2][N][20];
+char str[N];
+int cur[2];
+
+void fail () {
+    printf("C No\n");
+    fflush(stdout);
+    exit(0);
+}
+
+void succ () {
+    printf("C Yes\n");
+    fflush(stdout);
+    exit(0);
+}
+
+bool match (char * a, char * b) {
+    int i;
+    for (i = 0; a[i]; i++)
+        if (a[i] != b[i])
+            return 0;
+    return (a[i] == b[i]);
+}
+
+void rem (int k, int u) {
+    for (int i = 0; i < n; i++) {
+        if (mat[k][u][i]) {
+            mat[k][i][u] = 0;
+            qtd[k][i]--;
+        }
+    }
+    qtd[k][u] = -1;
+}
+
+void query (int k, int i) {
+    if (!k) {
+        int rm = cur[k] - qtd[k][i];
+        if (rm < (cur[k] + 1)/2)
+            fail();
+    } else {
+        int rm = qtd[k][i] + 1;
+        if (rm < (cur[k] + 1)/2) 
+            fail();
+    }
+
+    printf("%c %s\n", 'A'+k, nm[k][i]);
+    fflush(stdout);
+    scanf(" %s", str);
+
+    for (int j = 0; j < q[!k]; j++) {
+        if (match(str, nm[!k][j]))
+            succ();
+    }
+
+    for (int j = 0; j < q[!k]; j++) {
+        if (match(str, nm[!k][j])) {
+            for (int u = 0; u < n; u++) {
+                if (u != j && mat[k][j][u] == k)
+                    rem(k, u);
+            }
+            rem(k, j);
+        }
+    }
+}
 
 int main () {
     scanf("%d %d %d %d", &n, &m, &q[0], &q[1]);
 
     for (int k = 0; k < 2; k++) {
         for (int i = 0; i < n; i++) {
-            for (int j = 0; j < n; j++)
-                adj[k][i][j] = !k;
-            adj[k][i][i] = 1;
-        }
-
-        for (int i = 0; i < n; i++) {
-            scanf(" %s", str[k][i]);
-            mp[k][str[k][i]] = i;
+            scanf(" %s", nm[k][i]);
+            mp[k][nm[k][i]] = i;
         }
 
         for (int i = 0; i < m; i++) {
-            scanf(" %s %s", eda, edb);
+            int a, b;
+            scanf(" %s", str);
+            a = mp[k][str];
+            scanf(" %s", str);
+            b = mp[k][str];
 
-            int a = mp[k][eda];
-            int b = mp[k][edb];
-            adj[k][a][b] = adj[k][b][a] = k;
+            mat[k][a][b] = mat[k][b][a] = 1;
         }
 
-        for (int i =0 ; i <n ; i++)
+        for (int i = 0; i < n; i++)
             for (int j = 0; j < n; j++)
-                siz[k][i] += adj[k][i][j];
+                qtd[k][i] += mat[k][i][j];
     }
 
-    int qt[2] = {n,n};
+    cur[0] = cur[1] = n;
 
-    bool ok = 1;
-    while (ok) {
-        ok = 0;
-        for (int k = 0; k < 2; k++) {
-            int a = 0;
-            for (int i = 0; i < q[k]; i++)
-                if (siz[k][i] > siz[k][a])
-                    i = a;
+    while (true) {
+        int mni = 0;
+        for (int i = 0; i < q[0]; i++) {
+            if (qtd[0][mni] == -1 || (qtd[0][i] != -1 && qtd[0][mni] > qtd[0][i])) {
+                mni = i;
+            }
+        }
 
+        int mnj = 0;
+        for (int i = 0; i < q[1]; i++) {
+            if (qtd[1][mnj] < qtd[1][i]) {
+                mnj = i;
+            }
+        }
 
-            if (siz[k][a] < qt[k]/2)
-                break;
-
-            printf("%c %s\n", 'A'+k, str[k][a]);
-            fflush(stdout);
-
-            scanf("%s", edb);
-            int b = mp[!k][edb];
-
-            if (b <q[!k]) {
-                printf("C Yes\n");
+        if (qtd[0][mni] == -1) {
+            if (qtd[1][mnj] == -1) {
+                printf("C No\n");
+                fflush(stdout);
                 return 0;
             }
-
-            int i[2] = {a,b};
-            for (int z = 0; z < 2; z++) {
-                for (int j = 0; j < n; j++) {
-                    if (siz[k^z][j] != -1 && adj[k^z][i[z]][j]) {
-                        qt[k^z]--;
-                        ok = 1;
-                        siz[k^z][j] = -1;
-                        for (int i = 0; i < n; i++) {
-                            if (siz[k^z][i] != -1)
-                                siz[k^z][i] -= adj[k^z][j][i];
-                        }
-                    }
-                }
-            }
+            
+            query(1, mnj);   
+        } else if (qtd[1][mnj] == -1) {
+            query(0, mni);
+        } else {
+            if (cur[0] - qtd[0][mni] > qtd[1][mnj] + 1)
+                query(0, mni);
+            else
+                query(1, mnj);
         }
     }
-    printf("C No\n");
 }
