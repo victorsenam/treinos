@@ -123,6 +123,7 @@ int main () {
     cur[0] = cur[1] = n;
 
     while (true) {
+        assert(cur[0] == cur[1]); // assert
         if (cnn[0] == 0 || cnn[1] == 0) {
             fail();
         }
