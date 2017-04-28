@@ -54,12 +54,10 @@ void rem (int k, int u) {
     if (u < q[k])
         cnn[k]--;
     qtd[k][u] = -1;
+    cur[k]--;
 }
 
 void query (int k, int i) {
-    while (qq >= 10);
-    assert(qq < 10);
-    assert(qtd[k][i] != -1); //ok
     qq++;
     if (!k) {
         int rm = cur[k] - qtd[k][i];
