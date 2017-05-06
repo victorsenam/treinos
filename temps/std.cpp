@@ -7,7 +7,7 @@
 
 using namespace std;
 typedef long long int ll;
-typedef pair<int, int> pii;
+typedef pair<ll,ll> pii;
 #define pb push_back
 
 int main () {
