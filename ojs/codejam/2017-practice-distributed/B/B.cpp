@@ -69,7 +69,7 @@ int main () {
             for (int i = 0; i < nds; i++) {
                 while (j < nds && v[!k][j+1] <= v[k][i])
                     j++;
-                PutInt(i, j);
+                PutInt(i, j*jum);
                 PutLL(i, v[k][i]);
                 PutLL(i, v[!k][j]);
                 Send(i);
@@ -103,11 +103,14 @@ int main () {
             ll a = GetLL(nds); // o dos criticos (i, k)
             ll b = GetLL(nds); // o outro (j, !k)
 
+            //printf("[%d:%lld] %d[%lld] -> %d[%lld] = %d INIT\n", k, node, int(l), a, j, b, rs);
             for (int i = l; i < l + jum && i < n; i++) {
-                while (j < n && b + GetTime(!k, j) < a)
+                while (j < n && b + GetTime(!k, j) < a) {
                     b += GetTime(!k, j);
+                    j++;
+                }
                 rs += testDis(GetPosition(k, i), GetPosition(!k, j), GetPosition(!k, j+1), GetTime(!k, j), a-b);
-                //printf("[%d] %d[%lld] -> %d[%lld] = %d\n", k, i, a, j, b, rs);
+                //printf("[%d:%lld] %d[%lld] -> %d[%lld] = %d\n", k, node, i, a, j, b, rs);
                 a += GetTime(k, i);
             }
 
