@@ -43,7 +43,7 @@ void tryit (int a, int ch) {
     if (p < 1 || p > n) return;
 
     while (s > 0) {
-        if(query(p,a+(s/2))
+        if(query(p,a+(s/2)))
             s /= 2;
         else
             p += s;
