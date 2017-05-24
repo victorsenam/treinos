@@ -118,6 +118,12 @@ vec v[M];
 int ty[M];
 int visi[M], turn;
 
+bool operator< (vec a, vec b) {
+    if (a.x < b.x - eps || a.x > b.x + eps) return a.x < b.x - eps;
+    return a.y < b.y - eps;
+}
+
+map<vec, int> mp;
 vector<int> pts[N];
 vector<pair<int, double> > adj[M];
 
@@ -126,12 +132,14 @@ double dfs (int u, int p, int t, int d) {
         printf("-1\n");
         exit(0);
     }
+    assert(u != 1 || t == 0);
     if (ty[u] == t) {
         ty[u] = d;
         return 0;
     }
     if (visi[u] == turn || ty[u] == d)
         return 0;
+    visi[u] = turn;
 
     double rr = 0.;
     for (pair<int, double> v : adj[u]) {
@@ -148,6 +156,7 @@ int main () {
     cin >> n >> m;
 
     double res = 0.;
+    double check = 0.;
 
     for (int i = 0; i < n; i++) {
         cin >> pp[i][0].x >> pp[i][0].y >> pp[i][1].x >> pp[i][1].y;
@@ -156,6 +165,7 @@ int main () {
     m += 2;
     for (int i = 2; i < m; i++) {
         cin >> v[i].x >> v[i].y;
+        mp[v[i]] = i;
         ty[i] = 0; // closing
 
         for (int j = 0; j < n; j++)
@@ -164,6 +174,7 @@ int main () {
     }
     for (int i = 0; i < 2; i++) {
         cin >> v[i].x >> v[i].y;
+        mp[v[i]] = i;
         ty[i] = 1; // spec
 
         for (int j = 0; j < n; j++)
@@ -174,7 +185,9 @@ int main () {
     for (int i = 0; i < n; i++) {
         for (int j = 0; j < 2; j++) {
             v[m] = pp[i][j];
-            ty[m] = 1;
+            if (mp.find(v[m]) != mp.end()) continue;
+            mp[v[m]] = m;
+            ty[m] = 4;
             pts[i].push_back(m);
             m++;
         }
@@ -191,10 +204,17 @@ int main () {
                     ty[m] = 2; // inter
                     v[m] = lin(pp[i][0], pp[i][1]).inter(lin(pp[j][0], pp[j][1]));
                 }
+                
+                int idx = m;
+                if (mp.find(v[m]) != mp.end())
+                    idx = mp[v[m]];
+                else {
+                    mp[v[m]] = m;
+                    m++;
+                }
 
-                pts[i].push_back(m);
-                pts[j].push_back(m);
-                m++;
+                pts[i].push_back(idx);
+                pts[j].push_back(idx);
             }
         }
     }
@@ -204,12 +224,19 @@ int main () {
             return pp[i][0].sq(v[x]) < pp[i][0].sq(v[y]);
         });
 
+        cout << "segm " << pp[i][0] << " " << pp[i][1] << endl;
+        cout << "[" << pts[i][0] << "] " << v[pts[i][0]] << " ty=" << ty[pts[i][0]] << endl;
         for (int j = 1; j < pts[i].size(); j++) {
+            if (pts[i][j-1] == pts[i][j]) continue;
+            cout << "[" << pts[i][j] << "] " << v[pts[i][j]] << " ty=" << ty[pts[i][j]] << endl;
             double dist = v[pts[i][j-1]].nr(v[pts[i][j]]);
             adj[pts[i][j-1]].push_back(pair<int, double>(pts[i][j],dist));
             adj[pts[i][j]].push_back(pair<int, double>(pts[i][j-1],dist));
+            check += dist;
         }
     }
+
+    assert(abs(check - res) < eps);
 
     turn++;
     dfs(1, 1, 0, 3);
