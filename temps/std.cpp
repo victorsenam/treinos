@@ -12,4 +12,6 @@ typedef pair<ll,ll> pii;
 #define pb push_back
 
 int main () {
+    sync_with_stdio(0);
+    cin.tie(0);
 }
