@@ -1,5 +1,5 @@
+
 #include <bits/stdc++.h>
-//#define ONLINE_JUDGE
 #ifndef ONLINE_JUDGE
 #define debug(...) {fprintf(stdout, __VA_ARGS__);}
 #else
@@ -11,7 +11,14 @@ typedef long long int ll;
 typedef pair<ll,ll> pii;
 #define pb push_back
 
+int n;
+double h;
+
 int main () {
-    sync_with_stdio(0);
-    cin.tie(0);
+    scanf("%d %lf", &n, &h);
+
+    for (int i = 0; i <= n; i++) {
+        double A = double(n-i)/double(n);
+        printf("%.20lf\n", h*double(1.-sqrt(1.-A)));
+    }
 }
