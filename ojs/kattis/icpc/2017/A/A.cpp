@@ -133,36 +133,40 @@ int main () {
 
     cin >> n;
 
-    for (int i = 0; i < n; i++)
+    for (int i = 0; i < n; i++) {
+        cin >> v[i].x >> v[i].y;
         v[i+n] = v[i];
+    }
 
     double res = 0.;
     for (int i = 0; i < n; i++) {
         for (int j = i+1; j < n; j++) {
-            bool ok = 1;   
-
             bool nl = 1, nr = 1;
             vec l, r;
 
-            for (int k = 0; ok && k < n; k++) {
+            for (int k = 0; k < n; k++) {
                 if (seg_inter(v[i],v[j],v[k],v[k+1])) {
                     vec at = lin(v[i],v[j]).inter(lin(v[k],v[k+1]));
 
-                    upd(nl, l, at, v[i], v[j]);
-                    upd(nr, r, at, v[j], v[i]);
+                    upd(nl, l, at, v[j], v[i]);
+                    upd(nr, r, at, v[i], v[j]);
                 }
 
                 if (v[k+1].sd(v[i],v[j]) == 0) {
                     if ((v[k].sd(v[i],v[j]) * v[k+2].sd(v[i],v[j]) == -1) ||
-                        v[k+2].sd(v[k],v[k+1]) == 1) {
-                            upd(nl, l, v[k+1], v[i], v[j]);
-                            upd(nr, r, v[k+1], v[j], v[i]);
-                    }
+                        (v[k+2].sd(v[k],v[k+1]) == -1)) {
+                            upd(nl, l, v[k+1], v[j], v[i]);
+                            upd(nr, r, v[k+1], v[i], v[j]);
+                        }
                 }
             }
 
-            if (!nl && !nr && r.dr(v[j],v[i]) != 1 && l.dr(v[i],v[j]) != 1)
+            //cout << v[i] << v[j];
+            assert(!nl && !nr);
+            //cout << " " << l << r << " = " << l.nr(r) << endl;
+            if (r.dr(v[j],v[i]) != 1 && l.dr(v[i],v[j]) != 1) {
                 res = max(res,l.nr(r));
+            }
         }
     }
 
