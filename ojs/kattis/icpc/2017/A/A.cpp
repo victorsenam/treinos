@@ -40,8 +40,8 @@ struct vec { // vector
 
 	cood sq (vec o = vec())
 	{ return ((*this)-o)*((*this)-o); }
-	double nr (vec o = vec())
-	{ return sqrt(sq(o)); }
+	ldbl nr (vec o = vec())
+	{ return sqrt(ldbl(sq(o))); }
 
 	cood ar (vec a, vec b) // ccw signed area (positive if this is to the left of ab)
 	{ return (b - a) ^ ((*this) - a); }
@@ -151,6 +151,7 @@ int n;
 vec v[N];
 
 bool is_interest (int k, vec a, vec b) {
+    if (v[k].sd(a,b) != 0) return 0;
     if (v[k+n-1].sd(a,b) * v[k+1].sd(a,b) == -1)
         return 1;
     if (v[k+1].sd(v[k+n-1],v[k]) == -1)
@@ -191,7 +192,7 @@ int main () {
                 } else if (lin_inter(v[k], v[k+1], v[i], v[j])) {
                     ldbl ni = seg_dist(v[k], v[k+1], v[i], v[j]);
                     ldbl nj = seg_dist(v[k], v[k+1], v[j], v[i]);
-                    //cout << v[k] << " to " << v[k + 1] << " interest " << ni << nj << endl;
+                    //cout << v[k] << " to " << v[k + 1] << " interest : " << ni << " " << nj << endl;
                     if (ni < nj + 1e-12)
                         di = min(di, ni);
                     else
@@ -203,17 +204,17 @@ int main () {
                         //cout << v[k] << " stops" << endl;
                         ok = 0;
                     } else if (v[k].dr(v[i],v[j]) == 1) {
-                        //cout << v[k] << " interest for " << v[i] << endl;
+                        //cout << v[k] << " interest for " << v[j] << " : " << v[k].nr(v[j]) << endl;
                         dj = min(dj, ldbl(v[k].nr(v[j])));
                     } else {
-                        //cout << v[k] << " interest for " << v[i] << endl;
+                        //cout << v[k] << " interest for " << v[i] << " : " << v[k].nr(v[i]) << endl;
                         di = min(di, ldbl(v[k].nr(v[i])));
                     }
                 }
             }
             
 
-            cout << v[i] << " " << v[j] << " = " << di + dj + v[i].nr(v[j]) << endl;
+            //cout << v[i] << " " << v[j] << " = " << di + dj + v[i].nr(v[j]) << " = " << di << "+" << dj << "+" << v[i].nr(v[j]) << endl;
             if (ok)
                 res = max(res, di + dj + v[i].nr(v[j]));
         }

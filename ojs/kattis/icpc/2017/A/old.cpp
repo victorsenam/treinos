@@ -87,11 +87,13 @@ int main () {
 		for (int j = i + 1; j < n; j++) {
 			//if ((i+1)%n == j || (i+n-1)%n == j)
 			//	continue;
-
-			if (v[(i+1)%n].sd(v[i], v[j]) == -1)
-				continue;
-			if (v[(i+n-1)%n].sd(v[i], v[j]) == 1)
-				continue;
+            if (v[i+n-1].sd(v[i], v[i+1]) == -1) {
+                if (v[j].sd(v[i],v[i+1]) == 1 || v[j].sd(v[i], v[i+n-1]) == -1)
+                    continue;
+            } else {
+                if (v[j].sd(v[i],v[i+n-1]) != 1 && v[j].sd(v[i], v[i+1]) != -1)
+                    continue;
+            }
 
 			vec A = v[i], B = v[j];
 			vec AB = B - A;
