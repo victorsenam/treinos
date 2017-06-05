@@ -19,7 +19,7 @@ ll ac[2][N];
 int p[N];
 ll in[2][N];
 ll d;
-set<ll> poi;
+priority_queue<ll> poi;
 
 multiset<ll> s[2][2]; // s[vem de][vale em] 0: baixo, 1: cima
 
@@ -35,9 +35,8 @@ ll calc (ll x, ll y) {
     ll p = lower_bound(in[0], in[0] + n, x) - in[0];
     ll q = lower_bound(in[1], in[1] + n, y) - in[1];
 
-    ll r = 0;
-    r += p*x - 2ll*ac[0][p] + ac[0][n] - ll(n-p)*x;
-    r += q*y - 2ll*ac[1][q] + ac[1][n] - ll(n-q)*y;
+    ll r = (p+p-n)*x - 2ll*ac[0][p] + ac[0][n];
+    r += (q+q-n)*y - 2ll*ac[1][q] + ac[1][n];
 
     return r;
 }
@@ -59,7 +58,7 @@ ll solve (ll x) {
     while (l + 4 < r) {
         ll q1 = (l + l + r)/3;
         ll q2 = (l + r + r)/3;
-        
+
         if (calc(x,q1) < calc(x,q2))
             r = q2;
         else
@@ -73,8 +72,8 @@ ll solve (ll x) {
 }
 
 void putpoi (ll l, ll r, ll x) {
-    if (x < l || x > r) return;
-    poi.insert(x);
+    for (ll i = max(l, x-3); i <= min(r, x+3); i++)
+        poi.push(-i);
 }
 
 void putpoi (ll l, ll r) {
@@ -84,15 +83,12 @@ void putpoi (ll l, ll r) {
             ll x = *(s[a/2][a%2].begin());
             ll y = *(s[b/2][b%2].begin());
             putpoi(l,r,abs(x-y)/2ll);
-            putpoi(l,r,(abs(x-y)+1)/2ll);
 
             y = *(s[b/2][b%2].rbegin());
             putpoi(l,r,abs(x-y)/2ll);
-            putpoi(l,r,(abs(x-y)+1)/2ll);
 
             x = *(s[a/2][a%2].rbegin());
             putpoi(l,r,abs(x-y)/2ll);
-            putpoi(l,r,(abs(x-y)+1)/2ll);
         }
     }
 }
@@ -139,9 +135,11 @@ int main () {
 
 
     int i = 0;
+    ll ls = -1e9;
     while (!poi.empty()) {
-        ll ps = *(poi.begin());
-        poi.erase(poi.begin());
+        ll ps = -poi.top();
+        poi.pop();
+        if (ps <= ls) continue;
 
         while (i < n && x[i] < ps) {
             chg(i++);
@@ -149,6 +147,7 @@ int main () {
         }
 
         res = min(res, solve(ps));
+        ls = ps;
     }
 
     if (res == LLONG_MAX)
