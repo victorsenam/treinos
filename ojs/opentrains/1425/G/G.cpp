@@ -120,6 +120,7 @@ bool mark (int u) {
 }
 
 double dfs (int u, int v) {
+    assert(snk != u);
     if (visi[u])
         return 0;
     visi[u] = 1;
@@ -228,8 +229,7 @@ int main () {
             res += double(v[inl[i][j]].nr(v[inl[i][j-1]]));
         }
     }
-
-    assert(abs(res-chk) < eps);
+    assert(abs(res - chk) < eps);
 
     if (!mark(snk)) {
         cout << -1 << endl;
