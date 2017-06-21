@@ -58,7 +58,7 @@ struct vec { // vector
 	// === ADVANCED ===
 	// is this inside segment st? (tip of segment included, change for < -eps otherwise)
 	bool in_seg (vec s, vec t)
-	{ return (sd(s, t) == 0) && !(-eps < ((*this) - s) * ((*this) - t)); }
+	{ return (sd(s, t) == 0) && !(eps < ((*this) - s) * ((*this) - t)); }
 };
 
 // tests TODO
@@ -102,6 +102,7 @@ bool istp[N];
 int snk;
 int src;
 vector<int> adj[N];
+set<pair<int, int> > s;
 
 bool mark (int u) {
     if (visi[u])
@@ -119,20 +120,22 @@ bool mark (int u) {
     return 1;
 }
 
-double dfs (int u, int v) {
+void dfs (int u, int v) {
     assert(snk != u);
     if (visi[u])
-        return 0;
+        return;
     visi[u] = 1;
 
-    double res = 0.;
     for (int w : adj[u]) {
         if (w == v) continue;
-        res += ::v[u].nr(::v[w]);
-        res += dfs(w, u);
+        if (u < w)
+            s.insert(pii(u,w));
+        else
+            s.insert(pii(w,u));
+        dfs(w, u);
     }
 
-    return res;
+    return;
 }
 
 int main () {
@@ -148,15 +151,14 @@ int main () {
 
         int cur = qs;
         if (mp.find(v[qs]) == mp.end()) {
-            mp[v[qs]] = qs++;
+            mp[v[qs]] = qs;
+            qs++;
         } else {
             cur = mp[v[qs]];
         }
 
         if (i < n+n) {
             ls[i/2][i%2] = cur;
-            if (i%2 == 1)
-                chk += v[ls[i/2][0]].nr(v[ls[i/2][1]]);
         } else if (i < n+n+m) {
             istp[cur] = 1;
         } else if (i == n+n+m) {
@@ -167,6 +169,7 @@ int main () {
     }
 
     for (int i = 0; i < n; i++) {
+        chk += v[ls[i][0]].nr(v[ls[i][1]]);
         for (int j = 0; j < qs; j++) {
             if (v[j].in_seg(v[ls[i][0]],v[ls[i][1]])) {
                 //cout << j << ": " << v[j] << " in " << i << ": " << v[ls[i][0]] << " " << v[ls[i][1]] << endl;
@@ -193,7 +196,8 @@ int main () {
                     v[qs] = lin(v[ls[i][0]], v[ls[i][1]]).inter(lin(v[ls[j][0]], v[ls[j][1]]));
 
                     if (mp.find(v[qs]) == mp.end()) {
-                        mp[v[qs]] = qs++;
+                        mp[v[qs]] = qs;
+                        qs++;
                     } else {
                         cur = mp[v[qs]];
                     }
@@ -229,12 +233,15 @@ int main () {
             res += double(v[inl[i][j]].nr(v[inl[i][j-1]]));
         }
     }
-    assert(abs(res - chk) < eps);
+    assert(abs(res - chk) < 1e-7);
 
     if (!mark(snk)) {
         cout << -1 << endl;
         return 0;
     }
-    res -= dfs(src, src);
+
+    dfs(src, src);
+    for (pii x : s)
+        res -= v[x.first].nr(v[x.second]);
     cout << setprecision(20) << res << endl;
 }
