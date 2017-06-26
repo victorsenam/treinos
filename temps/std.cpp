@@ -1,9 +1,9 @@
 #include <bits/stdc++.h>
 //#define ONLINE_JUDGE
 #ifndef ONLINE_JUDGE
-#define debug(...) {fprintf(stdout, __VA_ARGS__);}
+#define debug if(true)
 #else
-#define debug(...) {}
+#define debug if(false)
 #endif
 
 using namespace std;

@@ -13,50 +13,59 @@ typedef pair<ll,ll> pii;
 
 const int N = 103;
 
-ll mat[2][N];
-ll val[N][N];
-int p[N*N];
+ll mx[2][N];
+ll mat[N][N];
 int n, m;
+ll res;
+int p[2][N];
+
+int visi[N];
+int ass[N];
+
+bool dfs (int i, int k) {
+    if (visi[i] == k)
+        return false;
+    visi[i] = k;
+
+    for (int j = 0; j < m; j++) {
+        if (mx[0][i] != mx[1][j]) continue;
+        if (mat[i][j] == 0) continue;
+
+        if (ass[j] == -1 || dfs(ass[j], k)) {
+            ass[j] = i;
+            return true;
+        }
+    }
+    return false;
+}
 
 int main () {
     ios::sync_with_stdio(0);
     cin.tie(0);
 
+    memset(visi, -1, sizeof visi);
+    memset(ass, -1, sizeof ass);
+
     cin >> n >> m;
 
-    ll res = 0;
     for (int i = 0; i < n; i++) {
         for (int j = 0; j < m; j++) {
-            ll a;
-            cin >> a;
-            val[i][j] = a;
-            res += a - !!a;
-            mat[0][i] = max(mat[0][i], a);
-            mat[1][j] = max(mat[1][j], a);
-            p[i*m+j] = i*m+j;
+            cin >> mat[i][j];
+            mx[0][i] = max(mx[0][i], mat[i][j]);
+            mx[1][j] = max(mx[1][j], mat[i][j]);
+
+            res += max(mat[i][j] - 1, 0ll);
         }
     }
 
-    sort(p, p+n*m, [] (int a, int b) { return val[a/m][a%m] < val[b/m][b%m]; });
-
-    for (int pp = 0; pp < n*m; pp++) {
-        int i = p[pp]/m;
-        int j = p[pp]%m;
-        if (mat[0][i] == mat[1][j] && val[i][j] && mat[0][i] > 0) {
-            res -= mat[0][i] - 1;
-            mat[0][i] = mat[1][j] = -1;
-        }
-    }
+    for (int i = 0; i < n; i++)
+        res -= max(mx[0][i] - 1, 0ll);
+    for (int j = 0; j < m; j++)
+        res -= max(mx[1][j] - 1, 0ll);
 
     for (int i = 0; i < n; i++) {
-        if (mat[0][i] <= 0)
-            continue;
-        res -= mat[0][i] - 1;
-    }
-    for (int i = 0; i < m; i++) {
-        if (mat[1][i] <= 0)
-            continue;
-        res -= mat[1][i] - 1;
+        if (dfs(i,i))
+            res += max(mx[0][i] - 1, 0ll);
     }
 
     cout << res << endl;
