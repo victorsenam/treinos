@@ -1,9 +1,9 @@
 #include <bits/stdc++.h>
 //#define ONLINE_JUDGE
 #ifndef ONLINE_JUDGE
-#define debug(...) {fprintf(stdout, __VA_ARGS__);}
+#define debug if (true)
 #else
-#define debug(...) {}
+#define debug if (false)
 #endif
 
 using namespace std;
@@ -175,10 +175,10 @@ int main () {
 
     s = graham(v, k, 0);
 
-    //cout << v[0] << endl;
+    debug cout << v[0] << endl;
     for (int i = 1; i < s; i++) {
         ar[i] = ar[i-1] + v[i].ar(v[0], v[i-1]);
-        //cout << v[i] << endl;
+        debug cout << v[i] << endl;
     }
     ar[s] = ar[s-1];
 
@@ -186,17 +186,18 @@ int main () {
 
     for (int i = k; i < n; i++) {
         int z = flf(v[i]);
-        //cout << "===== " << v[i] << " =====" << z <<endl;
+        debug cout << "===== " << v[i] << " =====" << z <<endl;
+        debug cout << "fica entre " << v[z - 1] << " e " << v[z%s] << endl;
 
-        if (v[i].sd(v[0],v[1]) == 1 && v[i].sd(v[s-1],v[0]) == 1) {
-            //cout << "tira" << endl;
+        if (v[i].sd(v[0],v[1]) != -1 && v[i].sd(v[s-1],v[0]) != -1) {
+            debug cout << "tira" << endl;
 
             // primeiro que fica até z
             int lo = 1;
             int hi = z;
             while (lo < hi) {
                 int md = (lo + hi)/2;
-                if (v[md].sd(v[i],v[md+1]) == -1)
+                if (v[md].sd(v[i],v[md+1]) != 1)
                     lo = md + 1;
                 else
                     hi = md;
@@ -208,20 +209,21 @@ int main () {
             hi = s-1;
             while (lo < hi) {
                 int md = (lo + hi + 1)/2;
-                if (v[md].sd(v[md-1],v[i]) == -1)
+                if (v[md].sd(v[md-1],v[i]) != 1)
                     hi = md - 1;
                 else
                     lo = md;
             }
             int r = lo;
 
-            //cout << "fica [" << v[l] << "," << v[r%s] << "] :";
+            debug cout << "fica [" << v[l] << "," << v[r%s] << "] :";
             ll loc = ar[r] - ar[l] + abs(v[l].ar(v[0],v[i])) + abs(v[i].ar(v[0],v[r]));
-            //cout << loc << endl;
+            debug cout << loc << endl;
             res = max(res, loc);
+        } else if (v[i].sd(v[z%s],v[(z+1)%s]) != 1 && v[i].sd(v[z-1],v[z%s]) != 1) {
+            debug cout << "dentro" << endl;
         } else {
-            //cout << "deixa" << endl;
-            //cout << "fica entre " << v[z - 1] << " e " << v[z%s] << endl;
+            debug cout << "deixa" << endl;
 
             // ultimo que fica antes de z
             int lo = 0;
@@ -247,9 +249,9 @@ int main () {
             }
             int r = lo;
 
-            //cout << "tira ]" << v[l] << "," << v[r%s] << "[ :";
+            debug cout << "tira ]" << v[l] << "," << v[r%s] << "[ :";
             ll loc = ar[s] - ar[r] + ar[l] + v[i].ar(v[0],v[l]) + v[r].ar(v[0],v[i]);
-            //cout << loc << endl;
+            debug cout << loc << endl;
             res = max(res, loc);
         }
     }
