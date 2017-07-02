@@ -44,7 +44,7 @@ struct vec { // vector
 	double nr (vec o = vec())
 	{ return sqrt(sq(o)); }
 
-	ull ar (vec a, vec b) // ccw signed area (positive if this is to the left of ab)
+	ll ar (vec a, vec b) // ccw signed area (positive if this is to the left of ab)
 	{ return (b - a) ^ ((*this) - a); }
 	int sd (vec a, vec b) // which side is this from ab? (-1 left, 0 over, 1 right)
 	{ cood o = ar(a, b); return (o < -eps) - (eps < o); }
@@ -152,14 +152,14 @@ ull ar[N];
 vec v[N];
 
 // index of first point to the left of a
-int flf (vec a) {
+int flf (vec a, int ty=-1) {
     int lo = 1;
     int hi = s;
 
     while (lo < hi) {
         int md = (lo+hi)/2;
 
-        if (v[md].sd(v[0], a) == -1)
+        if (v[md].sd(v[0], a) == ty)
             hi = md;
         else
             lo = md+1;
@@ -178,7 +178,7 @@ int main () {
 
     debug cout << v[0] << endl;
     for (int i = 1; i < s; i++) {
-        ar[i] = ar[i-1] + v[i].ar(v[0], v[i-1]);
+        ar[i] = ar[i-1] + ull(v[i].ar(v[0], v[i-1]));
         debug cout << v[i] << endl;
     }
     ar[s] = ar[s-1];
@@ -187,16 +187,17 @@ int main () {
     debug cout << res << endl;
 
     for (int i = k; i < n; i++) {
-        int z = flf(v[i]);
-        debug cout << "===== " << v[i] << " =====" << z <<endl;
-        debug cout << "fica entre " << v[z - 1] << " e " << v[z%s] << endl;
+        int z;
 
         if (v[i].sd(v[0],v[1]) != -1 && v[i].sd(v[s-1],v[0]) != -1) {
-            debug cout << "tira" << endl;
 
+            z = flf(v[i], 1);
+            debug cout << "===== " << v[i] << " =====" << z <<endl;
+            debug cout << "fica entre " << v[z - 1] << " e " << v[z%s] << endl;
+
+            debug cout << "tira" << endl;
             // primeiro que fica até z
-            int lo = 1;
-            int hi = z;
+            int lo = 1, hi = z;
             while (lo < hi) {
                 int md = (lo + hi)/2;
                 if (v[md].sd(v[i],v[md+1]) != 1)
@@ -219,10 +220,16 @@ int main () {
             int r = lo;
 
             debug cout << "fica [" << v[l] << "," << v[r%s] << "] :";
-            ull loc = ar[r] - ar[l] + abs(v[l].ar(v[0],v[i])) + abs(v[i].ar(v[0],v[r]));
+            ull loc = ar[r] - ar[l] + ull(v[l].ar(v[0],v[i])) + ull(v[i].ar(v[0],v[r%s]));
             debug cout << loc << endl;
             res = max(res, loc);
-        } else if (v[i].sd(v[z%s],v[(z+1)%s]) != 1 && v[i].sd(v[z-1],v[z%s]) != 1) {
+            continue;
+        }
+        
+        z = flf(v[i]);
+        debug cout << "===== " << v[i] << " =====" << z <<endl;
+        debug cout << "fica entre " << v[z - 1] << " e " << v[z%s] << endl;
+        if (v[i].sd(v[z%s],v[(z+1)%s]) != 1 && v[i].sd(v[z-1],v[z%s]) != 1) {
             debug cout << "dentro" << endl;
         } else {
             debug cout << "deixa" << endl;
@@ -252,7 +259,7 @@ int main () {
             int r = lo;
 
             debug cout << "tira ]" << v[l] << "," << v[r%s] << "[ :";
-            ull loc = ar[s] - ar[r] + ar[l] + v[i].ar(v[0],v[l]) + v[r%s].ar(v[0],v[i]);
+            ull loc = ar[s] - ar[r] + ar[l] + ull(v[i].ar(v[0],v[l])) + ull(v[r%s].ar(v[0],v[i]));
             debug cout << loc << endl;
             debug cout << ar[s] << " - " << ar[r] << " + " << ar[l] << endl;
             debug cout << v[i].ar(v[0],v[l]) << " + " << v[r%s].ar(v[0],v[i]) << endl;
