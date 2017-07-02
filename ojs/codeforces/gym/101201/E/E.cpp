@@ -1,5 +1,5 @@
 #include <bits/stdc++.h>
-//#define ONLINE_JUDGE
+#define ONLINE_JUDGE
 #ifndef ONLINE_JUDGE
 #define debug if (true)
 #else
@@ -8,6 +8,7 @@
 
 using namespace std;
 typedef long long int ll;
+typedef unsigned long long ull;
 typedef pair<ll,ll> pii;
 #define pb push_back
 
@@ -43,7 +44,7 @@ struct vec { // vector
 	double nr (vec o = vec())
 	{ return sqrt(sq(o)); }
 
-	cood ar (vec a, vec b) // ccw signed area (positive if this is to the left of ab)
+	ull ar (vec a, vec b) // ccw signed area (positive if this is to the left of ab)
 	{ return (b - a) ^ ((*this) - a); }
 	int sd (vec a, vec b) // which side is this from ab? (-1 left, 0 over, 1 right)
 	{ cood o = ar(a, b); return (o < -eps) - (eps < o); }
@@ -147,7 +148,7 @@ int graham (vec v[], int n, int brd) {
 const int N = 2e5+7;
 
 int n, k, s;
-ll ar[N];
+ull ar[N];
 vec v[N];
 
 // index of first point to the left of a
@@ -182,7 +183,8 @@ int main () {
     }
     ar[s] = ar[s-1];
 
-    ll res = ar[s];
+    ull res = ar[s];
+    debug cout << res << endl;
 
     for (int i = k; i < n; i++) {
         int z = flf(v[i]);
@@ -217,7 +219,7 @@ int main () {
             int r = lo;
 
             debug cout << "fica [" << v[l] << "," << v[r%s] << "] :";
-            ll loc = ar[r] - ar[l] + abs(v[l].ar(v[0],v[i])) + abs(v[i].ar(v[0],v[r]));
+            ull loc = ar[r] - ar[l] + abs(v[l].ar(v[0],v[i])) + abs(v[i].ar(v[0],v[r]));
             debug cout << loc << endl;
             res = max(res, loc);
         } else if (v[i].sd(v[z%s],v[(z+1)%s]) != 1 && v[i].sd(v[z-1],v[z%s]) != 1) {
@@ -250,11 +252,13 @@ int main () {
             int r = lo;
 
             debug cout << "tira ]" << v[l] << "," << v[r%s] << "[ :";
-            ll loc = ar[s] - ar[r] + ar[l] + v[i].ar(v[0],v[l]) + v[r].ar(v[0],v[i]);
+            ull loc = ar[s] - ar[r] + ar[l] + v[i].ar(v[0],v[l]) + v[r%s].ar(v[0],v[i]);
             debug cout << loc << endl;
+            debug cout << ar[s] << " - " << ar[r] << " + " << ar[l] << endl;
+            debug cout << v[i].ar(v[0],v[l]) << " + " << v[r%s].ar(v[0],v[i]) << endl;
             res = max(res, loc);
         }
     }
 
-    printf("%.1f\n", .5*double(res));
+    cout << res/2 << "." << 5*(res%2) << endl;
 }
