@@ -16,7 +16,7 @@ int pre[N], low[N], vs[N], os;
 int mrk[N];
 int cm[N];
 int ach[N];
-int vv[N][3], tr;
+ll vv[N][3], tr;
 int fff[N];
 vector<int> com[N];
 
@@ -93,6 +93,7 @@ int main () {
             vs[i] = 0;
             hd[i] = 0;
             mrk[i] = 0;
+            cm[i] = -1;
             com[i].clear();
         }
         es = 2;
@@ -142,15 +143,22 @@ int main () {
             }
         }
         
-        if (false && go(0,-1,0,1)) {
-            for (int i = 0; i < n; i++) {
-                int r = go(0,i,0,1);
+        debug {
+            if (vs[n-1]) {
+                assert(go(0,-1,0,1) != 0);
+                for (int i = 0; i < n; i++) {
+                    int r = go(0,i,0,1);
+                    //cout << i << ": " << r << endl;
 
-                if ((fff[i] == 1)^(r == 0)) {
-                    cout << i+1 << " is wrong " << fff[i] << " " << r << endl;
-                    printgraph();
-                    return 0;
+                    if ((fff[i] == 1)^(r == 0)) {
+                        cout << i+1 << " is wrong " << fff[i] << " " << r << endl;
+                        printgraph();
+                        assert(0);
+                        return 0;
+                    }
                 }
+            } else {
+                assert(res.empty());
             }
         }
 
