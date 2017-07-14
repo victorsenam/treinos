@@ -18,12 +18,13 @@ void printa (int j) {
     cout << bitset<4>(j);
 }
 
-int get (int id, int pos, int mask) {
+int get (int id, int pos, int mask, int tt = 0) {
     if (pos == n)
         return (b[id][mask]);
     
     if (visi[pos&1][mask] >= turn - 1)
         return memo[pos&1][mask];
+    assert(tt);
     visi[pos&1][mask] = turn;
 
     memo[pos&1][mask] = get(id, pos+1, mask);
@@ -32,7 +33,7 @@ int get (int id, int pos, int mask) {
     return memo[pos&1][mask];
 }
 
-int get2 (int pos, int mask) {
+int get2 (int pos, int mask, int tt = 0) {
     if (pos == n) {
         if (__builtin_popcount(mask) & 1)
             return f[mask];
@@ -41,6 +42,7 @@ int get2 (int pos, int mask) {
     }
     if (visi[pos&1][mask] >= turn - 1)
         return memo[pos&1][mask];
+    assert(tt);
     visi[pos&1][mask] = turn;
 
     memo[pos&1][mask] = get2(pos+1,mask);
@@ -69,6 +71,7 @@ int main () {
     m = min(n,m);
 
     b[1][0] = 1;
+    b[1][1] = 1;
 
     for (int i = 0; i < m; i++) {
         cout << "mala " << i << endl;
@@ -79,12 +82,19 @@ int main () {
                 cout << endl;
             }
         }
+        cout << "com " << endl;
+        for (int j = 0; j < (1<<n); j++) {
+            if (b[1][j]) {
+                printa(j);
+                cout << endl;
+            }
+        }
 
         turn += 2;
         for (int i = n-1; i >= 0; i--) {
             turn++;
             for (int j = 0; j < (1<<n); j++)
-                get(0,i,j);
+                get(0,i,j,1);
         }
         for (int j = 0; j < (1<<n); j++)
             f[j] = get(0,0,j);
@@ -93,7 +103,7 @@ int main () {
         for (int i = n-1; i >= 0; i--) {
             turn++;
             for (int j = 0; j < (1<<n); j++)
-                get(1,i,j);
+                get(1,i,j,1);
         }
         for (int j = 0; j < (1<<n); j++)
             f[j] *= get(1,0,j);
@@ -102,16 +112,19 @@ int main () {
         for (int i = n-1; i >= 0; i--) {
             turn++;
             for (int j = 0; j < (1<<n); j++)
-                get2(i,j);
+                get2(i,j,1);
         }
 
         cout << "juntando " << endl;
         for (int j = 0; j < (1<<n); j++) {
             b[1][j] = get2(0,j);
+            printa(j);
+            cout << " ";
             if (b[1][j]) {
-                printa(j);
-                cout << endl;
+                cout << "sim ";
             }
+            cout << get2(0,j);
+            cout << endl;
         }
 
         if (b[1][(1<<n)-1]) {
