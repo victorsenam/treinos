@@ -4,10 +4,11 @@ using namespace std;
 typedef long long ll;
 typedef pair<ll,ll> pii;
 
-const int N = (1<<24);
+const int K = 25;
+const int N = (1<<K);
 int n, m;
 
-int v[25];
+int v[K];
 int w[101];
 
 ll acc[N];

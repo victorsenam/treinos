@@ -1,5 +1,5 @@
 #include <bits/stdc++.h>
-#define debug if (1)
+#define debug if (0)
 
 using namespace std;
 typedef long long int ll;
@@ -40,13 +40,12 @@ int main () {
 
     
     int i = n-1, j = 0;
-    ll tm = 0;
+    ll tm = 1;
     for (int tt = 1; tt <= qs; tt++) {
         string cm;
         ll qt;
         evt cur;
         cur.tm = tm;
-        cur.x;
 
         cin >> cm >> qt;
 
@@ -89,7 +88,7 @@ int main () {
         });
     }
     for (int j = 0; j < m; j++) {
-        sort(occ[1][j].begin(), occ[1][j].begin(), [] (evt a, evt b) {
+        sort(occ[1][j].begin(), occ[1][j].end(), [] (evt a, evt b) {
             return a.l < b.l;
         });
     }
@@ -113,16 +112,26 @@ int main () {
             ll & vl = mat[i*m + j];
             vl = 0;
             if (!pq[0][i].empty()) {
-                vl = max(vl, pq[0][i].top().x + pq[0][i].top().y*abs(j - pq[0][i].top().l) + 1ll);
+                vl = max(vl, pq[0][i].top().x + pq[0][i].top().y*ll(abs(j - pq[0][i].top().l)));
             }
             if (!pq[1][j].empty()) {
-                vl = max(vl, pq[1][j].top().x + pq[1][j].top().y*abs(i - pq[1][j].top().l) + 1ll);
+                vl = max(vl, pq[1][j].top().x + pq[1][j].top().y*ll(abs(i - pq[1][j].top().l)));
             }
         }
     }
 
+    debug {
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < m; j++) {
+                printf("%02lld%c ", mat[i*m+j], inp[i*m+j]);
+            }
+            printf("\n");
+        }
+        printf("\n");
+    }
+
     ll l = 0;
-    ll r = tm + 1;
+    ll r = tm;
     for (int i = 0; i < n; i++) {
         for (int j = 0; j < m; j++) {
             if ((inp[i*m+j] == '#') && (mat[i*m+j] == 0)) {
@@ -135,6 +144,9 @@ int main () {
             }
         }
     }
+
+    if (l > r)
+        l = r = -1;
 
     cout << l << " " << r << endl;
 }
