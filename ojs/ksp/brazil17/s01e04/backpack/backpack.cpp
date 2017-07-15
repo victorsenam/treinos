@@ -8,48 +8,41 @@ const int K = 25;
 const int N = (1<<K);
 int n, m;
 
-int v[K];
-int w[101];
+ll v[K];
+ll w[101];
+pii memo[N];
 
-ll acc[N];
-bitset<N> b[3];
-int visi[2][N], memo[2][N], turn, f[N];
-
-void printa (int j) {
-    cout << bitset<4>(j);
-}
-
-int get (int id, int pos, int mask, int tt = 0) {
-    if (pos == n)
-        return (b[id][mask]);
+pii pd (int mask) {
+    if (mask == 0)
+        return pii(0,0);
     
-    if (visi[pos&1][mask] >= turn - 1)
-        return memo[pos&1][mask];
-    assert(tt);
-    visi[pos&1][mask] = turn;
+    pii & me = memo[mask];
+    if (me.first != -1)
+        return me;
 
-    memo[pos&1][mask] = get(id, pos+1, mask);
-    if (mask&(1<<pos));
-        memo[pos&1][mask] += get(id, pos+1, mask^(1<<pos));
-    return memo[pos&1][mask];
-}
+    me.first = m+1;
+    me.second = 0;
 
-int get2 (int pos, int mask, int tt = 0) {
-    if (pos == n) {
-        if (__builtin_popcount(mask) & 1)
-            return f[mask];
-        else
-            return -f[mask];
+    for (int i = 0; i < n; i++) {
+        if (mask&(1<<i)) {
+            pii loc = pd(mask^(1<<i));
+            
+            if (loc.second < v[i]) {
+                if (loc.first >= m) continue;
+                loc.second = w[loc.first];
+                loc.first++;
+            }
+
+            loc.second -= v[i];
+            if (loc.second < 0)
+                continue;
+
+            if (loc.first < me.first || (loc.first == me.first && loc.second > me.second))
+                me = loc;
+        }
     }
-    if (visi[pos&1][mask] >= turn - 1)
-        return memo[pos&1][mask];
-    assert(tt);
-    visi[pos&1][mask] = turn;
 
-    memo[pos&1][mask] = get2(pos+1,mask);
-    if (mask&(1<<pos))
-        memo[pos&1][mask] += get2(pos+1,mask^(1<<pos));
-    return memo[pos&1][mask];
+    return me;
 }
 
 int main () {
@@ -61,77 +54,16 @@ int main () {
         cin >> w[i];
 
     for (int i = 0; i < (1<<n); i++) {
-        for (int j = 0; j < n; j++)
-            if (i&(1<<j))
-                acc[i] += v[j];
+        memo[i].first = -1;
     }
 
     sort(w, w+m, [] (int i, int j) {
         return w[i] > w[j];
     });
-    m = min(n,m);
 
-    b[1][0] = 1;
-    b[1][1] = 1;
-
-    for (int i = 0; i < m; i++) {
-        cout << "mala " << i << endl;
-        for (int j = 0; j < (1<<n); j++) {
-            b[0][j] = (acc[j] <= ll(w[i]));
-            if (b[0][j]) {
-                printa(j);
-                cout << endl;
-            }
-        }
-        cout << "com " << endl;
-        for (int j = 0; j < (1<<n); j++) {
-            if (b[1][j]) {
-                printa(j);
-                cout << endl;
-            }
-        }
-
-        turn += 2;
-        for (int i = n-1; i >= 0; i--) {
-            turn++;
-            for (int j = 0; j < (1<<n); j++)
-                get(0,i,j,1);
-        }
-        for (int j = 0; j < (1<<n); j++)
-            f[j] = get(0,0,j);
-
-        turn += 2;
-        for (int i = n-1; i >= 0; i--) {
-            turn++;
-            for (int j = 0; j < (1<<n); j++)
-                get(1,i,j,1);
-        }
-        for (int j = 0; j < (1<<n); j++)
-            f[j] *= get(1,0,j);
-
-        turn += 2;
-        for (int i = n-1; i >= 0; i--) {
-            turn++;
-            for (int j = 0; j < (1<<n); j++)
-                get2(i,j,1);
-        }
-
-        cout << "juntando " << endl;
-        for (int j = 0; j < (1<<n); j++) {
-            b[1][j] = get2(0,j);
-            printa(j);
-            cout << " ";
-            if (b[1][j]) {
-                cout << "sim ";
-            }
-            cout << get2(0,j);
-            cout << endl;
-        }
-
-        if (b[1][(1<<n)-1]) {
-            cout << i+1 << endl;
-            return 0;
-        }
-    }
-    cout << "NIE" << endl;
+    ll res = pd((1<<n)-1).first; 
+    if (res == m+1)
+        cout << "NIE" << endl;
+    else
+        cout << res << endl;
 }
