@@ -1,5 +1,6 @@
 #include <bits/stdc++.h>
 using namespace std;
+#define debug if (0)
 
 typedef long long ll;
 typedef pair<int, int> pii;
@@ -11,13 +12,51 @@ int ts;
 int n;
 ll x[N], y[N], r[N], a[N], b[N];
 int p[N], mrk[N];
+int deg[N];
 vector<int> adj[N];
 vector<int> ord;
 
-void dfs (int u) {
-    ord.pb(u);
+vector<int> edg[N];
+
+bool isbest (int i, int j, vector<int> & res, int x) { // i é melhor q j?
+    if (i < j) {
+        return x < res[i];
+    } else {
+        return res[j] < x;
+    }
+}
+
+ll dfs (int u) {
+    ll val = 0;
+    int ps = ord.size();
+
+    for (int i = 0; i < ord.size(); i++) {
+        ll loc = (ll(ord.size() - i + 1)/2)*a[u] + (ll(ord.size() - i)/2)*b[u];
+        debug cout << u + 1 << " ? (" << loc << "," << i << ")" << endl;
+        if (loc > val || (loc == val && isbest(i, ps, ord, u))) {
+            val = loc;
+            ps = i;
+        }
+    }
+
+    debug cout << u + 1 << " = (" << val << "," << ps << ")" << endl;
+
+    if (ps < ord.size()) {
+        edg[u].pb(ord[ps]);
+        deg[ord[ps]]++;
+    }
+    if (ps > 0) {
+        edg[ord[ps-1]].pb(u);
+        deg[u]++;
+    }
+
+    ord.insert(ord.begin() + ps, u);
     for (int v : adj[u])
-        dfs(v);
+        val += dfs(v);
+    assert(*(ord.begin() + ps) == u);
+    ord.erase(ord.begin() + ps);
+
+    return val;
 }
 
 ll sq (ll x)
@@ -29,14 +68,6 @@ ll dist (int i, int j) {
 
 bool inside (int i, int j) { // i is inside j?
     return (r[j] > r[i] && dist(i,j) <= sq(r[i] - r[j]));
-}
-
-bool isbest (int i, int j, vector<int> & res, int x) { // i é melhor q j?
-    if (i < j) {
-        return x < res[i];
-    } else {
-        return res[j] < x;
-    }
 }
 
 int main() {
@@ -52,6 +83,8 @@ int main() {
             p[i] = i;
 
             adj[i].clear();
+            edg[i].clear();
+            deg[i] = 0;
             mrk[i] = 0;
         }
 
@@ -60,7 +93,7 @@ int main() {
         for (int _i = 0; _i < n; _i++) {
             int i = p[_i];
             for (int j = 0; j < n; j++) {
-                if (mrk[j]) continue;
+                if (mrk[j] || i == j) continue;
                 if (inside(j,i)) {
                     mrk[j] = 1;
                     adj[i].push_back(j);
@@ -68,44 +101,48 @@ int main() {
             }
         }
 
-        for (int i = 0; i < n; i++)
-            random_shuffle(adj[i].begin(), adj[i].end());
-
-        for (int i = n-1; i >= 0; i--) {
-            if (mrk[i]) continue;
-            dfs(i);
-        }
-
-        vector<int> res;
-        ll val = 0;
-        for (int u : ord) {
-            ll cur = 0;
-            int ps = n;
-
-            ll cnt = 0;
-
-            for (int i = res.size()-1; i >= 0; i--) {
-                if (inside(u,res[i]))
-                    cnt++;
-
-                ll loc = ((cnt+1)/2) * a[u] + (cnt/2) * b[u];
-                
-                if (loc > cur || (loc == cur && isbest(i,ps,res,u))) {
-                    cur = loc;
-                    ps = i;
+        debug {
+            cout << "tree" << endl;
+            for (int i = 0; i < n; i++) {
+                cout << i+1 << ":"; 
+                for (int v : adj[i]) {
+                    cout << " " << v+1;
                 }
+                cout << endl;
             }
-
-            val += cur;
-
-            res.pb(u);
-            for (int i = int(res.size()) - 2; i >= ps; i--)
-                swap(res[i], res[i+1]);
         }
 
+        ll val = 0;
+        for (int i = 0; i < n; i++) {
+            if (mrk[i]) continue;
+            val += dfs(i);
+        }
         cout << val << endl;
-        for (int u : res)
-            cout << u + 1 << " ";
+        
+        priority_queue<int> qu;
+        for (int i = 0; i < n; i++) {
+            if (deg[i] == 0)
+                qu.push(-i);
+        }
+
+        bool ok = 0;
+        int cnn = 0;
+        while (!qu.empty()) {
+            cnn++;
+            int u = qu.top();
+            qu.pop();
+            if (ok)
+                cout << " ";
+            ok = 1;
+            cout << -u + 1;
+
+            for (int v : edg[-u]) {
+                deg[v]--;
+                if (!deg[v])
+                    qu.push(-v);
+            }
+        }
+        assert(cnn == n);
         cout << endl;
     }
 }
