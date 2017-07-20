@@ -5,13 +5,13 @@ using namespace std;
 typedef long long ll;
 typedef pair<ll,ll> pii;
 
-const int M = 1e7+2;
-const int N = 1e4;
+const int N = 2e7+2;
+const int M = 1e4;
 
-int x[N];
+int x[M];
 int pr[N];
 int n;
-ll v[N], q[N], vs;
+ll v[M], q[M], vs;
 
 int main () {
     ios::sync_with_stdio(0);
@@ -24,6 +24,7 @@ int main () {
         pr[x[i]]++;
     }
     
+    ll res = 0;
     for (int i = 0; i < N; i++) {
         if (pr[i]) {
             v[vs] = i;
@@ -42,7 +43,6 @@ int main () {
         }
     }
 
-    ll res = 0;
     for (int i = vs-1; i >= 0; i--) {
         ll cs = 0, qtd = 0;
         int k = 0;
@@ -50,23 +50,40 @@ int main () {
             while (k < i && v[j] + v[k] < v[i])
                 k++;
             if (j < k) break;
+            if (v[j] + v[k] != v[i]) continue;
             if (j == k) {
                 qtd += cs * q[j] * (q[j]-1)/2;
-                qtd += q[j]*(q[j]-1)*(q[j]-2)*(q[j]-3)/4;
+                qtd += q[j]*(q[j]-1)*(q[j]-2)*(q[j]-3)/24;
             } else {
-                qtd += cs * q[j] * q[k];
+                qtd += cs * q[j] * q[k] + q[j] * (q[j] - 1) * q[k] * (q[k] - 1) / 4;
                 cs += q[j] * q[k];
             }
         }
         res += qtd * q[i] * (q[i]-1) / 2;
-
-        qtd = 0;
-        for (int j = i-1; j >= 0; j--) {
-            int b = v[i] - v[j];
-            if (b > v[j]) break;
-            qtd += q[j] * pr[b];
-        }
-        res += qtd * q[i] * (q[i]-1) * (q[i]-2) / 6;
     }
+
+    memset(pr, 0, sizeof pr);
+    sort(x, x+n, greater<int>());
+    for (int i = n-1; i >= 0; i--) {
+        //cout << "=== " << i << endl;
+        int ls = 0;
+        ll qt = 0;
+        for (int k = 0; ls != x[i] && k <= i; k++) {
+            if (k == i || x[k] != ls) {
+                if (ls) {
+                    //cout << "com " << ls << "[" << k << "] (" << qt << " choose " << 3 << ") * " << ls-x[i] << ":" << pr[ls-x[i]] << endl;
+                    res += (qt * (qt - 1) * (qt - 2) / 6) * pr[ls - x[i]];
+                }
+                ls = x[k];
+                qt = 1;
+            } else {
+                qt++;
+            }
+        }
+        
+        for (int j = i+1; j < n; j++)
+            pr[x[i] + x[j]]++;
+    }
+
     cout << res << endl;
 }
