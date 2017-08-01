@@ -15,29 +15,32 @@ struct edge {
 vector<edge> adj[N];
 int n;
 ll m;
-ll tot;
+ll tot, rs;
 ll inv, md;
-int sz[N];
+int sz[N], vs;
+pii v[N];
 
 ll phi (ll n) {
-    ll tot = 1;
     ll x = n;
     for (ll i = 2; i*i <= x; i++) {
-        if (x%i == 0)
-            tot *= (n - n/i);
+        if (x%i != 0) continue;
+        n /= i;
+        n *= (i-1);
         while (x%i == 0)
             x /= i;
     }
-    if (x != 1)
-        tot *= (n - n/x);
-    return tot;
+    if (x != 1) {
+        n /= x;
+        n *= (x - 1);
+    }
+    return n;
 }
 
-ll mod (ll x) {
+inline ll mod (ll x) {
     return x%m;
 }
 
-ll fexp (ll a, ll e) {
+inline ll fexp (ll a, ll e) {
     ll r = 1;
     while (e) {
         if (e&1) r = mod(a*r);
@@ -47,80 +50,76 @@ ll fexp (ll a, ll e) {
     return r;
 }
 
-ll c_inv (ll x) {
+inline ll c_inv (ll x) {
     return fexp(x,tot-1);
 }
 
-void dfs (map<ll,ll> & mp, int u, int p, int x, ll ac, ll ml) {
-    debug cout << u << " mp[" << ac << "] += " << x << endl;
-    mp[ac] += x;
+inline ll get (ll x, int u) {
+    rs += upper_bound(v, v+vs, pii(x,N)) - upper_bound(v, v+vs, pii(x,u)) + lower_bound(v, v+vs, pii(x,u)) - lower_bound(v, v+vs, pii(x,0));
+}
+
+void dfs (int u, int p, int x, ll ac, ll ml, int root) {
+    v[vs++] = pii(ac, root);
     
-    for (edge ed : adj[u]) {
+    for (edge & ed : adj[u]) {
         if (ed.to == p || sz[ed.to] == -1) continue;
-        dfs(mp, ed.to, u, x, mod(ac + ml*ed.w), mod(ml*10));
+        dfs(ed.to, u, x, mod(ac + ml*ed.w), mod(ml*10), root);
     }
 }
 
-ll go (map<ll,ll> & lc, map<ll,ll> & mp, int u, int p, ll ac, ll ml) {
+void go (int u, int p, ll ac, ll ml, int root) {
     ll x = mod((m-ac)*ml);
-    debug cout << u << " rs += mp[" << x << "] = " << mp[x] << endl;
-    ll rs = mp[x]-lc[x];
+    get(x, root);
 
-    for (edge ed : adj[u]) {
+    for (edge & ed : adj[u]) {
         if (ed.to == p || sz[ed.to] == -1) continue;
-        rs += go(lc, mp, ed.to, u, mod(ac*10 + ed.w), mod(ml*inv));
+        go(ed.to, u, mod(ac*10 + ed.w), mod(ml*inv), root);
     }
-
-    return rs;
 }
 
 int getsz (int u, int p) {
     sz[u] = 1;
-    for (edge ed : adj[u]) {
+    for (edge & ed : adj[u]) {
         if (ed.to == p || sz[ed.to] == -1) continue;
         sz[u] += getsz(ed.to, u);
     }
     return sz[u];
 }
 
-ll centroid (int u) {
+void centroid (int u) {
     int siz = getsz(u,u);
-    ll rs = 0;
     
     int w = u;
     do {
         u = w;
-        for (edge ed : adj[u]) {
+        for (edge & ed : adj[u]) {
             int v = ed.to;
-            if (sz[v] == -1 || sz[v] >= sz[u]) continue;
-            if (w == u || sz[v] > sz[w])
-                w = v;
+            if (sz[v] == -1 || sz[v] >= sz[u] || sz[v] + sz[v] <= siz) continue;
+            w = v;
+            break;
         }
-    } while (w != u && sz[w] + sz[w] >= siz);
+    } while (u != w);
 
     sz[u] = -1;
 
-    debug cout << "==== for node " << u << " ===== " << endl;
-    map<ll, ll> mp;
-    for (edge ed : adj[u]) {
+    vs = 0;
+    for (edge & ed : adj[u]) {
         if (sz[ed.to] == -1) continue;
-        dfs(mp, ed.to, ed.to, 1, ed.w, md);
+        dfs(ed.to, ed.to, 1, ed.w, md, ed.to);
     }
-    rs += mp[0];
-    mp[0]++;
-    for (edge ed : adj[u]) {
-        map<ll,ll> lc;
+    v[vs++] = pii(0,u);
+    sort(v,v+vs);
+
+    get(0,u);
+    for (edge & ed : adj[u]) {
         int v = ed.to;
         if (sz[v] == -1) continue;
-        debug cout << "---- from " << v << " ----- " << endl;
-        dfs(lc, v, v, 1, ed.w, md);
-        rs += go(lc, mp, v, v, ed.w, inv);
+        go(v, v, ed.w, inv, ed.to);
     }
-    for (edge ed : adj[u]) {
+    for (edge & ed : adj[u]) {
         if (sz[ed.to] == -1) continue;
-        rs += centroid(ed.to);
+        centroid(ed.to);
     }
-    return rs;
 }
 
 int main () {
@@ -129,6 +128,7 @@ int main () {
 
     cin >> n >> m;
     tot = phi(m);
+
     md = mod(10);
     inv = c_inv(10);
 
@@ -141,5 +141,6 @@ int main () {
         adj[b].pb({a,w});
     }
 
-    cout << centroid(0) << endl;
+    centroid(0);
+    cout << rs << endl;
 }
