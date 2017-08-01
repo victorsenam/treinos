@@ -16,6 +16,7 @@ vector<edge> adj[N];
 int n;
 ll m;
 ll tot;
+ll inv, md;
 int sz[N];
 
 ll phi (ll n) {
@@ -46,30 +47,28 @@ ll fexp (ll a, ll e) {
     return r;
 }
 
-ll inv (ll x) {
+ll c_inv (ll x) {
     return fexp(x,tot-1);
 }
 
 void dfs (map<ll,ll> & mp, int u, int p, int x, ll ac, ll ml) {
-    ac = mod(ac); ml = mod(ml);
     debug cout << u << " mp[" << ac << "] += " << x << endl;
     mp[ac] += x;
     
     for (edge ed : adj[u]) {
         if (ed.to == p || sz[ed.to] == -1) continue;
-        dfs(mp, ed.to, u, x, mod(ac + mod(ml*ed.w)), mod(ml*10));
+        dfs(mp, ed.to, u, x, mod(ac + ml*ed.w), mod(ml*10));
     }
 }
 
-ll go (map<ll,ll> & mp, int u, int p, ll ac, ll ml) {
-    ac = mod(ac); ml = mod(ml);
-    ll x = mod(mod(m-ac)*inv(ml));
+ll go (map<ll,ll> & lc, map<ll,ll> & mp, int u, int p, ll ac, ll ml) {
+    ll x = mod((m-ac)*ml);
     debug cout << u << " rs += mp[" << x << "] = " << mp[x] << endl;
-    ll rs = mp[x];
+    ll rs = mp[x]-lc[x];
 
     for (edge ed : adj[u]) {
         if (ed.to == p || sz[ed.to] == -1) continue;
-        rs += go(mp, ed.to, u, mod(mod(ac*10) + ed.w), mod(ml*10));
+        rs += go(lc, mp, ed.to, u, mod(ac*10 + ed.w), mod(ml*inv));
     }
 
     return rs;
@@ -105,17 +104,17 @@ ll centroid (int u) {
     map<ll, ll> mp;
     for (edge ed : adj[u]) {
         if (sz[ed.to] == -1) continue;
-        dfs(mp, ed.to, ed.to, 1, ed.w, 10);
+        dfs(mp, ed.to, ed.to, 1, ed.w, md);
     }
     rs += mp[0];
     mp[0]++;
     for (edge ed : adj[u]) {
+        map<ll,ll> lc;
         int v = ed.to;
         if (sz[v] == -1) continue;
         debug cout << "---- from " << v << " ----- " << endl;
-        dfs(mp, v, v, -1, ed.w, 10);
-        rs += go(mp, v, v, ed.w, 10);
-        dfs(mp, v, v, 1, ed.w, 10);
+        dfs(lc, v, v, 1, ed.w, md);
+        rs += go(lc, mp, v, v, ed.w, inv);
     }
     for (edge ed : adj[u]) {
         if (sz[ed.to] == -1) continue;
@@ -130,10 +129,13 @@ int main () {
 
     cin >> n >> m;
     tot = phi(m);
+    md = mod(10);
+    inv = c_inv(10);
 
     for (int i = 0; i < n-1; i++) {
         int a, b, w;
         cin >> a >> b >> w;
+        w = mod(w);
 
         adj[a].pb({b,w});
         adj[b].pb({a,w});
