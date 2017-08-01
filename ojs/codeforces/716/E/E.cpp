@@ -119,7 +119,7 @@ ll centroid (int u) {
     }
     for (edge ed : adj[u]) {
         if (sz[ed.to] == -1) continue;
-        centroid(ed.to);
+        rs += centroid(ed.to);
     }
     return rs;
 }
