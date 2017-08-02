@@ -1,143 +1,138 @@
 #include <bits/stdc++.h>
-#ifndef ONLINE_JUDGE
-#define debug(...) {fprintf(stdout, __VA_ARGS__);}
-#else
-#define debug(...) {}
-#endif
+#define debug if (0)
 
 using namespace std;
 typedef long long int ll;
-typedef pair<int, int> pii;
+typedef pair<ll,ll> pii;
 #define pb push_back
 
-const int N = 3e5+7;
+const int N = 2e5+7;
 
-stack<int> st;
+struct Node {
+    set<int> vtx;
+    vector<int> adj;
+    int sz;
+    int rs;
+
+    bool operator < (const Node & ot) const {
+        auto it = vtx.rbegin();
+        auto jt = ot.vtx.rbegin();
+
+        while (it != vtx.rend() && jt != ot.vtx.rend()) {
+            if (*it != *jt)
+                return *it < *jt;
+            ++it; ++jt;
+        }
+        return (it == vtx.rend());
+    }
+};
+
+pii ed[N];
 int n, m;
-int v[N][2];
-vector<int> df[N], imp[N];
+set<pii> avail;
+map<pii, int> idx;
+int ns;
+Node nd[N];
 
-int vtx[N];
-int rs[N], p[N];
-int hd[N], to[2*N], nx[2*N], es;
-int pr[N];
-int siz[N];
-int visi[N], turn;
+int inner (pii x)
+{ return x.second - x.first; }
+int outer (pii x)
+{ return n - x.second + x.first; }
 
-int dfs (int u, int fr) {
-    if (visi[u] == turn) return 0;
-    visi[u] = turn;
-    pr[u] = fr;
-    siz[u] = 1;
-    
-    for (int ed = hd[u]; ed; ed = nx[ed])
-        if (to[ed] != fr && !rs[to[ed]])
-            siz[u] += dfs(to[ed], u);
-    
-    return siz[u];
+int getsz (int u, int p) {
+    nd[u].sz = 1;
+    for (int v : nd[u].adj) {
+        if (v == p || nd[v].sz == -1) continue;
+        nd[u].sz += getsz(v, u);
+    }
+    return nd[u].sz;
 }
 
-void build (int u, int depth, int fr) {
-    turn++;
-    int size = dfs(u, fr);
+void centroid (int u, int d) {
+    int siz = getsz(u,u);
 
-    int ed = -1;
-    while (ed) {
-        for (ed = hd[u]; ed && (pr[u] == to[ed] || rs[to[ed]] || siz[to[ed]] + siz[to[ed]] <= size); ed = nx[ed]);
-        if (ed) u = to[ed];
+    int w = u;
+    do {
+        u = w;
+        for (int v : nd[u].adj) {
+            if (nd[v].sz == -1 || nd[v].sz >= nd[u].sz || nd[v].sz + nd[v].sz < siz)
+                continue;
+            w = v;
+            break;
+        }
+    } while (u != w);
+
+    nd[u].rs = d;
+    nd[u].sz = -1;
+
+    for (int v : nd[u].adj)
+        if (nd[v].sz != -1)
+            centroid(v, d+1);
+}
+
+void putin (pii aux, int x) {
+    nd[x].vtx.insert(aux.first);
+    nd[x].vtx.insert(aux.second);
+
+    if ((aux.first + 1)%n != aux.second) {
+        assert(idx.find(aux) != idx.end());
+        nd[x].adj.pb(idx[aux]);
+        nd[idx[aux]].adj.pb(x);
     }
+}
 
-    //debug("centroid: %d\n", u);
-    rs[u] = depth;
-    
-    for (ed = hd[u]; ed; ed = nx[ed])
-        if (to[ed] != fr && !rs[to[ed]])
-            build(to[ed], depth+1, u);
+void go (int l, int r, int x) {
+    auto it = avail.lower_bound(pii(l,l));
+    while (it != avail.end() && it->first < r) {
+        putin(*it, x);
+        auto jt = next(it);
+        avail.erase(it);
+        it = jt;
+    }
 }
 
 int main () {
-    scanf("%d %d", &n, &m);
-    
-    for (int i = 1; i <= m; i++) {
-        scanf("%d %d", &v[i][0], &v[i][1]);
-        v[i][0]--; v[i][1]--;
-        sort(v[i], v[i]+2);
+    ios::sync_with_stdio(0);
+    cin.tie(0);
+
+    cin >> n >> m;
+    for (int i = 0; i < m; i++) {
+        cin >> ed[i].first >> ed[i].second;
+        ed[i].first--; ed[i].second--;
+        if (ed[i].first > ed[i].second)
+            swap(ed[i].first, ed[i].second);
     }
 
-    for (int i = 0; i < m; i++)
-        p[i] = i+1;
-
-    sort(p, p+m, [] (int i, int j) {
-        if (v[i][0] != v[j][0])
-            return v[i][0] < v[j][0];
-        return v[i][1] > v[j][1];
+    sort(ed, ed+m, [] (pii a, pii b) {
+        return min(inner(a),outer(a)) < min(inner(b),outer(b));
     });
 
-    es = 2;
-    st.push(0);
+    pii extr(n-1,0);
+    for (int i = 0; i < n-1; i++)
+        avail.insert(pii(i,i+1));
 
-    int l = 0;
-    for (int _i = 0; _i < m || st.top(); _i++) {
-        int i = p[_i];
-
-        int u = st.top();
-        int r = l;
-
-        if (_i >= m || (u && v[u][1] <= v[i][0])) {
-            //debug("rem %d(%d,%d)\n", u, v[u][0], v[u][1]);
-            r = v[u][1];
-            st.pop();
-            _i--;
+    for (int i = 0; i < m; i++) {
+        pii cur = ed[i];
+        idx[cur] = i;
+        if (inner(cur) <= outer(cur)) {
+            go(cur.first, cur.second, i);
+            avail.insert(cur);
         } else {
-            r = v[i][0];
-            st.push(i);
-            //debug("add %d(%d,%d)\n", i, v[i][0], v[i][1]);
+            go(cur.second, n-1, i);
+            putin(extr,i);
+            go(0, cur.first, i);
+            extr = cur;
         }
-
-        int v = st.top();
-        
-        while (l < r)
-            imp[u].push_back(l++);
-        imp[u].push_back(l);
-
-        to[es] = v; nx[es] = hd[u]; hd[u] = es++;
-        debug("adj %d %d\n", u, v);
     }
-    while (l < n)
-        imp[0].push_back(l++);
 
-    assert(st.top() == 0);
+    go(0,n-1,m);
+    putin(extr,m);
 
+    centroid(0,0);
+
+    sort(nd, nd+m+1);
     for (int i = 0; i <= m; i++) {
-        p[i] = i;
-        auto it = unique(imp[i].begin(), imp[i].end());
-        imp[i].resize(distance(imp[i].begin(), it));
-
-/*
-        printf("%d:", i);
-        for (int j : imp[i])
-            printf(" %d", j+1);
-        printf("\n");
-*/
+        cout << nd[i].rs + 1 << " ";
     }
-
-    sort(p, p+m+1, [] (int i, int j) {
-        int a = imp[i].size(), b = imp[j].size();
-
-        while (a && b) {
-            a--; b--;
-            if (imp[i][a] == imp[j][b]) continue;
-            return imp[i][a] < imp[j][b];
-        }
-
-        if (!b) return false;
-        return true;
-    });
-
-    build(0, 1, -1);
-    for (int i = 0; i <= m; i++) {
-        debug("[%d]", p[i]);
-        printf("%d ", rs[p[i]]);
-    }
-    printf("\n");
+    cout << endl;
 }
