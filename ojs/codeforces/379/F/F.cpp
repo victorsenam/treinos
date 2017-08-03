@@ -9,30 +9,9 @@ typedef pair<ll,ll> pii;
 const int N = 2e6+7;
 
 int n, qs;
-int tm[N], sz[N];
+int adt[N], sz[N];
 vector<int> adj[N];
-int rs[N];
-
-struct pareto {
-    set<pii> s;
-    
-    ll get (ll x) {
-        auto it = s.lower_bound(pii(x, LLONG_MIN));
-        if (it == s.end())
-            return LLONG_MAX;
-        return it->second;
-    }
-
-    void insert (pii x) {
-        if (get(x.first) >= x.second)
-            return;
-
-        auto it = s.upper_bound(pii(x, LLONG_MAX));
-        while (it != s.begin() && prev(it).second <= x.second)
-            s.erase(prev(it));
-        s.insert(x);
-    }
-};
+ll rs[N];
 
 int getsz (int u, int p) {
     sz[u] = 1;
@@ -41,6 +20,20 @@ int getsz (int u, int p) {
         sz[u] += getsz(v, u);
     }
     return sz[u];
+}
+
+struct onp {
+    int u, p, t, d, o;
+
+    bool operator < (const onp & ot) const {
+        return t < ot.t;
+    }
+} mx[2];
+queue<onp> qu;
+onp vt[N];
+
+bool beats (onp & a, onp & b) {
+    return a.d > b.d;
 }
 
 void cent (int u) {
@@ -55,11 +48,52 @@ void cent (int u) {
             break;
         }
     } while (w != u);
-
-    sz[u] = -1;
     
-    pareto acc, cur;
-    acc.insert(pii(tm[u], 0));
+    sz[u] = -1;
+
+    qu.push(onp({u,u,adt[u],0,u}));
+    int vs = 0;
+
+    while (!qu.empty()) {
+        onp cur = qu.front();
+        qu.pop();
+
+        vt[vs++] = cur;
+
+        for (int v : adj[cur.u]) {
+            if (v == cur.p || sz[v] == -1)
+                continue;
+            onp nx = onp({v,cur.u,max(cur.t,adt[v]),cur.d+1,cur.o});
+            if (cur.o == u)
+                nx.o = v;
+            qu.push(nx);
+        }
+    }
+
+    mx[0] = mx[1] = onp({n,n,0,-N,n});
+
+    sort(vt,vt+vs);
+    for (int i = 0; i < vs; i++) {
+        onp & cur = vt[i];
+
+        ll vl = mx[0].d;
+        if (mx[1].o != cur.o)
+            vl = mx[1].d;
+        rs[cur.t] = max(rs[cur.t], vl + cur.d);
+
+        if (cur.d > mx[1].d) {
+            if (cur.o != mx[1].o)
+                mx[0] = mx[1];
+            mx[1] = cur;
+        } else if (cur.d > mx[0].d && mx[1].o != cur.o) {
+            mx[0] = cur;
+        }
+    }
+
+    for (int v : adj[u]) {
+        if (sz[v] == -1) continue;
+        cent(v);
+    }
 }
 
 int main () {
@@ -69,7 +103,9 @@ int main () {
     cin >> qs;
 
     n = 4;
+    adj[0].reserve(3);
     for (int i = 1; i < n; i++) {
+        adj[i].reserve(3);
         adj[0].pb(i);
         adj[i].pb(0);
     }
@@ -79,10 +115,21 @@ int main () {
         cin >> v;
         v--;
 
-        tm[n] = tm[n+1] = i;
-        adj[n].pb(v);
-        adj[v].pb(n);
+        for (int k = 0; k < 2; k++) {
+            adj[n].reserve(3);
+            adt[n] = i;
+            adj[n].pb(v);
+            adj[v].pb(n);
+            n++;
+        }
     }
 
     cent(0);
+
+    ll mx = 2;
+    for (int i = 1; i <= qs; i++) {
+        mx = max(mx, rs[i]);
+        cout << mx << " ";
+    }
+    cout << endl;
 }
