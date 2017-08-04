@@ -8,91 +8,62 @@ typedef pair<ll,ll> pii;
 
 const int N = 2e6+7;
 
-int n, qs;
-int adt[N], sz[N];
 vector<int> adj[N];
-ll rs[N];
+int sz[N], dp[N];
 
 int getsz (int u, int p) {
     sz[u] = 1;
     for (int v : adj[u]) {
-        if (v == p || sz[v] == -1) continue;
+        if (v == p || sz[v] < 0) continue;
         sz[u] += getsz(v, u);
     }
     return sz[u];
 }
 
-struct onp {
-    int u, p, t, d, o;
-
-    bool operator < (const onp & ot) const {
-        return t < ot.t;
-    }
-} mx[2];
-queue<onp> qu;
-onp vt[N];
-
-bool beats (onp & a, onp & b) {
-    return a.d > b.d;
-}
-
-void cent (int u) {
-    int siz = getsz(u, u);
+void cent (int u, int d) {
+    int siz = getsz(u, u);   
     int w = u;
     do {
         u = w;
         for (int v : adj[u]) {
-            if (sz[v] == -1 || sz[v] >= sz[u] || sz[v] + sz[v] < siz)
+            if (sz[v] >= sz[u] || sz[v] < 0 || sz[v] + sz[v] < siz)
                 continue;
             w = v;
             break;
         }
     } while (w != u);
-    
+
     sz[u] = -1;
-
-    qu.push(onp({u,u,adt[u],0,u}));
-    int vs = 0;
-
-    while (!qu.empty()) {
-        onp cur = qu.front();
-        qu.pop();
-
-        vt[vs++] = cur;
-
-        for (int v : adj[cur.u]) {
-            if (v == cur.p || sz[v] == -1)
-                continue;
-            onp nx = onp({v,cur.u,max(cur.t,adt[v]),cur.d+1,cur.o});
-            if (cur.o == u)
-                nx.o = v;
-            qu.push(nx);
-        }
-    }
-
-    mx[0] = mx[1] = onp({n,n,0,-N,n});
-
-    sort(vt,vt+vs);
-    for (int i = 0; i < vs; i++) {
-        onp & cur = vt[i];
-
-        ll vl = mx[0].d;
-        if (mx[1].o != cur.o)
-            vl = mx[1].d;
-        rs[cur.t] = max(rs[cur.t], vl + cur.d);
-
-        if (cur.d > mx[1].d) {
-            if (cur.o != mx[1].o)
-                mx[0] = mx[1];
-            mx[1] = cur;
-        } else if (cur.d > mx[0].d && mx[1].o != cur.o) {
-            mx[0] = cur;
-        }
-    }
+    dp[u] = d;
 
     for (int v : adj[u]) {
-        if (sz[v] == -1) continue;
-        cent(v);
+        if (sz[v] < 0)
+            continue;
+        cent(v, d+1);
+    }
+}
+
+struct opn {
+    int u, p, cent, subt, dst;
+};
+
+int n, qs;
+int tim[N];
+opn vt[N], mx[N][2];
+int rs[N];
+
+void dfs (opn cur, int d) {
+    vt[cur.u] = cur;
+    for (int v : adj[cur.u]) {
+        if (v == cur.p || dp[v] < d) continue;
+        opn nxt = cur;
+        nxt.u = v;
+        nxt.p = cur.u;
+        if (cur.subt == cur.cent)
+            nxt.subt = v;
+        nxt.dst++;
+
+        dfs(nxt, d);
     }
 }
 
@@ -101,13 +72,12 @@ int main () {
     cin.tie(0);
 
     cin >> qs;
-
     n = 4;
-    adj[0].reserve(3);
+    tim[0] = 0;
     for (int i = 1; i < n; i++) {
-        adj[i].reserve(3);
         adj[0].pb(i);
         adj[i].pb(0);
+        tim[i] = 0;
     }
 
     for (int i = 1; i <= qs; i++) {
@@ -116,20 +86,55 @@ int main () {
         v--;
 
         for (int k = 0; k < 2; k++) {
-            adj[n].reserve(3);
-            adt[n] = i;
             adj[n].pb(v);
             adj[v].pb(n);
+            tim[n] = i;
             n++;
         }
     }
 
-    cent(0);
+    for (int u = 0; u < n; u++) {
+        mx[u][0] = mx[u][1] = opn({n,n,n,n,INT_MIN});
+    }
 
-    ll mx = 2;
+    cent(0,0);
+    
+    for (int d = 0; ; d++) {
+        bool fnd = 0;
+        for (int u = 0; u < n; u++) {
+            if (dp[u] == d) {
+                fnd = 1;
+                dfs(opn({u,u,u,u,0}), d);
+            }
+        }
+
+        if (!fnd)
+            break;
+
+        for (int u = 0; u < n; u++) {
+            opn & cur = vt[u];
+            if (dp[cur.cent] != d) continue;
+
+            int vl = mx[cur.cent][0].dst;
+            if (mx[cur.cent][1].subt != vt[u].subt)
+                vl = mx[cur.cent][1].dst;
+            rs[tim[cur.u]] = max(rs[tim[cur.u]], vl + cur.dst);
+            
+            if (mx[cur.cent][1].dst < cur.dst) {
+                if (mx[cur.cent][1].subt != cur.subt)
+                    mx[cur.cent][0] = mx[cur.cent][1];
+                mx[cur.cent][1] = cur;
+            } else if (mx[cur.cent][0].dst < cur.dst && mx[cur.cent][1].subt != cur.subt) {
+                mx[cur.cent][0] = cur;
+            }
+        }
+    }
+
+    int mx = 2;
     for (int i = 1; i <= qs; i++) {
         mx = max(mx, rs[i]);
         cout << mx << " ";
     }
     cout << endl;
 }
+
