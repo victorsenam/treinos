@@ -10,6 +10,25 @@ const int N = 2e6+7;
 
 vector<int> adj[N];
 int sz[N], dp[N];
+int cnt;
+
+inline bool iswhite (char c) {
+    return c == ' ' || c == '\n' || c == EOF;
+}
+
+inline void getint (int & v) {
+    char c;
+    v = 0;
+    bool ok = 0;
+    while (true) {
+        c = getchar();
+        if (iswhite(c) && ok)
+            break;
+        if (iswhite(c)) continue;
+        ok = 1;
+        v = v*10 + (c - '0');
+    }
+}
 
 int getsz (int u, int p) {
     sz[u] = 1;
@@ -21,6 +40,7 @@ int getsz (int u, int p) {
 }
 
 void cent (int u, int d) {
+    assert(d < 20);
     int siz = getsz(u, u);   
     int w = u;
     do {
@@ -53,9 +73,10 @@ opn vt[N], mx[N][2];
 int rs[N];
 
 void dfs (opn cur, int d) {
+    cnt++;
     vt[cur.u] = cur;
     for (int v : adj[cur.u]) {
-        if (v == cur.p || dp[v] < d) continue;
+        if (v == cur.p || dp[v] <= d) continue;
         opn nxt = cur;
         nxt.u = v;
         nxt.p = cur.u;
@@ -68,10 +89,7 @@ void dfs (opn cur, int d) {
 }
 
 int main () {
-    ios::sync_with_stdio(0);
-    cin.tie(0);
-
-    cin >> qs;
+    getint(qs);
     n = 4;
     tim[0] = 0;
     for (int i = 1; i < n; i++) {
@@ -82,7 +100,7 @@ int main () {
 
     for (int i = 1; i <= qs; i++) {
         int v;
-        cin >> v;
+        getint(v);
         v--;
 
         for (int k = 0; k < 2; k++) {
@@ -100,6 +118,7 @@ int main () {
     cent(0,0);
     
     for (int d = 0; ; d++) {
+        cnt = 0;
         bool fnd = 0;
         for (int u = 0; u < n; u++) {
             if (dp[u] == d) {
@@ -128,6 +147,8 @@ int main () {
                 mx[cur.cent][0] = cur;
             }
         }
+
+        assert(cnt <= n);
     }
 
     int mx = 2;
