@@ -1,5 +1,5 @@
 #include <bits/stdc++.h>
-#define debug if (1)
+#define cout if (1) cout
 
 using namespace std;
 typedef long long int ll;
