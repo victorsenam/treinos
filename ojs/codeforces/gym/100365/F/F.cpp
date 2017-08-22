@@ -1,79 +1,74 @@
 #include <bits/stdc++.h>
-#define debug if (1)
+#define cout if (1) cout
 
 using namespace std;
 typedef long long int ll;
 typedef pair<ll,ll> pii;
 #define pb push_back
 
-const int N = 20;
-const int T = (1<<N);
+const int N = 53;
 
-int n;
-int rs[T];
+int v[N][N];
+char x[N][N];
+int s[N*N];
 
-void printa (int mask) {
-	while (mask) {
-		cout << (mask&1) << " ";
-		mask /= 2;
-	}
+int n, m;
+
+int res;
+void go (int x, int a, int b, int i, int j) {
+	if (res != x) return;
+	printf("%d %d\n%d %d\n", i+1, j+1, a+1, b+1);
+	exit(0);
 }
 
 int main () {
-	ios::sync_with_stdio(0);
-	cin.tie(0);
+#ifdef ONLINE_JUDGE
+	freopen("coins.in", "r", stdin);
+	freopen("coins.out", "w", stdout);
+#endif
+	scanf("%d %d", &n, &m);
 
-	int lst = 0;
-	for (int mask = 0; mask < T; mask++) {
-		//if (__builtin_popcount(mask) != kk) continue;
-		int i = 0;
-		for (i = 0; i <= N; i++) {
-			bool ok = 1;
+	for (int i = 0; i < n; i++) {
+		for (int j = 0; j < m; j++) {
+			for (int a = 0; a < i; a++)
+				s[v[a][j]] = i*n + j + 1;
+			for (int b = 0; b < j; b++)
+				s[v[i][b]] = i*n + j + 1;
+			for (int a = 0; a < i; a++)
+				for (int b = 0; b < j; b++)
+					s[(v[a][j]^v[i][b]^v[a][b])] = i*n + j + 1;
 
-			for (int r = 0; ok && r < N; r++) {
-				if (!(mask&(1<<r))) continue;
-				
-				ok = !(rs[mask - (1<<r)] == i);
-				for (int a = 0; ok && a < r; a++)
-					ok = !(rs[(mask - (1<<r))^(1<<a)] == i);
-			}
+			v[i][j] = 1;
+			while (s[v[i][j]] == i*n + j + 1)
+				v[i][j]++;
 
-			if (ok)
-				break;
-		}
+			scanf(" %c", &x[i][j]);
+			x[i][j] -= '0';
+			if (x[i][j])
+				res ^= v[i][j];
 
-		rs[mask] = i;
-		if (mask >= 5000 && rs[mask] == 0) {
-			cout << mask << " " << mask - lst << endl;
-			lst = mask;
 		}
 	}
 
-	return 0;
-	int ls = 0;
-	int qt = 0;
-	for (int i = 0; i < T; i += 16) {
-		int mn = 8;
-		vector<int> v;
-		for (int j = 0; j < 16; j++) {
-			assert(rs[i+j] == rs[(i+j)^7]);
-			if ((i+j)%8 < 4) continue;
-			mn = min(mn, rs[i+j]);
-			v.pb(rs[i+j]);
-			//cout << rs[i+j] << " ";
-		}
-		sort(v.begin(), v.end());
-		for (int j = 0; j < 8; j++)
-			cout << v[j] << " ";
-		cout << endl;
-		continue;
+	if (res) {
+		printf("Ann\n");
 
-		if (mn == ls) {
-			qt++;
-		} else {
-			cout << ls << " -> " << qt << endl;
-			qt = 0;
-			ls = mn;
+		for (int i = 0; i < n; i++) {
+			for (int j = 0; j < m; j++) {
+				if (!x[i][j]) continue;
+				go(v[i][j], -1, -1, i, j);
+				for (int a = 0; a < i; a++)
+					go(v[a][j]^v[i][j], a, -1, i, j);
+				for (int b = 0; b < j; b++)
+					go(v[i][b]^v[i][j], -1, b, i, j);
+				for (int a = 0; a < i; a++) {
+					for (int b = 0; b < j; b++) {
+						go(v[a][b]^v[a][j]^v[i][b]^v[i][j], a, b, i, j);
+					}
+				}
+			}
 		}
+	} else {
+		printf("Betty\n");
 	}
 }
