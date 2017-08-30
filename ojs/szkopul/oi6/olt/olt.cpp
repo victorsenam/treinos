@@ -131,64 +131,63 @@ int main () {
 		for (int j = 0; j < n; j++) {
 			v[j][0] = inp[j][0];
 			v[j][1] = inp[j][1];
+			fnd[j] = 0;
 			
 			if (c[i] == 'S' || c[i] == 'N') 
 				turn(j);
 			if (c[i] == 'W' || c[i] == 'N')
 				flip(j);
-
 		}
-		
-		alt = vec((v[i][0].x + v[i][1].x)/2, (v[i][0].y + v[i][1].y)/2);
-
-		evs = 0;
-		ev[evs].i = i;
-		ev[evs++].p = vec(v[i][1].x, (v[i][0].y + 3*v[i][1].y)/4);
-		ev[evs].i = i;
-		ev[evs++].p = vec(v[i][1].x, (3*v[i][0].y + v[i][1].y)/4);
 
 		int opn = 0;
+		evs = 0;
+		
+		alt = vec((v[i][0].x + v[i][1].x)/2, (v[i][0].y + v[i][1].y)/2);
+		vec lo(v[i][1].x, v[i][0].y + 3*v[i][1].y);
+		vec hi(v[i][1].x, 3*v[i][0].y + v[i][1].y);
+
 		for (int j = 0; j < n; j++) {
-			fnd[j] = 0;
-			if (i == j || v[j][1].x <= v[i][0].x)
+			if (v[j][1].x <= v[i][1].x || i == j)
 				continue;
+			
+			vec a(v[j][0].x,v[j][0].y), b(v[j][0].x,v[j][1].y), 
+				c(v[j][1].x,v[j][0].y), d(v[j][1].x,v[j][1].y);
 
 			vec mn, mx;
-			mn = v[j][0];
-			mx = v[j][1];
+			if (alt.sd(a,b) < 0) {
+				mn = a; mx = b;
+			} else {
+				mn = b; mx = a;
+			}
 
-			if (alt.sd(mx, mn) < 0)
-				swap(mx, mn);
+			if (alt.sd(c,mn) < 0)
+				mn = c;
+			else if (alt.sd(mx,c) < 0)
+				mx = c;
+			if (alt.sd(d,mn) < 0)
+				mn = d;
+			else if (alt.sd(mx,d) < 0)
+				mx = d;
 
-			vec cur(v[j][0].x, v[j][1].y);
-			if (alt.sd(cur,mn) < 0)
-				mn = cur;
-			else if (alt.sd(mx,cur) < 0)
-				mx = cur;
-
-			cur = vec(v[j][1].x, v[j][0].y);
-			if (alt.sd(cur,mn) < 0)
-				mn = cur;
-			else if (alt.sd(mx,cur) < 0)
-				mx = cur;
-
-			if (alt.sd(mn, ev[0].p) < 0) {
+			if (alt.sd(mn,lo) <= 0) {
 				fnd[j]++;
 				opn++;
-			} else if (alt.sd(mn, ev[1].p) <= 0) {
+			} else if (alt.sd(mn, hi) < 0) {
 				ev[evs++] = evt({j,mn});
 			}
-			if (alt.sd(mx, ev[0].p) < 0) {
-				if (fnd[j]) {
-					fnd[j]++;
+
+			if (alt.sd(mx,lo) <= 0) {
+				if (fnd[j]) { 
+					fnd[j]--;
 					opn--;
 				}
-			} else if (alt.sd(mx, ev[1].p) <= 0) {
+			} else if (alt.sd(mx, hi) < 0) {
 				ev[evs++] = evt({j,mx});
 			}
 		}
 
 		sort(ev, ev+evs, [] (evt a, evt b) {
+			//return a.p.compare(b.p, vec(-1,0));
 			return alt.sd(a.p, b.p) < 0;
 		});
 
@@ -206,7 +205,7 @@ int main () {
 			}
 			cout << endl;
 
-			if (opn == 0 && fnd[i] == 1) {
+			if (opn == 0) {
 				cnt++;
 				printf("%d\n", i+1);
 				break;
