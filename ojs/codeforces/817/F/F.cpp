@@ -1,113 +1,74 @@
 #include <bits/stdc++.h>
-#define cout if (1) cout
+#define cout if (0) cout
 
 using namespace std;
 typedef long long int ll;
 typedef pair<ll,ll> pii;
 #define pb push_back
 
-const int N = 8e6+7;
-const ll M = 2e18;
+#include <ext/pb_ds/assoc_container.hpp>
+#include <ext/pb_ds/tree_policy.hpp>
+using namespace __gnu_pbds;
+typedef ll tA;
+typedef null_type tB; // or null_type if you want a set
+typedef tree<tA, tB, less<tA>, rb_tree_tag, tree_order_statistics_node_update> ord_set;
+// map: tA -> tB com comparador less<tA>
+// pode usar como um map normalmente
+// s.find_by_order(k) :: retorna iterador para o k-esimo elemento (0-index) (ou s.end())
+// s.order_of_key(x)  :: retorna a qtd de elementos estritamente menores que x
 
 int n;
-int t; ll l, r;
-int sg[N]; // 0 : vazio, 1 : misto, 2 : cheio
-int lz[N]; // -1 : nada, 0 : limpa, 1 : inverte, 2 : preenche
-ll lf[N], rg[N];
-int ch[N][2];
-int es;
+ord_set s;
 
-void create (int & u, ll l, ll r) {
-	if (u) return;
-	u = ++es;
-	lf[u] = l; rg[u] = r;
-	sg[u] = 0; lz[u] = -1;
-	ch[u][0] = ch[u][1] = 0;
+void rev (ll x) {
+	if (s.find(x) == s.end()) {
+		s.insert(x);
+		cout << "+" << x << endl;
+	} else { 
+		s.erase(x);
+		cout << "-" << x << endl;
+	}
 }
 
-void rev (int & u) {
-	if (u == -1 || u == 1)
-		u = -u;
-	else
-		u = 2-u;
-}
-
-void upd (int u) {
-	ll md = lf[u] + (rg[u] - lf[u])/2ll;
-	if (lf[u] != rg[u]) { 
-		create(ch[u][0], lf[u], md);
-		create(ch[u][1], md+1, rg[u]);
-	}
-
-	if (lz[u] == 0 || lz[u] == 2) {
-		sg[u] = lz[u];
-		if (lf[u] != rg[u])
-			lz[ch[u][0]] = lz[ch[u][1]] = lz[u];
-	} else if (lz[u] == 1) {
-		sg[u] = 2 - sg[u];
-		if (lf[u] != rg[u]) {
-			rev(lz[ch[u][0]]);
-			rev(lz[ch[u][1]]);
-		}
-	}
-	lz[u] = -1;
-}
-
-void chg (int u, ll l, ll r, int t) {
-	upd(u);
-	if (r < lf[u] || rg[u] < l) {
-		//printf("[%lld,%lld] : %d\n", lf[u], rg[u], sg[u]);
-		return;
-	} else if (l <= lf[u] && rg[u] <= r) {
-		lz[u] = t;
-		upd(u);
-	} else {
-		chg(ch[u][0], l, r, t);
-		chg(ch[u][1], l, r, t);
-		
-		if (sg[ch[u][0]] == sg[ch[u][1]])
-			sg[u] = sg[ch[u][0]];
-		else
-			sg[u] = 1;
-	}
-	//printf("[%lld,%lld] : %d\n", lf[u], rg[u], sg[u]);
-}
-
-ll get (int u) {
-	assert(u);
-	upd(u);
-
-	//printf("[%lld,%lld] -> %lld\n", lf[u], rg[u], sg[u]);
-	if (sg[u] == 0) {
-		return lf[u];
-	} else if (sg[u] == 2) {
-		return M;
-	} else {
-		ll l = get(ch[u][0]);
-		if (l == M) {
-			ll r = get(ch[u][1]);
-			return r;
-		}
-		return l;
-	}
+int isin (ll x) {
+	int o = (int) s.order_of_key(x+1);
+	//printf("%lld é maior que %d\n", x, o);
+	return !(o%2);
 }
 
 int main () {
 	scanf("%d", &n);
-
-	int root = 0;
-	create(root, 0, M-1);
-	chg(root, 0, 0, 2);
+	s.insert(1);
+	cout << "+" << 1 << endl;
 	for (int i = 0; i < n; i++) {
 		int t; ll l, r;
 		scanf("%d %lld %lld", &t, &l, &r);
-		if (t == 1)
-			t = 2;
-		else if (t == 2)
-			t = 0;
-		else
-			t = 1;
-		chg(root, l, r, t);
-		printf("%lld\n", get(root));
+		r++;
+		
+		if (t == 3) {
+			rev(l);
+			rev(r);
+		} else {
+			int ini = isin(r);
+			ord_set::iterator it = s.lower_bound(l);
+			while (it != s.end() && *it < r) {
+				ord_set::iterator nx = next(it);
+				cout << "-" << *it << endl;
+				s.erase(it);
+				it = nx;
+			}
+
+			int is = isin(l);
+			if ((t == 1 && !is) || (t == 2 && is)) { 
+				s.insert(l);
+				cout << "+" << l << endl;
+			}
+
+			//printf("%lld foi de %d pra %d\n", r, ini, isin(r));
+
+			if (ini != isin(r))
+				rev(r);
+		}
+		printf("%lld\n", (*s.begin()));
 	}
 }
