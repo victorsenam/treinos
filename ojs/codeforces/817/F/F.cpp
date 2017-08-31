@@ -41,11 +41,14 @@ void upd (int u) {
 
 	if (lz[u] == 0 || lz[u] == 2) {
 		sg[u] = lz[u];
-		lz[ch[u][0]] = lz[ch[u][1]] = lz[u];
+		if (lf[u] != rg[u])
+			lz[ch[u][0]] = lz[ch[u][1]] = lz[u];
 	} else if (lz[u] == 1) {
 		sg[u] = 2 - sg[u];
-		rev(lz[ch[u][0]]);
-		rev(lz[ch[u][1]]);
+		if (lf[u] != rg[u]) {
+			rev(lz[ch[u][0]]);
+			rev(lz[ch[u][1]]);
+		}
 	}
 	lz[u] = -1;
 }
@@ -93,7 +96,8 @@ int main () {
 	scanf("%d", &n);
 
 	int root = 0;
-	create(root, 1, M-1);
+	create(root, 0, M-1);
+	chg(root, 0, 0, 2);
 	for (int i = 0; i < n; i++) {
 		int t; ll l, r;
 		scanf("%d %lld %lld", &t, &l, &r);
