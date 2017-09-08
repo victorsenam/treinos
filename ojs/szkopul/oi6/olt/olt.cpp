@@ -6,213 +6,178 @@ typedef long long int ll;
 typedef pair<ll,ll> pii;
 #define pb push_back
 
-// NOT STANDART FROM HERE
-
-// area de calota 2.pi.R.h (h altura)
-// volume de calota pi.h/6 * (3r^2 + h^2)
+const int N = 1e3+7;
+const char dr[] = "SENW";
 
 typedef ll cood;
 cood eps = 0;
 
-const double pi = acos(-1.);
-
-struct vec { // vector
-	// === BASIC ===
+struct vec { 
 	cood x, y;
-	vec () : x(0), y(0) {}
+
+	vec () {}
 	vec (cood a, cood b) : x(a), y(b) {}
 	friend ostream& operator<<(ostream& os, vec o);
+
 	vec operator - (vec o)
 	{ return vec(x - o.x, y - o.y); }
 	vec operator + (vec o)
 	{ return vec(x + o.x, y + o.y); }
-	vec operator * (cood o)
-	{ return vec(x * o, y * o); }
-	vec operator / (cood o)
-	{ return vec(x / o, y / o); }
+	vec operator / (cood a)
+	{ return vec(x/a, y/a); }
 	cood operator ^ (vec o)
 	{ return x * o.y - y * o.x; }
 	cood operator * (vec o)
 	{ return x * o.x + y * o.y; }
-
 	cood sq (vec o = vec())
 	{ return ((*this)-o)*((*this)-o); }
-	double nr (vec o = vec())
-	{ return sqrt(sq(o)); }
 
-	inline cood ar (vec a, vec b) // ccw signed area (positive if this is to the left of ab)
+	cood ar (vec a, vec b) // ccw signed area (positive if this is to the left of ab)
 	{ return (b - a) ^ ((*this) - a); }
-	inline int sd (vec a, vec b) // which side is this from ab? (-1 left, 0 over, 1 right)
+	int sd (vec a, vec b) // which side is this from ab? (-1 left, 0 over, 1 right)
 	{ cood o = ar(a, b); return (o < -eps) - (eps < o); }
 
-	// === ADVANCED ===
-	// rotate ccw by a (fails with ll)
-	vec rotate (double a)
-	{ return vec(cos(a) * x - sin(a) * y, sin(a) * x + cos(a) * y); }
+	// on which half plane is this point?
+	// 0 is upper half plane (y > 0) and (x,0) where x >= 0, 1 is otherwise
+	inline bool halfplane ()
+	{ return (y < eps || (abs(y) <= eps && x < eps)); }
 
-	// divide the plane relative to anc
-	// 0 if the ccw angle from anc to this is in [0,pi) and 1 otherwise, origin goes to 0
-	inline bool halfplane (vec anc = vec(1,0)) {
-		int l = sd(vec(), anc);
-		if (l == 0)
-			return (x < -eps);
-		return (l == 1);
+	// full ordering (ccw angle from this+(1,0), distance to this)
+	// is a < b?
+	// PRECISION : ok with double if norm in [-1e9,5e3]
+	inline bool compare (vec a, vec b) {
+		if ((a-(*this)).halfplane() != (b-(*this)).halfplane())
+			return (b-(*this)).halfplane();
+		return sd(a,b) < 0;
 	}
 
-	// ordering (ccw angle from anc, distance to origin)
-	// is this < o?
-	// PRECISION : ok with double if norm in [-1e4,1e3]
-	inline bool compare (vec o, vec anc = vec(1,0)) {
-		bool s[2] = {halfplane(anc), o.halfplane(anc)};
-		if (s[0] != s[1])
-			return s[0] < s[1];
-
-		int l = sd(o, vec());
-		if (l == 0)
-			return sq() - o.sq() < -eps;
-		return (l == -1);
+	vec flip () {
+		return vec({ y, -x });
 	}
-
-	// is this inside segment st? (tip of segment included, change for < -eps otherwise)
-	bool in_seg (vec s, vec t)
-	{ return (sd(s, t) == 0) && !(eps < ((*this) - s) * ((*this) - t)); }
 };
-ostream& operator<<(ostream& os, vec o)
-{ return os << '(' << o.x/4. << ", " << o.y/4. << ')'; }
-
-const int N = 2e3+7;
+ostream& operator << (ostream & os, vec a) {
+	return os << "(" << a.x << "," << a.y << ")";
+}
 
 int n;
-vec v[N][2], inp[N][2];
-char c[N];
-int fnd[N];
-vec alt;
+vec v[N][2]; char d[N];
+int cnt[N];
+bool isa[N];
+vec anc;
+int yes;
 
-struct evt {
-	int i;
+struct evt { 
+	int i, ty;
 	vec p;
-};
-
-int evs;
-evt ev[4*N];
-
-void flip (int j) {
-	vec r[2] = {v[j][0], v[j][1]};
+	friend ostream& operator<<(ostream& os, evt o);
 	
-	v[j][0].x = -r[1].x;
-	v[j][0].y = r[0].y;
-	v[j][1].x = -r[0].x;
-	v[j][1].y = r[1].y;
+	evt () {}
+	evt (int a, int b) { 
+		i = a; ty = b;
+		if (ty == -1)
+			p = vec({v[i][0].x, (3*v[i][0].y + v[i][1].y)/4});
+		else if (ty == -2)
+			p = vec({v[i][0].x, (3*v[i][1].y + v[i][0].y)/4});
+		else if (ty == 1)
+			p = vec({v[i][1].x, v[i][0].y});
+		else if (ty == 3)
+			p = vec({v[i][0].x, v[i][1].y});
+		else
+			p = v[i][!!ty];
+	}
+
+	bool operator < (const evt & ot) const {
+		return anc.sd(p, ot.p) < 0;
+	}
+};
+ostream& operator << (ostream & os, evt a) {
+	return os << "[" << a.i+1 << " " << a.ty << "](" << a.p.flip().x/4. << "," << a.p.flip().y/4. << ")";
 }
 
-void turn (int j) {
-	vec r[2] = {v[j][0], v[j][1]};
 
-	v[j][0].x = -r[0].y;
-	v[j][0].y = r[1].x;
-	v[j][1].x = -r[1].y;
-	v[j][1].y = r[0].x;
-}
+evt p[4*N];
+int ps;
 
 int main () {
 	scanf("%d", &n);
 
 	for (int i = 0; i < n; i++) {
-		for (int k = 0; k < 2; k++) {
-			scanf("%lld %lld", &inp[i][k].x, &inp[i][k].y);
-			inp[i][k].x *= 4;
-			inp[i][k].y *= 4;
+		for (int j = 0; j < 2; j++) {
+			scanf("%d %d", &v[i][j].x, &v[i][j].y);
+			v[i][j].x *= 4;
+			v[i][j].y *= 4;
 		}
-		scanf(" %c", &c[i]);
+		scanf(" %c", &d[i]);
 	}
 
-	int cnt = 0;
-	for (int i = 0; i < n; i++) {
-		for (int j = 0; j < n; j++) {
-			v[j][0] = inp[j][0];
-			v[j][1] = inp[j][1];
-			fnd[j] = 0;
-			
-			if (c[i] == 'S' || c[i] == 'N') 
-				turn(j);
-			if (c[i] == 'W' || c[i] == 'N')
-				flip(j);
+	for (int k = 0; k < 4; k++) { 
+		for (int i = 0; i < n; i++) {
+			v[i][0] = v[i][0].flip();
+			v[i][1] = v[i][1].flip();
+			swap(v[i][0].x, v[i][1].x);
 		}
 
-		int opn = 0;
-		evs = 0;
-		
-		alt = vec((v[i][0].x + v[i][1].x)/2, (v[i][0].y + v[i][1].y)/2);
-		vec lo(v[i][1].x, v[i][0].y + 3*v[i][1].y);
-		vec hi(v[i][1].x, 3*v[i][0].y + v[i][1].y);
-
-		for (int j = 0; j < n; j++) {
-			if (v[j][1].x <= v[i][1].x || i == j)
-				continue;
+		for (int i = 0; i < n; i++) {
+			if (d[i] != dr[k]) continue;
+			cout << "FROM " << i + 1 << endl;
+			ps = 0;
 			
-			vec a(v[j][0].x,v[j][0].y), b(v[j][0].x,v[j][1].y), 
-				c(v[j][1].x,v[j][0].y), d(v[j][1].x,v[j][1].y);
+			anc = (v[i][0] + v[i][1])/2;
+			vec ini = evt({ i, -1 }).p;
+			vec end = evt({ i, -2 }).p;
 
-			vec mn, mx;
-			if (alt.sd(a,b) < 0) {
-				mn = a; mx = b;
-			} else {
-				mn = b; mx = a;
-			}
+			int qt = 0;
+			for (int j = 0; j < n; j++) {
+				cnt[j] = 0;
+				if (i == j || v[j][0].x >= v[i][0].x)
+					continue;
+				for (int t = 0; t < 4; t++) {
+					p[ps] = evt({ j, t });
 
-			if (alt.sd(c,mn) < 0)
-				mn = c;
-			else if (alt.sd(mx,c) < 0)
-				mx = c;
-			if (alt.sd(d,mn) < 0)
-				mn = d;
-			else if (alt.sd(mx,d) < 0)
-				mx = d;
-
-			if (alt.sd(mn,lo) <= 0) {
-				fnd[j]++;
-				opn++;
-			} else if (alt.sd(mn, hi) < 0) {
-				ev[evs++] = evt({j,mn});
-			}
-
-			if (alt.sd(mx,lo) <= 0) {
-				if (fnd[j]) { 
-					fnd[j]--;
-					opn--;
+					if (!anc.compare(ini, p[ps].p)) {
+						if (cnt[p[ps].i] == 0)
+							qt++;
+						else if (cnt[p[ps].i] == 3)
+							qt--;
+						cnt[p[ps].i]++;
+					} else if (anc.compare(p[ps].p, end)) {
+						ps++;
+					}
 				}
-			} else if (alt.sd(mx, hi) < 0) {
-				ev[evs++] = evt({j,mx});
 			}
-		}
+			sort(p, p+ps);
 
-		sort(ev, ev+evs, [] (evt a, evt b) {
-			//return a.p.compare(b.p, vec(-1,0));
-			return alt.sd(a.p, b.p) < 0;
-		});
+			if (!qt) {
+				isa[i] = 1;
+				yes++;
+			}
 
-		for (int j = 0; j < evs;) {
-			vec fs = ev[j].p;
-			while (j < evs && alt.sd(ev[j].p,fs) == 0) {
-				if (ev[j].i != i) {
-					if (fnd[ev[j].i] == 0)
-						opn++;
-					if (fnd[ev[j].i] == 1)
-						opn--;
+			for (int j = 0; !isa[i] && j < ps;) {
+				evt cur = p[j];
+				while (j < ps && !(cur < p[j])) {
+					cout << p[j] << " ";
+					if (cnt[p[j].i] == 0)
+						qt++;
+					else if (cnt[p[j].i] == 3)
+						qt--;
+					cnt[p[j].i]++;
+					j++;
 				}
-				fnd[ev[j].i]++;
-				j++;
-			}
-			cout << endl;
+				cout << endl;
 
-			if (opn == 0) {
-				cnt++;
-				printf("%d\n", i+1);
-				break;
+				if (!qt) {
+					isa[i] = 1;
+					yes++;
+				}
 			}
 		}
 	}
-
-	if (cnt == 0)
+	
+	if (!yes) {
 		printf("BRAK\n");
+	} else {
+		for (int i = 0; i < n; i++)
+			if (isa[i])
+				printf("%d\n", i+1);
+	}
 }
