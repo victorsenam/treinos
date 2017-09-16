@@ -1,251 +1,215 @@
 #include <bits/stdc++.h>
-#define debug if (1)
+#define cout if (0) cout
 
 using namespace std;
 typedef long long int ll;
 typedef pair<ll,ll> pii;
 #define pb push_back
 
-// NOT STANDART FROM HERE
+typedef double num;
+const num eps = 1e-8;
 
-// area de calota 2.pi.R.h (h altura)
-// volume de calota pi.h/6 * (3r^2 + h^2)
-
-typedef double cood;
-cood eps = 1e-8;
-// tests for double were made with eps = 1e-8
-
-const double pi = acos(-1.);
 const int N = 1e6+7;
 
-struct vec { // vector
-	// === BASIC ===
-	cood x, y;
+struct vec { 
+	num x, y;
+	num st;
 
-	vec () : x(0), y(0) {}
-	vec (cood a, cood b) : x(a), y(b) {}
-	friend ostream& operator<<(ostream& os, vec o);
-
-	vec operator - (vec o)
-	{ return vec(x - o.x, y - o.y); }
-	vec operator + (vec o)
-	{ return vec(x + o.x, y + o.y); }
-	vec operator * (cood o)
-	{ return vec(x * o, y * o); }
-	vec operator / (cood o)
-	{ return vec(x / o, y / o); }
-	cood operator ^ (vec o)
-	{ return x * o.y - y * o.x; }
-	cood operator * (vec o)
-	{ return x * o.x + y * o.y; }
-
-	cood sq (vec o = vec())
-	{ return ((*this)-o)*((*this)-o); }
-	double nr (vec o = vec())
-	{ return sqrt(sq(o)); }
-
-	cood ar (vec a, vec b) // ccw signed area (positive if this is to the left of ab)
-	{ return (b - a) ^ ((*this) - a); }
-	int sd (vec a, vec b) // which side is this from ab? (-1 left, 0 over, 1 right)
-	{ cood o = ar(a, b); return (o < -eps) - (eps < o); }
-
-	cood pr (vec a, vec b)
-	{ return (a-(*this)) * (b-(*this)); }
-	int dr (vec a, vec b)
-	{ cood o = pr(a, b); return (o < -eps) - (eps < o); }
-
-	// === ADVANCED ===
-	// rotate ccw by a (fails with ll)
-	vec rotate (double a)
-	{ return vec(cos(a) * x - sin(a) * y, sin(a) * x + cos(a) * y); }
-
-	// on which half plane is this point?
-	// 0 is upper half plane (y > 0) and (x,0) where x >= 0, 1 is otherwise
-	inline bool halfplane ()
-	{ return (y < eps || (abs(y) <= eps && x < eps)); }
-
-	// full ordering (ccw angle from this+(1,0), distance to this)
-	// is a < b?
-	// PRECISION : ok with double if norm in [-1e9,5e3]
-	bool compare (vec a, vec b) {
-		if ((a-(*this)).halfplane() != (b-(*this)).halfplane())
-			return (b-(*this)).halfplane();
-		int o = sd(a,b);
-		if (o) return o < 0;
-		return a.dr((*this),b) > 0;
+	num eval (num al) {
+		return x * cos(al) + y * sin(al);
 	}
 
-	// is this inside segment st? (tip of segment included, change for < -eps otherwise)
-	bool in_seg (vec s, vec t)
-	{ return (sd(s, t) == 0) && !(eps < ((*this) - s) * ((*this) - t)); }
-};
-ostream& operator<<(ostream& os, vec o)
-{ return os << '(' << o.x << ", " << o.y << ')'; }
+	// esse cara ganha de t daqui pra frente
+	// x >= t.x
+	num beats (vec t) {
+		if (abs(x - t.x) < eps) {
+			if (y < t.y)
+				return 0.;
+			else
+				return 1.;
+		}
+		num lo = 0.;
+		num hi = 1.;
 
-// tests TODO
-struct lin { // line
-	cood a, b, c;
+		int ts = 70;
+		while (ts--) {
+			num md = (lo + hi)*.5;
+			if (eval(md) + eps <= t.eval(md))
+				hi = md;
+			else
+				lo = md;
+		}
 
-	lin () {}
-	lin (cood x, cood y, cood z) : a(x), b(y), c(z) {}
-	lin (vec s, vec t) : a(t.y - s.y), b(s.x - t.x), c(a * s.x + b * s.y) {}
+		return lo;
+	}
 
-	// parallel to this through p
-	lin parll (vec p) { return lin(a, b, a * p.x + b * p.y); }
-
-	// line intersection
-	vec inter (lin o) {
-		cood d = a * o.b - o.a * b;
-		if (d < eps && -eps < d) throw 0; // parallel
-		return vec((o.b * c - b * o.c) / d, (a * o.c - o.a * c) / d);
+	bool operator < (const vec & ot) const {
+		if (abs(x - ot.x) > eps)
+			return x < ot.x;
+		return y + eps < ot.y;
 	}
 };
+
+num evt[N]; int t_evt[N], i_evt[N], evs;
+
+struct env {
+ 	vec v[N];
+	int n;
+
+	void add (vec t) {
+		if (n && t.beats(v[n-1]) + eps >= 1.)
+			return;
+		while (n && t.beats(v[n-1]) + eps <= v[n-1].st)
+			n--;
+
+		if (n)
+			t.st = t.beats(v[n-1]);
+		else
+			t.st = 0.;
+		v[n++] = t;
+	}
+
+	num get (double al) {
+		int lo = 0;
+		int hi = n-1;
+
+		while (lo < hi) {
+			int md = (lo+hi+1)/2;
+			if (v[md].st < al)
+				lo = md;
+			else
+				hi = md-1;
+		}
+
+		return v[lo].eval(al);
+	}
+
+	void inter (int i, vec t) {
+		cout << "(" << t.x << "," << t.y << ")";
+		int nx = upper_bound(v, v+n, t, [] (vec a, vec b) { return a.x < b.x; }) - v;
+		int pr = nx-1;
+		t_evt[evs] = 0;
+		i_evt[evs] = i;
+		if (pr == -1) {
+			evt[evs++] = eps;
+		} else {
+			int lo = 0, hi = pr;
+			while (lo < hi) {
+				int md = (lo+hi+1)/2;
+
+				if (t.eval(v[md].st) + eps <= v[md].eval(v[md].st))
+					hi = md-1;
+				else
+					lo = md;
+			}
+			evt[evs++] = t.beats(v[lo]) + eps;
+		}
+		cout << "[" << evt[evs-1] << ",";
+		
+		t_evt[evs] = 1;
+		i_evt[evs] = i;
+		if (nx == n) {
+			evt[evs++] = 1. - eps;
+		} else {
+			int lo = nx, hi = n-1;
+			while (lo < hi) {
+				int md = (lo+hi)/2;
+				
+				if (v[md].eval(v[md+1].st) + eps <= t.eval(v[md+1].st))
+					hi = md;
+				else
+					lo = md+1;
+			}
+			evt[evs++] = v[lo].beats(t) - eps;
+		}
+
+		cout << evt[evs-1] << "]" << endl;
+	}
+} e[2];
 
 int n;
-int as, bs;
-vec a[N], b[N];
+vec f[N], a[N];
 int p[N];
-vec env[2][N];
-int es[2];
-
-pair<double, bool> c[N];
-int cs;
-
-double aval (vec v, double al)
-{ return v.x * cos(al) + v.y * sin(al); }
-
-// avalia env k no angulo al
-double get (int k, double al) {
-	int lo = 0, hi = es[k]-1;
-	while (lo < hi) {
-		int md = (lo + hi)/2;
-		
-		if (aval(env[k][md], al) <= aval(env[k][md+1], al))
-			hi = md;
-		else
-			lo = md+1;
-	}
-
-	return aval(env[k][lo], al);
-}
-
-pair<double, double> inters (int k, vec v) {
-	double lo = 0., hi = pi;
-	
-	// minimo da dif
-	int ts = 70;
-	while (ts--) {
-		double q = (lo+hi)/3.;
-
-		double r1 = aval(v, q) - get(k, q);
-		double r2 = aval(v, q+q) - get(k, q+q);
-
-		if (r1 < r2)
-			hi = q+q;
-		else
-			lo = q;
-	}
-
-	double cen = lo;
-	pair<double,double> res;
-
-	// primeira inter
-	lo = 0.;
-	hi = max(cen - eps, 0.);
-	ts = 70;
-	while (ts--) {
-		double md = (lo+hi)/2.;
-
-		if (aval(v,md) < get(k,md))
-			lo = md;
-		else
-			hi = md;
-	}
-	res.first = lo;
-	if (v.x >= env[k][es[k]-1].x)
-		res.first = 0./0.;
-
-	// segunda inter
-	lo = min(cen + eps, pi);
-	hi = pi;
-	ts = 70;
-	while (ts--) {
-		double md = (lo+hi)/2.;
-
-		if (aval(v,md) < get(k,md))
-			hi = md;
-		else
-			lo = md;
-	}
-	res.second = lo;
-	if (v.x <= env[k][0].x)
-		res.second = 0./0.;
-
-	return res;
-}
+int fs, as;
+set<vec> s;
 
 int main () {
+	cout << setprecision(10) << fixed;
 	scanf("%d", &n);
 
 	for (int i = 0; i < n; i++) {
-		vec v;
-		int t;
+		vec v; int t;
 		scanf("%lf %lf %d", &v.x, &v.y, &t);
-
-		if (!t)
-			b[bs++] = v;
-		else
-			a[as++] = v;
+		if (t) {
+			f[fs++] = v;
+			s.insert(v);
+		} else {
+			if (s.find(v) == s.end())
+				a[as++] = v;
+		}
 	}
 
-	sort(a, a+as, [] (vec a, vec b) {
+	if (fs == 1) {
+		printf("1\n");
+		return 0;
+	}
+
+	sort(f, f+fs, [] (vec a, vec b) {
 		return a.x < b.x;
 	});
 
 	for (int k = 0; k < 2; k++) {
-		es[k] = 0;
-		for (int i = 0; i < as; i++) {
-			if (es[k] && env[k][es[k]-1].x == a[i].x)
-				env[k][es[k]-1].y = min(env[k][es[k]-1].y, a[i].y);
-			else
-				env[k][es[k]++] = a[i];
+		for (int i = 0; i < fs; i++) {
+			f[i].x = -f[i].x; 
+			f[i].y = -f[i].y; 
+		}
+		for (int i = 0; i + i < fs; i++)
+			swap(f[i], f[fs-i-1]);
+		
+		for (int i = 0; i < fs; i++) {
+			e[k].add(f[i]);
+		}
 
+		cout << "env " << k << endl;
+		for (int i = 0; i < e[k].n; i++)
+			cout << "(" << e[k].v[i].x << "," << e[k].v[i].y << ") : " << e[k].v[i].st << endl;
+
+	}
+
+	for (int k = 0; k < 2; k++) {
+		cout << "env " << k << endl;
+		for (int i = 0; i < as; i++) {
 			a[i].x = -a[i].x;
 			a[i].y = -a[i].y;
-		}
-
-		for (int i = 0; i + i < as; i++)
-			swap(a[i], a[as-i-1]);
-	}
-
-	int k = 0;
-	for (int i = 0; i < bs; i++) {
-		for (int j = 0; j < 2; j++) {
-			pair<double,double> it = inters(j,b[i]);
-			c[cs].first = it.first + eps;
-			c[cs].second = 1;
-			if (c[cs].first == c[cs].first)
-				cs++;
-			else
-				k++;
-
-			c[cs].first = it.second - eps;
-			c[cs].second = 0;
-			if (c[cs].first == c[cs].first)
-				cs++;
+			e[k].inter(i, a[i]);
 		}
 	}
 
-	sort(c, c+cs);
+	for (int i = 0; i < evs; i++)
+		p[i] = i;
 
-	int rs = k;
-	for (int i = 0; i < cs; i++) {
-		if (c[i].second)
-			k--;
-		else
-			k++;
-		rs = min(rs, k);
+	sort(p, p+evs, [] (int i, int j) {
+		return evt[i] < evt[j];
+	});
+
+	int cnt = n;
+	int mn = cnt;
+	map<int, int> mp;
+	for (int _ev = 0; _ev < evs; _ev++) {
+		int ev = p[_ev];
+		int i = i_evt[ev];
+
+		if (t_evt[ev]) {
+			if (--mp[i] == 0)
+				cnt++;
+		} else {
+			if (mp[i]++ == 0)
+				cnt--;
+		}
+
+		cout << evt[ev] << ": " << t_evt[ev] << " " << i << "  (cnt = " << cnt << ")" << endl;
+		mn = min(mn, cnt);
 	}
 
-	printf("%d\n", rs + as);
+	printf("%d\n", mn);
 }
