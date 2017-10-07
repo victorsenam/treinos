@@ -1,5 +1,5 @@
 #include <bits/stdc++.h>
-#define debug if (1)
+#define cout if (1) cout
 
 // XXX without explanation marks untested functions
 
@@ -323,14 +323,19 @@ struct segm {
 		return i;
 	}
 
+	int cmp (vec o) const {
+		return o.ccw(v[i].v, v[j].v);
+	}
+
+	int cmp (segm o) const {
+		int r = cmp(v[o.i].v);
+		if (r) return r == 1;
+		return cmp(v[o.j].v) == 1;
+	}
+
 	bool operator < (segm o) const {
-		assert(v[i].v.x <= v[o.i].v.x);
-		assert(i != j);
-		assert(idx != N-1);
-		//cout << "with " << idx << " " << v[i].v << " " << v[j].v;
-		int r = v[o.i].v.ccw(v[i].v, v[j].v);
-		//cout << " -> " << r << endl;
-		return r == 1;
+		if (i != j) return cmp(o) == 1;
+		return o.cmp((*this)) == -1;
 	}
 };
 
@@ -359,6 +364,7 @@ int main () {
 
 		if (v[b].v < v[a].v)
 			swap(a,b);
+		cout << "segment " << v[a].v << " to " << v[b].v << " gets (" << tips[i][0] << "," << tips[i][1] << ")" << endl;
 		sg[i] = segm({a,b,i});
 		is_on[a].pb(i);
 		is_on[b].pb(i);
@@ -381,6 +387,7 @@ int main () {
 			int x = tips[a.idx][!(v[i].v < v[a.oth(i)].v)];
 			int y = tips[b.idx][!(v[b.oth(i)].v < v[i].v)];
 
+			cout << x << "<->" << y << endl;
 			adj[x].pb(y);
 			adj[y].pb(x);
 		}
@@ -392,6 +399,7 @@ int main () {
 		v[i+n].type = 1;
 		p[i+n] = i+n;
 
+		cout << "query " << v[i+n].v << " gets " << ns << endl;
 		node[i+n] = ns++;
 	}
 
@@ -431,10 +439,11 @@ int main () {
 			// segmento acima (ou que passa pelo) sg[j].i (não sg[j].j)
 			int x = 0;
 			auto it = s.lower_bound(sg[j]);
-			if (it != s.end()) x = it->idx;
+			if (it != s.end()) x = tips[it->idx][0];
 
-			adj[tips[j][0]].pb(tips[x][0]);
-			adj[tips[x][0]].pb(tips[j][0]);
+			cout << tips[j][0] << "<->" << x << endl;
+			adj[tips[j][0]].pb(x);
+			adj[x].pb(tips[j][0]);
 		}
 
 		for (int j : queries) {
@@ -442,29 +451,25 @@ int main () {
 			sg[N-1].i = sg[N-1].j = j;
 			sg[N-1].idx = N-1;
 			int x = 0;
-			cout << "query " << j << endl;
-			for (segm ss : s)
-				cout << "with " << ss.idx << " " << v[ss.i].v << " " << v[ss.j].v << " -> " << v[j].v.ccw(v[ss.i].v, v[ss.j].v) << endl;
 			auto it = s.lower_bound(sg[N-1]);
-			if (it != s.end()) x = it->idx;
-			cout << "results in " << x << endl;
+			if (it != s.end()) {
+				cout << "found " << it->idx << endl;
+				x = tips[it->idx][0];
+			}
 
-			adj[node[j]].pb(tips[x][0]);
-			adj[tips[x][0]].pb(node[j]);
+			cout << node[j] << "<->" << x << endl;
+			adj[node[j]].pb(x);
+			adj[x].pb(node[j]);
 		}
 
 		for (int j : before) {
 			s.erase(sg[j]);
-			cout << "remove " << j << endl;
-			for (segm ss : s)
-				cout << "with " << ss.idx << " " << v[ss.i].v << " " << v[ss.j].v << " -> " << v[sg[j].i].v.ccw(v[ss.i].v, v[ss.j].v) << endl;
+			cout << "erase " << sg[j].idx << endl;
 		}
 
 		for (int j : after) {
 			s.insert(sg[j]);
-			cout << "add " << j << " : " << v[sg[j].i].v << " " << v[sg[j].j].v << endl;
-			for (segm ss : s)
-				cout << "with " << ss.idx << " " << v[ss.i].v << " " << v[ss.j].v << " -> " << v[sg[j].i].v.ccw(v[ss.i].v, v[ss.j].v) << endl;
+			cout << "insert " << sg[j].idx << endl;
 		}
 
 		for (int j : queries) {
@@ -473,25 +478,32 @@ int main () {
 			sg[N-1].idx = N-1;
 			int x = 0;
 			auto it = s.lower_bound(sg[N-1]);
-			if (it != s.end()) x = it->idx;
+			if (it != s.end()) {
+				cout << "found " << it->idx << endl;
+				x = tips[it->idx][0];
+			}
 
-			adj[node[j]].pb(tips[x][0]);
-			adj[tips[x][0]].pb(node[j]);
+			cout << node[j] << "<->" << x << endl;
+			adj[node[j]].pb(x);
+			adj[x].pb(node[j]);
 		}
 		
 		for (int j : vertical) {
 			// segmento acima (ou que passa pelo) sg[j].i (não sg[j].j)
 			int x = 0;
 			auto it = s.lower_bound(sg[j]);
-			if (it != s.end()) x = it->idx;
+			if (it != s.end()) x = tips[it->idx][0];
 
-			adj[tips[j][1]].pb(tips[x][0]);
-			adj[tips[x][0]].pb(tips[j][1]);
+			cout << tips[j][1] << "<->" << x << endl;
+			adj[tips[j][1]].pb(x);
+			adj[x].pb(tips[j][1]);
 		}
 	}
 
+	dfs(0);
+
 	for (int i = 0; i < q; i++)
-		if (visi[node[i+n]])
+		if (!visi[node[i+n]])
 			printf("Yes\n");
 		else
 			printf("No\n");
