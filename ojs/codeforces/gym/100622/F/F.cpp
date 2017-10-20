@@ -1,5 +1,5 @@
 #include <bits/stdc++.h>
-#define cout if (0) cout
+#define debug if (1)
 
 // XXX without explanation marks untested functions
 
@@ -13,8 +13,8 @@ typedef pair<ll,ll> pii;
 // area de calota 2.pi.R.h (h altura)
 // volume de calota pi.h/6 * (3r^2 + h^2)
 
-typedef ll cood;
-cood eps = 0;
+ typedef double cood;
+ cood eps = 1e-6;
 // tests for double were made with eps = 1e-8
 
 const double pi = acos(-1.);
@@ -31,8 +31,10 @@ struct vec { // vector
 	vec (cood a, cood b) : x(a), y(b) {}
 	friend ostream& operator<<(ostream& os, vec o);
 
-	bool operator < (vec o) const 
-	{ return (x < o.x || (x == o.x && y > o.y)); }
+	bool operator < (vec o) const {
+		if (x != o.x) return x < o.x;
+		return y < o.y;
+	}
 
 	vec operator - (vec o)
 	{ return vec(x - o.x, y - o.y); }
@@ -62,6 +64,11 @@ struct vec { // vector
 	int dir (vec a, vec b) // direction of (thia)a relative to (this)b (-1 opposite, 0 none, 1 same)
 	{ cood o = inner(a, b); return (eps < o) - (o < -eps); }
 
+	vec proj (vec a, vec b) { // projection of (this) over ab
+		double d = ((*this)-a)*(b-a) / (a.sq(b));
+		return a + (b-a)*d;
+	}
+
 	vec rotate (double a) // rotate ccw by a (fails with ll)
 	{ return vec(cos(a) * x - sin(a) * y, sin(a) * x + cos(a) * y); }
 	vec rot90 () // rotate pi/2 ccw
@@ -84,7 +91,7 @@ struct vec { // vector
 
 	// is this inside segment st? (tip of segment included, change for dr < 0 otherwise)
 	bool in_seg (vec s, vec t)
-	{ return (ccw(s,t) == 0) && (dir(s,t) <= 0); }
+	{ return (ccw(s,t) == 0) && (dir(s,t) < 0); }
 
 	// XXX squared distance from this to line defined by st
 	double dist2_lin (vec s, vec t)
@@ -222,7 +229,7 @@ struct cir { // circle
 		double d = c.nr(o.c);
 		double a = (r*r + d*d - o.r*o.r) / (2.*d); // r*cos(ans,v,c.v)
 		double h = sqrt(r*r - a*a);
-		if (::isnan(h)) h = 0;
+		if (h != h) h = 0;
 		vec p = o.c - c;
 		return pair<vec,vec>(c + p*(a/d) + (p.rot90()*(h/d)), c + p*(a/d) - (p.rot90()*(h/d)));
 	}
@@ -234,7 +241,7 @@ struct cir { // circle
 		double h = abs(s.cross(t,c)) / (2.*d);
 		double x = sqrt(s.sq(c) - h*h);
 		double y = sqrt(r*r - h*h);
-		if (::isnan(y)) y = 0;
+		if (y != y) y = 0;
 		vec p = t - s;
 		return pair<vec,vec>(s + p*((x-y)/d), s + p*((x+y)/d));
 	}
@@ -285,256 +292,79 @@ int graham (vec v[], int n, int brd) {
 	return s;
 }
 
-struct point {
-	vec v;
-	int idx;
-	int type; // 0 : tip, 1 : query
+vec v[4];
 
-	bool operator < (point & ot) {
-		return v.x < ot.v.x;
+void tcheca (vec v, vec l, bool troca=1) {
+	if (troca) {
+		tcheca(v,l,0);
+		tcheca(v,vec(0,0)-l,0);
+		tcheca(v,l.rot90(),0);
+		tcheca(v,vec(0,0)-l.rot90(),0);
+		return;
 	}
-};
+	vec a[4] = {v, v+l, v + l + l.rot90(), v + l.rot90()}; 
 
-const int N = 1e6+7;
+	for (int i = 0; i < 4; i++) {
+		if (isnan(a[i].x) || isnan(a[i].y)) return;
+		bool isin = 0;
+		for (int j = 0; j < 4; j++) {
+			if (::v[i].in_seg(a[j],a[(j+1)%4]))
+				isin = 1;
+		}
+		if (!isin)
+			return;
+	}
 
-int n, m, q;
-point v[N], inp[N];
-int p[N];
-int gr[N], ns;
-vector<int> is_on[N];
-int tips[N][2];
-int node[N];
-int visi[N];
-vector<int> adj[N];
-
-void dfs (int u) {
-	if (visi[u]) return;
-	cout << " " << u;
-	visi[u] = 1;
-	for (int v : adj[u])
-		dfs(v);
+	for (int i = 0; i < 4; i++)
+		printf("%.20f %.20f\n", a[i].x, a[i].y);
+	exit(0);
 }
 
-struct segm {
-	int i, j;
-	int idx;
-
-	int oth (int x) {
-		if (i == x) return j;
-		return i;
-	}
-
-	int cmp (vec o) const {
-		return o.ccw(v[i].v, v[j].v);
-	}
-
-	// i != j e v[i].x <= v[o.i].x
-	int cmp (segm o) const {
-		assert(i!=j && v[i].v.x <= v[o.i].v.x);
-		int r = cmp(v[o.i].v);
-		if (r) return r;
-		return cmp(v[o.j].v);
-	}
-
-	bool operator < (segm o) const {
-		if (i == j || v[i].v.x > v[o.i].v.x) return o.cmp((*this)) == -1;
-		return cmp(o) == 1;
-	}
-};
-
-segm sg[N];
-set<segm> s;
-
 int main () {
-	scanf("%d %d %d", &n, &m, &q);
-	ns = 1;
-
-	for (int i = 0; i < n; i++) {
-		scanf("%lld %lld", &v[i].v.x, &v[i].v.y);
-		v[i].idx = i;
-		v[i].type = 0;
-		inp[i] = v[i];
-		p[i] = i;
-	}
+#ifdef ONLINE_JUDGE
+	freopen("four.in", "r", stdin);
+	freopen("four.out", "w", stdout);
+#endif
+	for (int i = 0; i < 4; i++)
+		scanf("%lf %lf", &v[i].x, &v[i].y);
 	
-	for (int i = 0; i < m; i++) {
-		int a, b;
-		scanf("%d %d", &a, &b);
-		a--; b--;
+	sort(v, v+4);
 
-		tips[i][0] = ns++;
-		tips[i][1] = ns++;
-
-		if (v[b].v < v[a].v)
-			swap(a,b);
-		cout << "segment " << v[a].v << " to " << v[b].v << " gets (" << tips[i][0] << "," << tips[i][1] << ")" << endl;
-		sg[i] = segm({a,b,i});
-		is_on[a].pb(i);
-		is_on[b].pb(i);
-	}
-
-	for (int i = 0; i < n; i++) {
-		cout << "from point " << v[i].v << endl;
-		sort(is_on[i].begin(), is_on[i].end(), [i] (int x, int y) {
-			int a = sg[x].oth(i);
-			int b = sg[y].oth(i);
-
-			if ((v[a].v < v[i].v) != (v[b].v < v[i].v))
-				return v[a].v < v[i].v;
-			return v[a].v.ccw(v[i].v, v[b].v) == 1;
-		});
-
-		for (int j = 0; j < is_on[i].size(); j++) {
-			segm a = sg[is_on[i][j]];
-			segm b = sg[is_on[i][(j+1)%is_on[i].size()]];
-			
-			int x = tips[a.idx][!(v[i].v < v[a.oth(i)].v)];
-			int y = tips[b.idx][!(v[b.oth(i)].v < v[i].v)];
-
-			cout << x << "<->" << y << endl;
-			adj[x].pb(y);
-			adj[y].pb(x);
-		}
-	}
-
-	for (int i = 0; i < q; i++) {
-		scanf("%lld %lld", &v[i+n].v.x, &v[i+n].v.y);
-		v[i+n].idx = i;
-		v[i+n].type = 1;
-		p[i+n] = i+n;
-
-		cout << "query " << v[i+n].v << " gets " << ns << endl;
-		node[i+n] = ns++;
-	}
-
-	sort(p, p+n+q, [] (int i, int j) {
-		return v[i] < v[j];
-	});
-
-	for (int _i = 0; _i < n+q;) {
-		point ev = v[p[_i]];
-
-		vector<int> queries;
-		vector<int> vertical, before, after;
-
-		while (_i < n+q && !(ev < v[p[_i]])) {
-			int i = p[_i];
-			cout << v[i].v << " ";
-			if (v[i].type == 0) {
-				for (int j : is_on[i]) {
-					int a = sg[j].oth(i);
-					if (v[i].v.x == v[a].v.x) {
-						if (v[i].v.y < v[a].v.y)
-							vertical.pb(j);
-					} else if (v[i].v < v[a].v) {
-						after.pb(j);
-					} else {
-						before.pb(j);
-					}
-				}
-			} else {
-				queries.pb(i);
-			}
-			_i++;
-		}
-		cout << endl;
-
-		for (int j : vertical) {
-			// segmento acima (ou que passa pelo) sg[j].i (não sg[j].j)
-			int x = 0;
-			sg[N-1].i = sg[N-1].j = sg[j].i;
-			sg[N-1].idx = N-1;
-			auto it = s.lower_bound(sg[N-1]);
-			if (it != s.end()) x = tips[it->idx][0];
-
-			cout << tips[j][0] << "<->" << x << endl;
-			adj[tips[j][0]].pb(x);
-			adj[x].pb(tips[j][0]);
-		}
-
-		for (int j : queries) {
-			// segmento acima de v[j].v
-			sg[N-1].i = sg[N-1].j = j;
-			sg[N-1].idx = N-1;
-			int x = 0;
-			auto it = s.lower_bound(sg[N-1]);
-			if (it != s.end()) {
-				x = tips[it->idx][0];
-			}
-
-			cout << node[j] << "<->" << x << endl;
-			adj[node[j]].pb(x);
-			adj[x].pb(node[j]);
-		}
-
-		for (int j : before) {
-			int x = 0;
-			auto it = s.upper_bound(sg[j]);
-			if (it != s.end()) x = tips[it->idx][0];
-			
-			cout << tips[j][1] << "<->" << x << endl;
-			adj[tips[j][1]].pb(x);
-			adj[x].pb(tips[j][1]);
-		}
-
-		for (int j : before) {
-			s.erase(sg[j]);
-			cout << "erase " << sg[j].idx + 1 << endl;
-		}
-
-		for (int j : after) {
-			s.insert(sg[j]);
-			cout << "insert " << sg[j].idx + 1 << endl;
-		}
-
-		for (int j : after) {
-			int x = 0;
-			auto it = s.upper_bound(sg[j]);
-			if (it != s.end()) x = tips[it->idx][0];
-			
-			cout << tips[j][1] << "<->" << x << endl;
-			adj[tips[j][1]].pb(x);
-			adj[x].pb(tips[j][1]);
-		}
-
-
-		for (int j : queries) {
-			// segmento acima de v[j].v
-			sg[N-1].i = sg[N-1].j = j;
-			sg[N-1].idx = N-1;
-			int x = 0;
-			auto it = s.lower_bound(sg[N-1]);
-			if (it != s.end()) {
-				x = tips[it->idx][0];
-			}
-
-			cout << node[j] << "<->" << x << endl;
-			adj[node[j]].pb(x);
-			adj[x].pb(node[j]);
+	do {
+		double sum = 0;
+		for (int i = 0; i < 4; i++) {
+			sum += v[i].nr(v[(i+1)%4]);
+			//for (int j = 0; j < 4; j++) {
+			//	vec w[4];
+			//	for (int k = 0; k < 4; k++)
+			//		w[k] = v[k].proj(v[i],v[j]);
+			//	for (int k = 0; k < 4; k++) {
+			//		for (int z = 0; z < 4; z++) {
+			//			tcheca(w[k],w[z]-w[k]);
+			//			tcheca(w[k],((v[j]-v[i])/v[j].nr(v[i]))*5000);
+			//			tcheca(w[k],((v[j]-v[i])/v[j].nr(v[i]))*sqrt(v[z].dist2_lin(v[i],v[j])));
+			//		}
+			//	}
+			//}
 		}
 		
-		for (int j : vertical) {
-			// segmento acima (ou que passa pelo) sg[j].i (não sg[j].j)
-			int x = 0;
-			sg[N-1].i = sg[N-1].j = sg[j].i;
-			sg[N-1].idx = N-1;
-			auto it = s.lower_bound(sg[N-1]);
-			if (it != s.end()) x = tips[it->idx][0];
+		//sum /= sqrt(8.);
+		sum /= 2.904925547372954;
+		cout << sum << endl;
 
-			cout << tips[j][1] << "<->" << x << endl;
-			adj[tips[j][1]].pb(x);
-			adj[x].pb(tips[j][1]);
+		for (int i = 0; i < 4; i++) {
+			for (int j = 0; j < 4; j++) {
+				double d = v[i].nr(v[j]);
+				double alph = asin(sum/d);
+
+				vec filhadaputa = (v[j]-v[i]).rotate(-alph) * sum / d;
+				tcheca(v[i] + filhadaputa * sqrt(-sum * sum + d * d) / sum, filhadaputa);
+
+				filhadaputa = (v[j]-v[i]).rotate(alph) * sum / d;
+				tcheca(v[i] + filhadaputa * sqrt(-sum * sum + d * d) / sum, filhadaputa);
+			}
 		}
-
-	}
-
-	cout << "visiting:";
-	dfs(0);
-	cout << endl;
-
-	for (int i = 0; i < q; i++)
-		if (!visi[node[i+n]])
-			printf("Yes\n");
-		else
-			printf("No\n");
+	} while (next_permutation(v, v+4));
+	for (int i = 0; i < 4; i++)
+		printf("0 0\n");
 }

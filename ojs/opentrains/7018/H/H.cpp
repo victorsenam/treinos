@@ -1,5 +1,5 @@
 #include <bits/stdc++.h>
-#define cout if (0) cout
+#define debug if (1)
 
 // XXX without explanation marks untested functions
 
@@ -13,8 +13,8 @@ typedef pair<ll,ll> pii;
 // area de calota 2.pi.R.h (h altura)
 // volume de calota pi.h/6 * (3r^2 + h^2)
 
-typedef ll cood;
-cood eps = 0;
+ typedef ll cood;
+ cood eps = 0;
 // tests for double were made with eps = 1e-8
 
 const double pi = acos(-1.);
@@ -31,8 +31,10 @@ struct vec { // vector
 	vec (cood a, cood b) : x(a), y(b) {}
 	friend ostream& operator<<(ostream& os, vec o);
 
-	bool operator < (vec o) const 
-	{ return (x < o.x || (x == o.x && y > o.y)); }
+	bool operator < (const vec & o) const {
+		if (x != o.x) return x < o.x;
+		return y > o.y;
+	}
 
 	vec operator - (vec o)
 	{ return vec(x - o.x, y - o.y); }
@@ -78,13 +80,12 @@ struct vec { // vector
 		if ((a-(*this)).halfplane() != (b-(*this)).halfplane())
 			return (b-(*this)).halfplane();
 		int o = ccw(a,b);
-		if (o) return o > 0;
-		return a.dir((*this),b) < 0;
+		return o > 0;
 	}
 
 	// is this inside segment st? (tip of segment included, change for dr < 0 otherwise)
 	bool in_seg (vec s, vec t)
-	{ return (ccw(s,t) == 0) && (dir(s,t) <= 0); }
+	{ return (ccw(s,t) == 0) && (dir(s,t) < 0); }
 
 	// XXX squared distance from this to line defined by st
 	double dist2_lin (vec s, vec t)
@@ -222,7 +223,7 @@ struct cir { // circle
 		double d = c.nr(o.c);
 		double a = (r*r + d*d - o.r*o.r) / (2.*d); // r*cos(ans,v,c.v)
 		double h = sqrt(r*r - a*a);
-		if (::isnan(h)) h = 0;
+		if (h != h) h = 0;
 		vec p = o.c - c;
 		return pair<vec,vec>(c + p*(a/d) + (p.rot90()*(h/d)), c + p*(a/d) - (p.rot90()*(h/d)));
 	}
@@ -234,7 +235,7 @@ struct cir { // circle
 		double h = abs(s.cross(t,c)) / (2.*d);
 		double x = sqrt(s.sq(c) - h*h);
 		double y = sqrt(r*r - h*h);
-		if (::isnan(y)) y = 0;
+		if (y != y) y = 0;
 		vec p = t - s;
 		return pair<vec,vec>(s + p*((x-y)/d), s + p*((x+y)/d));
 	}
@@ -285,256 +286,214 @@ int graham (vec v[], int n, int brd) {
 	return s;
 }
 
-struct point {
-	vec v;
-	int idx;
-	int type; // 0 : tip, 1 : query
+const int N = 1e5+7;
 
-	bool operator < (point & ot) {
-		return v.x < ot.v.x;
-	}
-};
+int n;
+int ts;
+vec v[N][3];
+int uf[6*N], wf[6*N];
+set<vec> vecs;
 
-const int N = 1e6+7;
-
-int n, m, q;
-point v[N], inp[N];
-int p[N];
-int gr[N], ns;
-vector<int> is_on[N];
-int tips[N][2];
-int node[N];
-int visi[N];
-vector<int> adj[N];
-
-void dfs (int u) {
-	if (visi[u]) return;
-	cout << " " << u;
-	visi[u] = 1;
-	for (int v : adj[u])
-		dfs(v);
+int find (int u) {
+	if (uf[u] == u) return u;
+	return uf[u] = find(uf[u]);
 }
 
-struct segm {
+void join (int u, int v) {
+	cout << u << " " << v << endl;
+	if ((u = find(u)) == (v = find(v))) return;
+	if (wf[u] < wf[v]) swap(u,v);
+	wf[u] += wf[v];
+	uf[v] = u;
+}
+
+struct point {
 	int i, j;
-	int idx;
 
-	int oth (int x) {
-		if (i == x) return j;
-		return i;
-	}
-
-	int cmp (vec o) const {
-		return o.ccw(v[i].v, v[j].v);
-	}
-
-	// i != j e v[i].x <= v[o.i].x
-	int cmp (segm o) const {
-		assert(i!=j && v[i].v.x <= v[o.i].v.x);
-		int r = cmp(v[o.i].v);
-		if (r) return r;
-		return cmp(v[o.j].v);
-	}
-
-	bool operator < (segm o) const {
-		if (i == j || v[i].v.x > v[o.i].v.x) return o.cmp((*this)) == -1;
-		return cmp(o) == 1;
+	vec get () const {
+		return v[i][j];
 	}
 };
+vector<point> evt;
 
-segm sg[N];
-set<segm> s;
+struct seg {
+	point a, b;
+	int idx;
+	bool operator < (const seg & o) const;
+};
+
+bool compare (seg s, seg t) {
+	if (inter_seg(s.a.get(), s.b.get(), t.a.get(), t.b.get())) throw 0;
+
+	int o = t.a.get().ccw(s.a.get(), s.b.get());
+	if (o) return o > 0;
+	return t.b.get().ccw(s.a.get(), s.b.get()) > 0;
+}
+
+bool seg::operator < (const seg & o) const {
+	if (a.get().x <= o.a.get().x)
+		return compare((*this), o);
+	else
+		return !compare(o, (*this));
+}
+set<seg> s;
+
+vector<int> adj[6*N];
+int dist[6*N];
 
 int main () {
-	scanf("%d %d %d", &n, &m, &q);
-	ns = 1;
+	while (scanf("%d", &n) != EOF && n != -1) {
+		ts++;
+		try { 
+			for (int i = 0; i < 6; i++) {
+				uf[i] = i;
+				wf[i] = 1;
+			}
+			vecs.clear();
 
-	for (int i = 0; i < n; i++) {
-		scanf("%lld %lld", &v[i].v.x, &v[i].v.y);
-		v[i].idx = i;
-		v[i].type = 0;
-		inp[i] = v[i];
-		p[i] = i;
-	}
-	
-	for (int i = 0; i < m; i++) {
-		int a, b;
-		scanf("%d %d", &a, &b);
-		a--; b--;
+			for (int i = 1; i <= n; i++) {
+				for (int j = 0; j < 3; j++) {
+					scanf("%lld %lld", &v[i][j].x, &v[i][j].y);
+					
+					if (vecs.find(v[i][j]) != vecs.end())
+						throw 0;
+					vecs.insert(v[i][j]);
 
-		tips[i][0] = ns++;
-		tips[i][1] = ns++;
+					uf[6*i + 2*j] = 6*i + 2*j;
+					wf[6*i + 2*j] = 1;
+					uf[6*i + 2*j + 1] = 6*i + 2*j + 1;
+					wf[6*i + 2*j] = 1;
 
-		if (v[b].v < v[a].v)
-			swap(a,b);
-		cout << "segment " << v[a].v << " to " << v[b].v << " gets (" << tips[i][0] << "," << tips[i][1] << ")" << endl;
-		sg[i] = segm({a,b,i});
-		is_on[a].pb(i);
-		is_on[b].pb(i);
-	}
-
-	for (int i = 0; i < n; i++) {
-		cout << "from point " << v[i].v << endl;
-		sort(is_on[i].begin(), is_on[i].end(), [i] (int x, int y) {
-			int a = sg[x].oth(i);
-			int b = sg[y].oth(i);
-
-			if ((v[a].v < v[i].v) != (v[b].v < v[i].v))
-				return v[a].v < v[i].v;
-			return v[a].v.ccw(v[i].v, v[b].v) == 1;
-		});
-
-		for (int j = 0; j < is_on[i].size(); j++) {
-			segm a = sg[is_on[i][j]];
-			segm b = sg[is_on[i][(j+1)%is_on[i].size()]];
-			
-			int x = tips[a.idx][!(v[i].v < v[a.oth(i)].v)];
-			int y = tips[b.idx][!(v[b.oth(i)].v < v[i].v)];
-
-			cout << x << "<->" << y << endl;
-			adj[x].pb(y);
-			adj[y].pb(x);
-		}
-	}
-
-	for (int i = 0; i < q; i++) {
-		scanf("%lld %lld", &v[i+n].v.x, &v[i+n].v.y);
-		v[i+n].idx = i;
-		v[i+n].type = 1;
-		p[i+n] = i+n;
-
-		cout << "query " << v[i+n].v << " gets " << ns << endl;
-		node[i+n] = ns++;
-	}
-
-	sort(p, p+n+q, [] (int i, int j) {
-		return v[i] < v[j];
-	});
-
-	for (int _i = 0; _i < n+q;) {
-		point ev = v[p[_i]];
-
-		vector<int> queries;
-		vector<int> vertical, before, after;
-
-		while (_i < n+q && !(ev < v[p[_i]])) {
-			int i = p[_i];
-			cout << v[i].v << " ";
-			if (v[i].type == 0) {
-				for (int j : is_on[i]) {
-					int a = sg[j].oth(i);
-					if (v[i].v.x == v[a].v.x) {
-						if (v[i].v.y < v[a].v.y)
-							vertical.pb(j);
-					} else if (v[i].v < v[a].v) {
-						after.pb(j);
-					} else {
-						before.pb(j);
-					}
+					evt.push_back(point({ i,j }));
 				}
-			} else {
-				queries.pb(i);
-			}
-			_i++;
-		}
-		cout << endl;
 
-		for (int j : vertical) {
-			// segmento acima (ou que passa pelo) sg[j].i (não sg[j].j)
-			int x = 0;
-			sg[N-1].i = sg[N-1].j = sg[j].i;
-			sg[N-1].idx = N-1;
-			auto it = s.lower_bound(sg[N-1]);
-			if (it != s.end()) x = tips[it->idx][0];
-
-			cout << tips[j][0] << "<->" << x << endl;
-			adj[tips[j][0]].pb(x);
-			adj[x].pb(tips[j][0]);
-		}
-
-		for (int j : queries) {
-			// segmento acima de v[j].v
-			sg[N-1].i = sg[N-1].j = j;
-			sg[N-1].idx = N-1;
-			int x = 0;
-			auto it = s.lower_bound(sg[N-1]);
-			if (it != s.end()) {
-				x = tips[it->idx][0];
+				for (int j = 0; j < 3; j++) {
+					join(6*i + 2*j, 6*i + 2*((j+1)%3));
+					join(6*i + 2*j + 1, 6*i + 2*((j+1)%3) + 1);
+				}
 			}
 
-			cout << node[j] << "<->" << x << endl;
-			adj[node[j]].pb(x);
-			adj[x].pb(node[j]);
-		}
+			sort(evt.begin(), evt.end(), [] (point a, point b) {
+				return a.get() < b.get();
+			});
 
-		for (int j : before) {
-			int x = 0;
-			auto it = s.upper_bound(sg[j]);
-			if (it != s.end()) x = tips[it->idx][0];
-			
-			cout << tips[j][1] << "<->" << x << endl;
-			adj[tips[j][1]].pb(x);
-			adj[x].pb(tips[j][1]);
-		}
+			for (int i = 0; i < evt.size();) {
+				int l = i;
 
-		for (int j : before) {
-			s.erase(sg[j]);
-			cout << "erase " << sg[j].idx + 1 << endl;
-		}
+				vector<seg> before, after;
+				vector<seg> ev_before, ev_after;
+				set<seg> vertical;
 
-		for (int j : after) {
-			s.insert(sg[j]);
-			cout << "insert " << sg[j].idx + 1 << endl;
-		}
+				while (i < evt.size() && evt[i].get().x == evt[l].get().x) {
+					point a = evt[i];
+					point b = a;
+					b.j++;
+					b.j%=3;
+					point c = b;
+					c.j++;
+					c.j%=3;
 
-		for (int j : after) {
-			int x = 0;
-			auto it = s.upper_bound(sg[j]);
-			if (it != s.end()) x = tips[it->idx][0];
-			
-			cout << tips[j][1] << "<->" << x << endl;
-			adj[tips[j][1]].pb(x);
-			adj[x].pb(tips[j][1]);
-		}
+					//cout << a.get() << " on triangle " << b.get() << " " << c.get() << endl;
+					
 
+					if (a.get().x < b.get().x) {
+						int type = (c.get().ccw(a.get(),b.get())) < 0; // who is up?
+						after.pb(seg({ a, b, 6*a.i + 2*a.j + !type }));
+						ev_after.pb(seg({ a, b, 6*a.i + 2*a.j + type }));
 
-		for (int j : queries) {
-			// segmento acima de v[j].v
-			sg[N-1].i = sg[N-1].j = j;
-			sg[N-1].idx = N-1;
-			int x = 0;
-			auto it = s.lower_bound(sg[N-1]);
-			if (it != s.end()) {
-				x = tips[it->idx][0];
+						//cout << "after " << type << endl;
+					} else if (a.get().x > b.get().x) {
+						int type = (c.get().ccw(a.get(),b.get())) > 0; // who is up?
+						before.pb(seg({ b, a, 6*a.i + 2*a.j + !type }));
+						ev_before.pb(seg({ b, a, 6*a.i + 2*a.j + type }));
+						//cout << "before " << type << endl;
+					} else {
+						if (a.get() < b.get())
+							swap(a,b);
+
+						vertical.insert(seg({ a, b, 6*a.i + 2*a.j + 1 }));
+						if (c.get().x < a.get().x) { // outer is after? {
+							//cout << "vertical after" << endl;
+							ev_after.pb(seg({ a, b, 6*a.i + 2*a.j + 1 }));
+						} else {
+							//cout << "vertical before" << endl;
+							ev_before.pb(seg({ a, b, 6*a.i + 2*a.j + 1 }));
+						}
+					}
+					i++;
+				}
+
+				for (seg cur : ev_before) {
+					auto it = s.upper_bound(cur);
+					int x = 0;
+					cout << cur.a.get() << " " << cur.b.get() << " found ";
+					if (it != s.end()) {
+						x = it->idx;
+						cout << it->a.get() << " " << it->b.get();
+					}
+					cout << endl;
+					join(cur.idx, x);
+				}
+
+				for (seg cur : before) {
+					s.erase(cur);
+					cout << "- " << cur.a.get() << " " << cur.b.get() << endl;
+				}
+				for (seg cur : after) {
+					s.insert(cur);
+					cout << "+ " << cur.a.get() << " " << cur.b.get() << endl;
+				}
+
+				for (seg cur : ev_after) {
+					auto it = s.upper_bound(cur);
+					int x = 0;
+					cout << cur.a.get() << " " << cur.b.get() << " " << cur.idx << " found ";
+					if (it != s.end()) {
+						x = it->idx;
+						cout << it->a.get() << " " << it->b.get();
+					}
+					cout << endl;
+					join(cur.idx, x);
+				}
 			}
 
-			cout << node[j] << "<->" << x << endl;
-			adj[node[j]].pb(x);
-			adj[x].pb(node[j]);
-		}
-		
-		for (int j : vertical) {
-			// segmento acima (ou que passa pelo) sg[j].i (não sg[j].j)
-			int x = 0;
-			sg[N-1].i = sg[N-1].j = sg[j].i;
-			sg[N-1].idx = N-1;
-			auto it = s.lower_bound(sg[N-1]);
-			if (it != s.end()) x = tips[it->idx][0];
+			for (int i = 0; i < 6*(n+1); i++) {
+				cout << i << " : " <<  i/6 << " " << (i/2)%3 << " -> " << find(i) << endl;
+				if (uf[i] == i) {
+					adj[i].clear();
+					dist[i] = -1;
+				}
+			}
 
-			cout << tips[j][1] << "<->" << x << endl;
-			adj[tips[j][1]].pb(x);
-			adj[x].pb(tips[j][1]);
-		}
+			for (int i = 1; i <= n;	i++) {
+				for (int j = 0; j < 3; j++) {
+					cout << find(6*i + 2*j + 1) << " <-> " << find(6*i + 2*j) << endl;
+					adj[find(6*i + 2*j + 1)].pb(find(6*i + 2*j));
+					adj[find(6*i + 2*j)].pb(find(6*i + 2*j + 1));
+				}
+			}
+			//cout << "end " << endl;
 
+			queue<int> qu;
+			qu.push(find(0));
+			dist[find(0)] = 0;
+			int d = 0;
+			while (!qu.empty()) {
+				int u = qu.front();
+				cout << u << endl;
+				qu.pop();
+				d = max(d, dist[u]);
+
+				for (int v : adj[u]) {
+					if (dist[find(v)] != -1) continue;
+					dist[find(v)] = dist[find(u)]+1;
+					qu.push(find(v));
+				}
+			}
+
+			printf("Case %d: %d shades\n", ts, d + 1);
+		} catch (int ev) {
+			printf("Case %d: ERROR\n", ts);
+		}
 	}
-
-	cout << "visiting:";
-	dfs(0);
-	cout << endl;
-
-	for (int i = 0; i < q; i++)
-		if (!visi[node[i+n]])
-			printf("Yes\n");
-		else
-			printf("No\n");
 }
