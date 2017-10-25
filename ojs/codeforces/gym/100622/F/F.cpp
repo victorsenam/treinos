@@ -1,5 +1,5 @@
 #include <bits/stdc++.h>
-#define debug if (1)
+#define cout if (0) cout
 
 // XXX without explanation marks untested functions
 
@@ -14,7 +14,7 @@ typedef pair<ll,ll> pii;
 // volume de calota pi.h/6 * (3r^2 + h^2)
 
  typedef double cood;
- cood eps = 1e-6;
+ cood eps = 1e-8;
 // tests for double were made with eps = 1e-8
 
 const double pi = acos(-1.);
@@ -58,16 +58,11 @@ struct vec { // vector
 	{ return (b - a) ^ ((*this) - a); }
 	int ccw (vec a, vec b) // which side is this from ab? (1 left, 0 over, -1 right)
 	{ cood o = cross(a, b); return (eps < o) - (o < -eps); } 
-
-	cood inner (vec a, vec b) // norm of projection of (this)a over (this)b times norm of (this)b
-	{ return (a-(*this)) * (b-(*this)); }
 	int dir (vec a, vec b) // direction of (thia)a relative to (this)b (-1 opposite, 0 none, 1 same)
-	{ cood o = inner(a, b); return (eps < o) - (o < -eps); }
+	{ cood o = (a-(*this))*(b-(*this)); return (eps < o) - (o < -eps); }
 
-	vec proj (vec a, vec b) { // projection of (this) over ab
-		double d = ((*this)-a)*(b-a) / (a.sq(b));
-		return a + (b-a)*d;
-	}
+	vec proj (vec s, vec t) // projection of this over st
+	{ return s + (t - s)*(((*this)-s)*(t-s))/t.sq(s); }
 
 	vec rotate (double a) // rotate ccw by a (fails with ll)
 	{ return vec(cos(a) * x - sin(a) * y, sin(a) * x + cos(a) * y); }
@@ -91,7 +86,7 @@ struct vec { // vector
 
 	// is this inside segment st? (tip of segment included, change for dr < 0 otherwise)
 	bool in_seg (vec s, vec t)
-	{ return (ccw(s,t) == 0) && (dir(s,t) < 0); }
+	{ return (ccw(s,t) == 0) && (dir(s,t) <= 0); }
 
 	// XXX squared distance from this to line defined by st
 	double dist2_lin (vec s, vec t)
@@ -236,14 +231,13 @@ struct cir { // circle
 
 	// double only
 	pair<vec,vec> inter_pts (vec s, vec t) { 
-		assert(has_inter_lin(s,t));
-		double d = s.nr(t);
-		double h = abs(s.cross(t,c)) / (2.*d);
-		double x = sqrt(s.sq(c) - h*h);
-		double y = sqrt(r*r - h*h);
-		if (y != y) y = 0;
-		vec p = t - s;
-		return pair<vec,vec>(s + p*((x-y)/d), s + p*((x+y)/d));
+		vec p = c.proj(s,t);
+		//double h2 = c.dist2_lin(s,t);
+		double h2 = p.sq(c);
+		double d = sqrt(r*r - h2);
+
+		vec v = (t - s)/t.nr(s);
+		return pair<vec,vec>(p + v*d, p - v*d);
 	}
 };
 
@@ -293,30 +287,30 @@ int graham (vec v[], int n, int brd) {
 }
 
 vec v[4];
+int s[4];
 
-void tcheca (vec v, vec l, bool troca=1) {
-	if (troca) {
-		tcheca(v,l,0);
-		tcheca(v,vec(0,0)-l,0);
-		tcheca(v,l.rot90(),0);
-		tcheca(v,vec(0,0)-l.rot90(),0);
-		return;
-	}
-	vec a[4] = {v, v+l, v + l + l.rot90(), v + l.rot90()}; 
-
+void tcheca (vector<vec> r) {
 	for (int i = 0; i < 4; i++) {
-		if (isnan(a[i].x) || isnan(a[i].y)) return;
-		bool isin = 0;
-		for (int j = 0; j < 4; j++) {
-			if (::v[i].in_seg(a[j],a[(j+1)%4]))
-				isin = 1;
+		cout << r[i] << " ";
+		s[i] = 0;
+	}
+	cout << endl;
+	for(int j = 0; j < 4; j++) {
+		int cnt = 0;
+		for (int i = 0; i < 4; i++) {
+			int loc = v[j].in_seg(r[i],r[(i+1)%4]);
+			s[i] += loc;
+			cnt += loc;
 		}
-		if (!isin)
+		if (cnt != 1)
 			return;
 	}
-
 	for (int i = 0; i < 4; i++)
-		printf("%.20f %.20f\n", a[i].x, a[i].y);
+		if (s[i] != 1) {
+			return;
+		}
+	for (vec a : r)
+		printf("%.20f %.20f\n", a.x, a.y);
 	exit(0);
 }
 
@@ -325,46 +319,40 @@ int main () {
 	freopen("four.in", "r", stdin);
 	freopen("four.out", "w", stdout);
 #endif
-	for (int i = 0; i < 4; i++)
+	for (int i = 0; i < 4; i++) {
 		scanf("%lf %lf", &v[i].x, &v[i].y);
-	
+	}
+
 	sort(v, v+4);
 
 	do {
-		double sum = 0;
-		for (int i = 0; i < 4; i++) {
-			sum += v[i].nr(v[(i+1)%4]);
-			//for (int j = 0; j < 4; j++) {
-			//	vec w[4];
-			//	for (int k = 0; k < 4; k++)
-			//		w[k] = v[k].proj(v[i],v[j]);
-			//	for (int k = 0; k < 4; k++) {
-			//		for (int z = 0; z < 4; z++) {
-			//			tcheca(w[k],w[z]-w[k]);
-			//			tcheca(w[k],((v[j]-v[i])/v[j].nr(v[i]))*5000);
-			//			tcheca(w[k],((v[j]-v[i])/v[j].nr(v[i]))*sqrt(v[z].dist2_lin(v[i],v[j])));
-			//		}
-			//	}
-			//}
-		}
+		cir a({ (v[0] + v[1])*.5, 0. });
+		cir b({ (v[2] + v[3])*.5, 0. });
+		cout << v[0] << " " << v[1] << " e " << v[2] << " " << v[3] << endl;
+		a.r = a.c.nr(v[0]);
+		b.r = b.c.nr(v[2]);
 		
-		//sum /= sqrt(8.);
-		sum /= 2.904925547372954;
-		cout << sum << endl;
+		for (int ra = -1; ra <= 1; ra += 2) {
+			for (int rb = -1; rb <= 1; rb += 2) {
+				vec x = a.c + (v[0] - a.c).rot90() * ra;
+				vec y = b.c + (v[2] - b.c).rot90() * rb;
+				cout << x << " " << y << endl;
 
-		for (int i = 0; i < 4; i++) {
-			for (int j = 0; j < 4; j++) {
-				double d = v[i].nr(v[j]);
-				double alph = asin(sum/d);
-
-				vec filhadaputa = (v[j]-v[i]).rotate(-alph) * sum / d;
-				tcheca(v[i] + filhadaputa * sqrt(-sum * sum + d * d) / sum, filhadaputa);
-
-				filhadaputa = (v[j]-v[i]).rotate(alph) * sum / d;
-				tcheca(v[i] + filhadaputa * sqrt(-sum * sum + d * d) / sum, filhadaputa);
+				pair<vec,vec> ia = a.inter_pts(x,y), ib = b.inter_pts(x,y);
+				for (vec r : { ia.first, ia.second} ) {
+					for (vec s : { ib.first, ib.second} ) {
+						cout << "=== " << r << " " << s << endl;
+						vec md = (r + s)*.5;
+						vec t = md + (r - md).rot90();
+						vec u = md + (s - md).rot90();
+						tcheca( {r, t, s, u} );
+					}
+				}
 			}
 		}
+		break;
 	} while (next_permutation(v, v+4));
-	for (int i = 0; i < 4; i++)
+
+	for (int k = 0; k < 4; k++)
 		printf("0 0\n");
 }
