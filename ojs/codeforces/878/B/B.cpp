@@ -10,7 +10,7 @@ ll n, m, k;
 
 struct el {
 	int v;
-	ll q;
+	int q;
 };
 
 struct seq {
@@ -40,6 +40,7 @@ struct seq {
 seq v, st;
 
 void junta (seq & a, seq b) {
+    a.v.reserve(a.v.size() + b.v.size() + 3);
 	for (el x : b.v)
 		a.add(x);
 }
@@ -59,7 +60,7 @@ void printa () {
 
 int main () {
 	scanf("%lld %lld %lld", &n, &k, &m);
-
+    v.v.reserve(n+2);
 	for (ll i = 0; i < n; i++) {
 		el c;
 		c.q = 1;
@@ -69,20 +70,37 @@ int main () {
 
 	printa();
 	while (m > 1 && v.v.size() > 1) {
-		ll szi = v.sz;
+		if (m&1)
+			junta(st,v);
+		m /= 2;
+
+		ll szi = v.sz + v.sz;
 		junta(v,v);
 		printa();
-
-		v.sz /= 2
-		v.v.resize(v.v.size()/2);
 
 		if (szi == v.sz)
 			break;
 	}
 
 	if (v.v.size() == 1) {
-		printf("%lld\n", (v.sz * m)%k);
+		el x = v.v.back();
+		x.q = (ll(x.q)*m)%k;
+		st.add(x);
+
+		v.rem();
+		m = 0;
+	}
+
+	cout << "---" << endl;
+	printa();
+	if (v.v.size() == 0 || m == 0) {
+		printf("%lld\n", st.sz);
 	} else {
-		printf("%lld\n", v.sz * m);
+		while (st.v.size() && m && v.v.size() && st.v.back().v == v.v.front().v) {
+			junta(st,v);
+			m--;
+		}
+		printa();
+		printf("%lld\n", st.sz + ll(v.sz) * m);
 	}
 }
