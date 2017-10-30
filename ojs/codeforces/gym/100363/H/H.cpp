@@ -1,5 +1,5 @@
 #include <bits/stdc++.h>
-#define cout if (1) cout
+#define cout if (0) cout
 
 // XXX without explanation marks untested functions
 
@@ -23,7 +23,6 @@ typedef tree<tA, tB, less<tA>, rb_tree_tag, tree_order_statistics_node_update> o
 // area de calota 2.pi.R.h (h altura)
 // volume de calota pi.h/6 * (3r^2 + h^2)
 
-const int N = 2e3+7;
 typedef ll cood;
 cood eps = 0;
 // tests for double were made with eps = 1e-8
@@ -43,6 +42,12 @@ struct vec { // vector
 	vec () : x(0), y(0) {}
 	vec (cood a, cood b) : x(a), y(b) {}
 	friend ostream& operator<<(ostream& os, vec o);
+
+	bool operator < (const vec & ot) const {
+		if (x != ot.x)
+			return x < ot.x;
+		return y > ot.y;
+	}
 
 	vec operator - (vec o)
 	{ return vec(x - o.x, y - o.y); }
@@ -81,7 +86,7 @@ struct vec { // vector
 	{ return vec(-y, x); }
 
 	inline bool halfplane () // 0 is upper half plane (y > 0) and (x,0) where x >= 0, 1 is otherwise
-	{ return (x < eps || (abs(x) <= eps && y > eps)); }
+	{ return (y < eps || (abs(y) <= eps && x < eps)); }
 
 	// === ADVANCED ===
 	// full ordering (ccw angle from this+(1,0), distance to this)
@@ -90,7 +95,9 @@ struct vec { // vector
 	bool compare (vec a, vec b) {
 		if ((a-(*this)).halfplane() != (b-(*this)).halfplane())
 			return (b-(*this)).halfplane();
-		return ccw(a,b) > 0;
+		int o = ccw(a,b);
+		if (o) return o > 0;
+		return a.dir((*this),b) < 0;
 	}
 
 	// is this inside segment st? (tip of segment included, change for dr < 0 otherwise)
@@ -300,16 +307,18 @@ int graham (vec v[], int n, int brd) {
 	return s;
 }
 
-ll c2 (ll x) {
-	return x*(x-1)/2;
-}
-ll c3 (ll x) {
-	return x*(x-1)*(x-2)/6;
-}
-
+const int N = 1506;
 int n;
 vec v[N];
 vec p[N];
+int ps;
+
+ll c3 (ll n) {
+	return n*(n-1)*(n-2)/6;
+}
+ll c2 (ll n) {
+	return n*(n-1)/2;
+}
 
 int main () {
 #ifdef ONLINE_JUDGE
@@ -321,66 +330,51 @@ int main () {
 	for (int i = 0; i < n; i++) {
 		scanf("%lld %lld", &v[i].x, &v[i].y);
 	}
-	
-	ll triang = 0;
-	ll circle = 0;
-	for (int i = 0; i < n; i++) {
-		int ps = 0;
 
+	ll circle = 0, triang = 0;
+	for (int i = 0; i < n; i++) {
+		ps = 0;
 		for (int j = 0; j < n; j++) {
 			if (i == j) continue;
 			p[ps++] = v[j];
 		}
 
-		queue<vec> dir;
-		ordered_set lf, rg;
-
-		sort(p, p + ps, [i] (vec a, vec b) {
-			return v[i].compare(a, b);
+		sort(p, p+ps, [i] (vec a, vec b) {
+			if (v[i] < a != v[i] < b)
+				return v[i] < a;
+			return v[i].ccw(a,b) > 0;
 		});
 
-		cout << endl << endl << "== from " << v[i] << " ==" << endl;
+		queue<vec> dir;
+		vector<vec> evt;
 		for (int j = 0; j < ps; j++) {
-			if (p[j].x < v[i].x) {
-				cout << "+ " << p[j] << endl;
+			if (p[j] < v[i])
 				dir.push(p[j]);
-				lf.insert(pii(p[j].x,j));
-			}
+			else
+				evt.pb(p[j]);
 		}
 
-		for (int j = 0; j < ps; j++) {
-			cout << "open " << p[j] << endl;
-			while (!dir.empty() && dir.front().ccw(v[i],p[j]) >= 0) {
-				cout << "- " << dir.front() << endl;
+		ordered_set s;
+		cout << v[i] << " looks at ";
+		for (vec u : evt) {
+			cout << u << " ";
+			while (!dir.empty() && dir.front().ccw(v[i],u) > 0)
 				dir.pop();
-			}
 
-			ll add = 0, sub = 0, below = 0;
-			
-			if (p[j].x > v[i].x) { // direita
-				sub = n - 2 - dir.size();
-				add = dir.size();
-				below = rg.order_of_key(pii(p[j].x,-1)) + 1;
-				rg.insert(pii(p[j].x,j));
-			} else if (p[j].x < v[i].x) { // esquerda
-				sub = dir.size();
-				add = n - 2 - dir.size();
-				lf.erase(pii(p[j].x,j));
-				below = lf.size() - lf.order_of_key(pii(p[j].x,-1)) + 1;
-			} else {
-				rg.insert(pii(p[j].x,j));
-			}
+			ll below = s.order_of_key(pii(u.x, -1));
+			triang -= below;
+			triang += ll(dir.size() + s.size())*below;
+			triang -= ll(n - 2 - dir.size() - s.size())*below;
 
-			cout << "add = " << add << " sub = " << sub << " below = " << below << " dir = " << dir.size() << endl;
-			triang += (add-sub)*below;
-			circle += c2(dir.size());		
-			circle += c2(n - 2 - dir.size());
-			cout << "triang = " << triang << " circle = " << circle << endl;
+			circle += c2(dir.size() + s.size());
+			circle += c2(n - 2 - dir.size() - s.size());
 
-			cout << "+ " << p[j] << endl;
-			dir.push(p[j]);
+			s.insert(pii(u.x,s.size()+1));
 		}
+		cout << endl;
 	}
 
-	printf("%.20f\n", double((long double)(((circle - triang)/2))/c3(n)));
+	cout << (circle-triang)/2 << endl;
+	printf("%.20f\n", double(circle-triang)*.5/double(c3(n)));
+
 }
