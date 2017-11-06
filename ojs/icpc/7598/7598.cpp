@@ -13,8 +13,8 @@ typedef pair<ll,ll> pii;
 // area de calota 2.pi.R.h (h altura)
 // volume de calota pi.h/6 * (3r^2 + h^2)
 
- typedef long double cood;
- cood eps = 0;
+ typedef double cood;
+ cood eps = 1e-8;
 // tests for double were made with eps = 1e-8
 
 double eps_d = 1e-8; // necessary even in integer geometry, should be eps otherwise
@@ -24,8 +24,6 @@ const double pi = acos(-1.);
 inline ll sq (ll x)
 { return x*x; }
 inline double sq (double x)
-{ return x*x; }
-inline cood sq (cood x)
 { return x*x; }
 
 struct vec { // vector
@@ -47,6 +45,10 @@ struct vec { // vector
 	{ return x * o.y - y * o.x; }
 	cood operator * (vec o)
 	{ return x * o.x + y * o.y; }
+
+	// positive is (*this)b is clockwise from (*this)a
+	double angle (vec a, vec b)
+	{ return atan2((a-(*this))^(b-(*this)), (a-(*this))*(b-(*this))); }
 
 	cood sq (vec o = vec())
 	{ return ((*this)-o)*((*this)-o); }
@@ -225,6 +227,11 @@ struct cir { // circle
 	bool contains (cir o)
 	{ return (o.r < r - eps && c.sq(o.c) < sq(r - o.r) - eps); }
 
+	double arc_area (vec a, vec b) {
+		double ang = c.angle(a,b);
+		return r*r*ang*.5;
+	}
+
 	// double only
 	pair<vec,vec> inter_pts (cir o) {
 		assert(has_inter(o) && !contains(o)); // fully contained case
@@ -251,6 +258,53 @@ struct cir { // circle
 		d = sqrt(r*r - h2);
 		if (d != d) d = 0;
 		return pair<vec,vec>(m + p*(d/p.nr()), m - p*(d/p.nr()));
+	}
+
+	// double only XXX not tested
+	// signed area of intersection of this with triangle (this.c,a,b)
+	double inter (vec a, vec b) {
+		double res = 0.;
+		if (contains(b)) swap(a,b);
+
+		if (contains(b)) {
+			res = abs(c.cross(a,b)*.5);
+		} else if (contains(a)) {
+			pair<vec,vec> rt = inter_pts(a,b);
+			vec p = rt.first;
+			if (b.sq(rt.first) > b.sq(rt.second)) 
+				p = rt.second;
+
+			rt = inter_pts(c,b);
+			vec q = rt.first;
+			if (b.sq(rt.first) > b.sq(rt.second)) 
+				q = rt.second;
+
+			res += abs(c.cross(a,p)*.5);
+			res += arc_area(p,q);
+		} else {
+			pair<vec,vec> rt = inter_pts(a,c);
+			vec p = rt.first;
+			if (a.sq(rt.first) > a.sq(rt.second))
+				p = rt.second;
+
+			rt = inter_pts(b,c);
+			vec q = rt.first;
+			if (b.sq(rt.first) > b.sq(rt.second))
+				q = rt.second;
+
+			res += arc_area(p,q);
+		}
+
+		return res;
+	}
+
+	// double only XXX not tested
+	// signed area of intersection of this with polygon
+	double inter (vector<vec> & p) {
+		double res = 0;
+		for (int i = 0; i < p.size(); i++)
+			res += inter(p[i],p[(i+1)%p.size()]);
+		return res;
 	}
 };
 
@@ -299,87 +353,50 @@ int graham (vec v[], int n, int brd) {
 	return s;
 }
 
-const int N = 1e5+7;
+const int N = 1e2+7;
 
-int n, m;
+int n;
+double r;
+vector<vec> v;
 
-struct point {
-	cood ex, mn;
+double solve (double x) {
+	double lo = -100., hi = 200.;
+	int ts = 60;
+	while (ts--) {
+		double q1 = (lo+lo+hi)/3;
+		double q2 = q1 + q1;
 
-	bool tira (point a, point b) {
-		if (abs(a.mn-b.mn) <= eps && abs(a.ex-b.ex) <= eps) return 1;
-		vec u(ex,mn), v(a.ex,a.mn), w(b.ex,b.mn);
-		return u.ccw(v,w) <= 0;
+		double r1 = abs(cir({ vec(x,q1), r }).inter(v));
+		double r2 = abs(cir({ vec(x,q2), r }).inter(v));
+
+		if (r1 < r2)
+			hi = q2;
+		else
+			lo = q1;
 	}
-};
-point v[N];
+
+	return cir({ vec(x,lo), r }).inter(v);
+}
 
 int main () {
-#ifdef ONLINE_JUDGE
-	freopen("ito.in", "r", stdin);
-	freopen("ito.out", "w", stdout);
-#endif
-	scanf("%d %d", &n, &m);
-
-	for (int i = 0; i <= n; i++) {
-		cood c, a, b;
-		if (i == n)
-			a = b = c = 1;
-		else
-			scanf("%Lf %Lf %Lf", &c, &a, &b);
-
-		v[i].ex = (a+b)/(2.*c) - 1;
-		v[i].mn = a/c - 1;
-	}
-	n++;
-	
-	sort(v, v+n, [] (point i, point j) {
-		return i.mn < j.mn;
-	});
-
-	int sz = 0;
-	for (int i = 0; i < n; i++) {
-		if (sz && abs(v[i].mn - v[sz-1].mn) <= eps && v[i].ex <= v[sz-1].ex + eps)
-			continue;
-
-		while (sz >= 2 && v[i].tira(v[sz-2],v[sz-1]))
-			sz--;
-		while (sz && v[i].ex >= v[sz-1].ex - eps)
-			sz--;
-		v[sz++] = v[i];
-	}
-
-	for (int j = 0; j < m; j++) {
-		cood s, l;
-		scanf("%Lf %Lf", &s, &l);
-		cood r;
-
-		point q;
-		q.mn = (l - s)/s;
-
-		int i = lower_bound(v, v+sz, q, [] (point a, point b) {
-			return a.mn < b.mn;
-		}) - v;
-
-		if (i == sz)
-			i--;
-
-		if (i == 0)
-			r = v[i].ex;
-		else {
-			cood lo = 0., hi = 1.;
-			int ts = 70;
-			vec a(v[i-1].ex,v[i-1].mn), b(v[i].ex,v[i].mn);
-			vec d = b-a;
-			while (ts--) {
-				cood al = (lo+hi)*.5;
-				if ((a + d*al).y <= q.mn)
-					lo = al;
-				else
-					hi = al;
-			}
-			r = (a+d*lo).x;
+	while (scanf("%d %lf", &n, &r) != EOF) {
+		v = vector<vec>(n);
+		for (int i = 0; i < n; i++) {
+			scanf("%lf %lf", &v[i].x, &v[i].y);
 		}
-		printf("%.20f\n", double(r*s + s));
+
+		double lo = -100., hi = 200.;
+		int ts = 60;
+		while (ts--) {
+			double q1 = (lo+lo+hi)/3;
+			double q2 = q1+q1;
+
+			if (solve(q1) < solve(q2))
+				hi = q2;
+			else
+				lo = q1;
+		}
+
+		printf("%.20f\n", solve(lo));
 	}
 }
