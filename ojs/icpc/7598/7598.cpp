@@ -1,5 +1,5 @@
 #include <bits/stdc++.h>
-#define debug if (1)
+#define cout if (1) cout
 
 // XXX without explanation marks untested functions
 
@@ -227,6 +227,7 @@ struct cir { // circle
 	bool contains (cir o)
 	{ return (o.r < r - eps && c.sq(o.c) < sq(r - o.r) - eps); }
 
+	// ccw area of arc from ca to cb
 	double arc_area (vec a, vec b) {
 		double ang = c.angle(a,b);
 		return r*r*ang*.5;
@@ -260,45 +261,40 @@ struct cir { // circle
 		return pair<vec,vec>(m + p*(d/p.nr()), m - p*(d/p.nr()));
 	}
 
-	// double only XXX not tested
+	// double only XXX AC only tested
 	// signed area of intersection of this with triangle (this.c,a,b)
 	double inter (vec a, vec b) {
-		double res = 0.;
-		if (contains(b)) swap(a,b);
-
+		double res = 0.; bool inv = 0;
 		if (contains(b)) {
-			res = abs(c.cross(a,b)*.5);
-		} else if (contains(a)) {
-			pair<vec,vec> rt = inter_pts(a,b);
-			vec p = rt.first;
-			if (b.sq(rt.first) > b.sq(rt.second)) 
-				p = rt.second;
-
-			rt = inter_pts(c,b);
-			vec q = rt.first;
-			if (b.sq(rt.first) > b.sq(rt.second)) 
-				q = rt.second;
-
-			res += abs(c.cross(a,p)*.5);
-			res += arc_area(p,q);
-		} else {
-			pair<vec,vec> rt = inter_pts(a,c);
-			vec p = rt.first;
-			if (a.sq(rt.first) > a.sq(rt.second))
-				p = rt.second;
-
-			rt = inter_pts(b,c);
-			vec q = rt.first;
-			if (b.sq(rt.first) > b.sq(rt.second))
-				q = rt.second;
-
-			res += arc_area(p,q);
+			swap(a,b);
+			inv = 1;
 		}
 
+		if (contains(b)) {
+			res = c.cross(a,b)*.5;
+		} else if (contains(a)) {
+			pair<vec,vec> rt = inter_pts(a,b);
+			vec q = rt.first;
+			if (!q.in_seg(a,b) || (a.sq(q) <= eps && rt.second.in_seg(a,b)))
+				q = rt.second;
+			res += c.cross(a,q)*.5;
+			res += arc_area(q,b);
+		} else if (has_inter_seg(a,b)) {
+			pair<vec,vec> rt = inter_pts(a,b);
+			if (a.sq(rt.second) < a.sq(rt.first))
+				swap(rt.first,rt.second);
+			res += arc_area(a,rt.first);
+			res += c.cross(rt.first,rt.second)*.5;
+			res += arc_area(rt.second,b);
+		} else {
+			res += arc_area(a,b);
+		}
+
+		if (inv) return -res;
 		return res;
 	}
 
-	// double only XXX not tested
+	// double only XXX AC only tested
 	// signed area of intersection of this with polygon
 	double inter (vector<vec> & p) {
 		double res = 0;
@@ -358,45 +354,75 @@ const int N = 1e2+7;
 int n;
 double r;
 vector<vec> v;
+double x[2], y[2];
 
 double solve (double x) {
-	double lo = -100., hi = 200.;
+	double lo = 200, hi = -100.;
+	for (int i = 0; i < n; i++) {
+		int j = (i+1)%n;
+		lin ln(v[i],v[j]);
+		vec it(x, (ln.c - ln.a*x)/ln.b);
+		if (it.in_seg(v[i],v[j]) && it.y == it.y && abs(it.y) < 200) {
+			lo = min(lo, it.y);
+			hi = max(hi, it.y);
+		}
+
+		if (abs(v[i].x - x) <= eps_d) {
+			lo = min(lo, v[i].y);
+			hi = max(hi, v[i].y);
+		}
+	}
+	hi = min(hi, 200.); lo = max(lo, -100.);
+
 	int ts = 60;
 	while (ts--) {
 		double q1 = (lo+lo+hi)/3;
-		double q2 = q1 + q1;
+		double q2 = (lo+hi+hi)/3;
 
 		double r1 = abs(cir({ vec(x,q1), r }).inter(v));
 		double r2 = abs(cir({ vec(x,q2), r }).inter(v));
 
 		if (r1 < r2)
-			hi = q2;
-		else
 			lo = q1;
+		else
+			hi = q2;
 	}
 
-	return cir({ vec(x,lo), r }).inter(v);
+	return abs(cir({ vec(x,lo), r }).inter(v));
 }
 
 int main () {
+
 	while (scanf("%d %lf", &n, &r) != EOF) {
 		v = vector<vec>(n);
+		
+		x[0] = 200;
+		x[1] = -100;
+
 		for (int i = 0; i < n; i++) {
 			scanf("%lf %lf", &v[i].x, &v[i].y);
+
+			x[0] = min(x[0],v[i].x);
+			x[1] = max(x[1],v[i].x);
 		}
 
-		double lo = -100., hi = 200.;
-		int ts = 60;
+		double lo = x[0], hi = x[1];
+		//int ts = 60;
+		int ts = 50;
 		while (ts--) {
 			double q1 = (lo+lo+hi)/3;
-			double q2 = q1+q1;
-
+			double q2 = (lo+hi+hi)/3;
+			
 			if (solve(q1) < solve(q2))
-				hi = q2;
-			else
 				lo = q1;
+			else
+				hi = q2;
 		}
 
-		printf("%.20f\n", solve(lo));
+		double res = solve(lo);
+		for (int i = 0; i < n; i++)
+			res = max(res, abs(cir({ v[i], r }).inter(v)));
+
+		printf("%.20f\n", res);
 	}
 }
