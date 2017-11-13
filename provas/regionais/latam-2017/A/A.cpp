@@ -1,5 +1,5 @@
 #include <bits/stdc++.h>
-#define cout if (0) cout
+#define cout if (1) cout
 
 // XXX without explanation marks untested functions
 
@@ -23,7 +23,7 @@ const double pi = acos(-1.);
 
 inline ll sq (ll x)
 { return x*x; }
-inline double sq (double x)
+inline cood sq (cood x)
 { return x*x; }
 
 struct vec { // vector
@@ -354,15 +354,15 @@ const int N = 14;
 const int MEMO = (1<<N);
 
 bitset<N> visi[MEMO];
-double memo[MEMO][N];
-double mn[N], mx[N];
-double rs[N][N];
+cood memo[MEMO][N];
+cood mn[N], mx[N];
+cood rs[N][N];
 
 vector<vec> lf[N], rg[N];
 
-double pd (int mask, int i) {
+cood pd (int mask, int i) {
 	if (!mask) return -mn[i];
-	double & me = memo[mask][i];
+	cood & me = memo[mask][i];
 	if (visi[mask][i]) return me;
 	visi[mask][i] = 1;
 	me = 1./0.;
@@ -372,14 +372,15 @@ double pd (int mask, int i) {
 	return me;
 }
 
-bool has_int (int i, int j, double x) {
+bool has_int (int i, int j, cood x) {
 	if (rg[i][0].x >= x) return 1;
 
 	int b = 0;
 	for (int a = 0; a < lf[j].size() - 1; a++) {
 		vec u = lf[j][a], v = lf[j][a+1];
 		u.x += x; v.x += x;
-		while (b < rg[i].size() - 1 && rg[i][b].y < lf[i][a+1].y) {
+
+		while (b < rg[i].size() - 1 && rg[i][b].y < v.y) {
 			if (inter_seg(u, v, rg[i][b], rg[i][b+1]))
 				return 1;
 			b++;
@@ -390,7 +391,7 @@ bool has_int (int i, int j, double x) {
 }
 
 int main () {
-	scanf("%d", &n);
+	scanf("%d",&n);
 
 	for (int i = 0; i < n; i++) {
 		int k;
@@ -399,8 +400,9 @@ int main () {
 
 		int part = 0;
 		while (k--) {
-			vec a;
-			scanf("%lf %lf", &a.x, &a.y);
+			double ax, ay;
+			scanf("%lf %lf", &ax, &ay);
+			vec a(ax,ay);
 			mn[i] = min(mn[i], a.x);
 			mx[i] = max(mx[i], a.x);
 			if (part == 0) {
@@ -417,22 +419,14 @@ int main () {
 				lf[i].pb(a);
 		};
 		reverse(lf[i].begin() + 1, lf[i].end());
-
-		cout << "==== " << i << " ====" << endl;
-		for (vec vt : lf[i])
-			cout << vt << " ";
-		cout << endl;
-		for (vec vt : rg[i])
-			cout << vt << " ";
-		cout << endl;
 	}
 
 	for (int i = 0; i < n; i++) {
 		for (int j = 0; j < n; j++) {
-			double lo = 0., hi = 1e8;
+			cood lo = 0, hi = 2e8;
 			int ts = 70;
 			while (ts--) {
-				double x = .5*(lo + hi);
+				cood x = .5*(lo + hi);
 				if (has_int(i,j,x))
 					lo = x;
 				else
@@ -442,8 +436,8 @@ int main () {
 		}
 	}
 
-	double res = 1./0.;
+	cood res = 1./0.;
 	for (int i = 0; i < n; i++)
 		res = min(res, pd((1<<n) - 1 - (1<<i), i) + mx[i]);
-	printf("%.3f\n", res);
+	printf("%.3f\n", double(res));
 }
