@@ -13,7 +13,7 @@ typedef pair<ll,ll> pii;
 // area de calota 2.pi.R.h (h altura)
 // volume de calota pi.h/6 * (3r^2 + h^2)
 
- typedef double cood;
+ typedef ll cood;
  cood eps = 0;
 // tests for double were made with eps = 1e-8
 
@@ -23,7 +23,7 @@ const double pi = acos(-1.);
 
 inline ll sq (ll x)
 { return x*x; }
-inline cood sq (cood x)
+inline double sq (double x)
 { return x*x; }
 
 struct vec { // vector
@@ -354,15 +354,15 @@ const int N = 14;
 const int MEMO = (1<<N);
 
 bitset<N> visi[MEMO];
-cood memo[MEMO][N];
-cood mn[N], mx[N];
-cood rs[N][N];
+double memo[MEMO][N];
+ll mn[N], mx[N];
+double rs[N][N];
 
 vector<vec> lf[N], rg[N];
 
-cood pd (int mask, int i) {
+double pd (int mask, int i) {
 	if (!mask) return -mn[i];
-	cood & me = memo[mask][i];
+	double & me = memo[mask][i];
 	if (visi[mask][i]) return me;
 	visi[mask][i] = 1;
 	me = 1./0.;
@@ -390,6 +390,40 @@ bool has_int (int i, int j, cood x) {
 	return 0;
 }
 
+double int_dist (int i, int j) {
+	double rs = 1./0.;
+	int b = 0;
+	ll sh = mx[i];
+	for (int a = 0; a < lf[j].size() - 1; a++) {
+		vec u = lf[j][a], v = lf[j][a+1];
+		u.x += sh; v.x += sh;
+
+		while (b < rg[i].size() && rg[i][b].y <= v.y) {
+			if (rg[i][b].y >= u.y) {
+				double x = (double(v.x-u.x)/double(v.y-u.y))*double(rg[i][b].y - u.y) + u.x; 
+				rs = min(rs, x-rg[i][b].x);
+			}
+			b++;
+		}
+		b--;
+	}
+	int a = 0;
+	for (int b = 0; b < rg[i].size() - 1; b++) {
+		vec u = rg[i][b], v = rg[i][b+1];
+		u.x -= sh; v.x -= sh;
+
+		while (a < lf[j].size() && lf[j][a].y <= v.y) {
+			if (lf[j][a].y >= u.y) {
+				double x = (double(v.x-u.x)/double(v.y-u.y))*double(lf[j][a].y - u.y) + u.x; 
+				rs = min(rs, lf[j][a].x-x);
+			}
+			a++;
+		}
+		a--;
+	}
+	return sh - rs;
+}
+
 int main () {
 	scanf("%d",&n);
 
@@ -400,9 +434,8 @@ int main () {
 
 		int part = 0;
 		while (k--) {
-			double ax, ay;
-			scanf("%lf %lf", &ax, &ay);
-			vec a(ax,ay);
+			vec a;
+			scanf("%lld %lld", &a.x, &a.y);
 			mn[i] = min(mn[i], a.x);
 			mx[i] = max(mx[i], a.x);
 			if (part == 0) {
@@ -423,20 +456,12 @@ int main () {
 
 	for (int i = 0; i < n; i++) {
 		for (int j = 0; j < n; j++) {
-			cood lo = 0, hi = 2e8;
-			int ts = 70;
-			while (ts--) {
-				cood x = .5*(lo + hi);
-				if (has_int(i,j,x))
-					lo = x;
-				else
-					hi = x;
-			}
-			rs[i][j] = lo;
+			if (i == j) continue;
+			rs[i][j] = int_dist(i,j);
 		}
 	}
 
-	cood res = 1./0.;
+	double res = 1./0.;
 	for (int i = 0; i < n; i++)
 		res = min(res, pd((1<<n) - 1 - (1<<i), i) + mx[i]);
 	printf("%.3f\n", double(res));
