@@ -91,23 +91,14 @@ bool inside (double t, vec c) {
 }
 bool solve (double t) {
 	if (inter_seg(a,b,c,d) || inter_seg(a,a+s*t,c,d) || inter_seg(b,b+s*t,c,d) || inter_seg(a+s*t,b+s*t,c,d)) return 1;
-	if (inside(t,c) || inside(t,d)) return 1;
+	if (c.ccw(a,b))
+		if (inside(t,c) || inside(t,d)) return 1;
 	return 0;
 }
 
 void fail () {
 	printf("-1\n");
 	exit(0);
-}
-
-double ans = 1/0.;
-
-void go(vec v) {
-	vec p = v.proj(a, b);
-	double ang = a.angle(a + s, b);
-	double sa = sin(ang);
-	double d = v.nr(p) / sa;
-	ans = min(ans, d / s.nr());
 }
 
 int main () {
@@ -123,13 +114,22 @@ int main () {
 
 	bool ok = 0;
 	for (vec w : {c,d}) {
-		if (w.ccw(a,b) == (a+s).ccw(a,b)) {
+		if (w.ccw(a,b)*(a+s).ccw(a,b) == 1) {
 			if (w.ccw(a,a+s) == 0 || w.ccw(b,b+s) == 0 || w.ccw(a,a+s) == -w.ccw(b,b+s))
-				go(w);
+				ok = 1;
 		}
 	}
-	if (inter_seg(a,a+s*3e4,c,d)) go(lin(a, a + s * 3e4).inter(lin(c, d)));
-	if (inter_seg(b,b+s*3e4,c,d)) go(lin(b, b + s * 3e4).inter(lin(c, d)));
-	if(ans > 1e10) fail();
-	printf("%.20f\n", ans);
+	if (inter_seg(a,a+s*3e4,c,d)) ok = 1;
+	if (inter_seg(b,b+s*3e4,c,d)) ok = 1;
+	if (!ok) fail();
+
+	double lo = 0, hi = 1e5;
+	int ts = 70;
+	while (ts--) {
+		double md = (lo+hi)/2;
+		if (solve(md)) hi = md;
+		else lo = md;
+	}
+
+	printf("%.20f\n", lo);
 }

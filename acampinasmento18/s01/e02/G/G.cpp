@@ -66,36 +66,42 @@ struct cir {
 	inline double arc_len(vec a, vec b) { return c.angle(a, b) * r; }
 };
 
-inline vec furt (vec * p, int n, vec d) {
+inline pair<vec,vec> furt (vec * p, int n, vec d) {
 	int s, t;
-	ll cur = p[0]*d;
-	vec mx = p[0];
-	if (p[1]*d >= cur) {
-		int lo = 1, hi = n-1;
-		while (lo < hi) {
-			int md = (lo+hi+1)/2;
-			if (p[md]*d >= cur) lo = md;
-			else hi = md-1;
-		}
-		s = 1; t = lo;
-	} else {
-		int lo = 1, hi = n-1;
-		while (lo < hi) {
-			int md = (lo+hi)/2;
-			if (p[md]*d >= cur) hi = md;
-			else lo = md+1;
-		}
-		s = lo; t = n-1;
+	if (p[1]*d < p[0]*d) {
+		pair<vec,vec> res = furt(p, n, vec(0,0) - d);
+		swap(res.first, res.second);
+		return res;
+	}
+	// p[1]*d >= cur
+	vec mn = p[0], mx = p[0];
+
+	int lo = 1, hi = n;
+	while (lo < hi) {
+		int md = (lo+hi+1)/2;
+		if (p[md]*d >= p[0]*d) lo = md;
+		else hi = md-1;
 	}
 
-	while (s < t) {
-		int md = (s+t)/2;
+	int di = lo;
 
-		if (p[md]*d < p[md+1]*d) s = md+1;
-		else t = md;
+	lo = 1, hi = di-1;
+	while (lo < hi) {
+		int md = (lo+hi)/2;
+		if (p[md]*d < p[md+1]*d) lo = md+1;
+		else hi = md;
 	}
-	if (p[s]*d > cur) mx = p[s];
-	return mx;
+	if (p[lo]*d >= mx*d) mx = p[lo];
+
+	lo = di, hi = n-1;
+	while (lo < hi) {
+		int md = (lo+hi)/2;
+		if (p[md]*d > p[md+1]*d) lo = md+1;
+		else hi = md;
+	}
+	if (lo < n && p[lo]*d <= mn*d) mn = p[lo];
+
+	return pair<vec,vec>(mn,mx);
 }
 
 inline int convex_hull (vec * v, int n, int border_in) {
@@ -148,8 +154,8 @@ int main () {
 	for (int i = 0; i < n; i++) {
 		for (int j = i+1; j < m; j++) {
 			vec l = lin(v[i], v[j]).nor();
-			vec a = furt(v,n,l);
-			vec b = furt(v,n,vec(0,0)-l);
+			pair<vec,vec> rs = furt(v,n,l);
+			vec a = rs.first, b = rs.second;
 
 			if (v[i].cross(a,v[j]) == 0 || v[i].cross(v[j],b) == 0) continue;
 			area = max(area,v[i].cross(a,v[j]) + v[i].cross(v[j],b));

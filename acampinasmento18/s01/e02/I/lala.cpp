@@ -35,7 +35,6 @@ struct vec {
 
 	inline double angle(vec a, vec b) { return atan2(cross(a, b), inner(a, b)); }
 };
-ostream & operator << (ostream & os, vec o) { return os << "(" << o.x << "," << o.y << ")"; }
 
 struct lin {
 	cood a, b, c;
@@ -82,32 +81,10 @@ inline vec furt (vec * p, int n, vec d) {
 	return mx;
 }
 
-inline int convex_hull (vec * v, int n, int border_in) {
-	swap(v[0], *max_element(v,v+n));
-	sort(v+1, v+n, [&v] (vec a, vec b) {
-		int o = b.ccw(v[0],a);
-		if (o) return (o == 1);
-		return v[0].sq(a) < v[0].sq(b);
-	});
-	if (border_in) {
-		int s = n-1;
-		while (s>1 && v[s].ccw(v[s-1],v[0]) == 0) s--;
-		for (int i = s; i < n-1-(i-s); i++) swap(v[i], v[n-1-(i-s)]);
-	}
-	int s = 0;
-	for (int i = 0; i < n; i++) {
-		if (s && v[s-1].x == v[i].x && v[s-1].y == v[i].y) continue;
-		while (s >= 2 && v[s-1].ccw(v[s-2],v[i]) >= border_in) s--;
-		v[s++] =  v[i];
-	}
-	return s;
-}
-
 const int N = 2e5+7;
 
 int n;
-vector<vector<vec> > v;
-int s[20];
+vec v[N];
 int m;
 int us;
 char str[10];
@@ -131,42 +108,81 @@ inline void rds (char * s) {
 	s[0] = 0;
 }
 
+inline int convex_hull1 (vec * v, int n, int border_in) {
+	swap(v[0], *max_element(v,v+n));
+	sort(v+1, v+n, [&v] (vec a, vec b) {
+		int o = b.ccw(v[0],a);
+		if (o) return (o == 1);
+		return v[0].sq(a) < v[0].sq(b);
+	});
+	if (border_in) {
+		int s = n-1;
+		while (s>1 && v[s].ccw(v[s-1],v[0]) == 0) s--;
+		for (int i = s; i < n-1-(i-s); i++) swap(v[i], v[n-1-(i-s)]);
+	}
+	int s = 0;
+	for (int i = 0; i < n; i++) {
+		if (s && v[s-1].x == v[i].x && v[s-1].y == v[i].y) continue;
+		while (s >= 2 && v[s-1].ccw(v[s-2],v[i]) >= border_in) s--;
+		swap(v[s++], v[i]);
+	}
+	return s;
+}
+
+int convex_hull (vec * w, vec * v, int n) {
+	if (n <= 4) { 
+		for (int k = 0; k < n; k++) w[k] = v[k];
+		return convex_hull1(w, n, 0);
+	}
+	int s = 0;
+	for (int i = 0; i < n; i++) {
+		if (s && w[s-1].x == v[i].x && w[s-1].y == v[i].y) continue;
+		while (s >= 2 && w[s-1].ccw(w[s-2],v[i]) > 0) s--;
+		w[s++] = v[i];
+	}
+	int k = s;
+	for (int i = n-2; i >= 0; i--) {
+		if (s && w[s-1].x == v[i].x && w[s-1].y == v[i].y) continue;
+		while (s > k && w[s-1].ccw(w[s-2],v[i]) > 0) s--;
+		w[s++] = v[i];
+	}
+	s--;
+	if (s <= 4) { return convex_hull1(w, s, 0); }
+	return s;
+}
+
+vec w[N];
+
 int main () {
 	rd(n);
 
-	v.pb(vector<vec>());
-	v[0].reserve(n);
 	for (int i = 0; i < n; i++) {
-		vec cur;
-		rd(cur.x);
-		rd(cur.y);
-		v[0].pb(cur);
+		rd(w[i].x);
+		rd(w[i].y);
 	}
-	v[0].resize(convex_hull(&v[0][0],n,0));
+	sort(w, w+n);
+	n = convex_hull(v,w,n);
 	
-	scanf("%d", &m);
+	rd(m);
+	int sq = sqrt(m*log(m));
 
 	for (int i = 0; i < m; i++) {
 		rds(str);
-		vec cur;
-		rd(cur.x);rd(cur.y);
+		rd(v[n+us].x);rd(v[n+us].y);
 		
 		if (str[0] == 'g') {
-			ll mx = LLONG_MIN;
-			for (vector<vec> & p : v)
-				mx = max(mx, furt(&p[0], p.size(), cur)*cur);
+			ll mx = furt(v, n, v[n+us])*v[n+us];
+			for (int j = 0; j < us; j++) mx = max(mx, v[n+us]*v[n+j]);
 			printf("%lld\n", mx);
 		} else {
-			v.pb(vector<vec>({cur}));
-
-			bool ch = 0;
-			while (v.size() >= 2 && v[v.size()-1].size() >= v[v.size()-2].size()) {
-				ch = 1;
-				v[v.size()-2].insert(v[v.size()-2].end(), v.back().begin(), v.back().end());
-				v.pop_back();
+			us++;
+			if (us == sq) {
+				sort(v+n,v+n+us);
+				merge(v,v+n,v+n,v+n+us,w);
+				n += us;
+				n = convex_hull(v,w,n);
+				us = 0;
 			}
-			
-			if (ch) v.back().resize(convex_hull(&(v.back()[0]), v.back().size(), 0));
 		}
 	}
 }
