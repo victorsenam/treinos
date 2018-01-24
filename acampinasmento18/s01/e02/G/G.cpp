@@ -14,18 +14,18 @@ inline double sq (double x) { return x*x; }
 struct vec {
 	cood x, y;
 	vec () : x(0),y(0) {} vec(cood a, cood b) : x(a),y(b) {}
-	inline vec operator - (vec o) { return {x - o.x, y-o.y}; }
-	inline vec operator + (vec o) { return {x + o.x, y+o.y}; }
-	inline vec operator * (cood o) { return {x*o, y*o}; }
-	inline vec operator / (cood o) { return {x/o, y/o}; }
-	inline cood operator ^ (vec o) { return x*o.y - y*o.x; }
-	inline cood operator * (vec o) { return x*o.x + y*o.y; }
+	inline vec operator - (const vec & o) const { return {x - o.x, y-o.y}; }
+	inline vec operator + (const vec & o) const { return {x + o.x, y+o.y}; }
+	inline vec operator * (const cood & o) const { return {x*o, y*o}; }
+	inline vec operator / (const cood & o) const { return {x/o, y/o}; }
+	inline cood operator ^ (const vec & o) const { return x*o.y - y*o.x; }
+	inline cood operator * (const vec & o) const { return x*o.x + y*o.y; }
 
-	inline cood cross(vec a, vec b) { return ((*this)-a)^((*this)-b); }
-	inline cood inner(vec a, vec b) { return ((*this)-a)*((*this)-b); }
+	inline cood cross(const vec & a, const vec & b) const { return ((*this)-a)^((*this)-b); }
+	inline cood inner(const vec & a, const vec & b) const { return ((*this)-a)*((*this)-b); }
 
-	inline int ccw (vec a, vec b) { cood o = cross(a,b); return (eps < o) - (o < -eps); }
-	inline int dir (vec a, vec b) { cood o = inner(a,b); return (eps < o) - (o < -eps); }
+	inline int ccw (const vec & a, const vec & b) const { cood o = cross(a,b); return (eps < o) - (o < -eps); }
+	inline int dir (const vec & a, const vec & b) const { cood o = inner(a,b); return (eps < o) - (o < -eps); }
 	inline cood sq (vec o = vec()) { return inner(o,o); }
 	inline double nr (vec o = vec()) { return sqrt(sq(o)); }
 	inline vec proj (vec a, vec b) { return a + (b-a)*(a.inner((*this),b) / a.sq(b)); }
@@ -33,7 +33,7 @@ struct vec {
 	inline vec rot90 () { return vec(-y,x); }
 
 	inline double angle(vec a, vec b) { return atan2(cross(a, b), inner(a, b)); }
-	inline bool operator < (vec o) { return (x!=o.x)?x<o.x:y<o.y; }
+	inline bool operator < (const vec & o) const { return (x!=o.x)?x<o.x:y<o.y; }
 };
 ostream & operator << (ostream & os, vec v) {
 	return os << "(" << v.x << "," <<v.y << ")";
@@ -41,10 +41,10 @@ ostream & operator << (ostream & os, vec v) {
 
 struct lin {
 	cood a, b, c;
-	lin () {} lin(cood x, cood y, cood z) : a(x), b(y), c(z) {}
-	lin (vec s, vec t) : a(t.y - s.y), b(s.x - t.x), c(a*s.x + b*s.y) {}
+	inline lin () {} inline lin(cood x, cood y, cood z) : a(x), b(y), c(z) {}
+	inline lin (vec s, vec t) : a(t.y - s.y), b(s.x - t.x), c(a*s.x + b*s.y) {}
 
-	vec nor () { return vec(a,b); }
+	inline vec nor () { return vec(a,b); }
 
 	vec inter (lin o) {
 		cood d = a*o.b - o.a*b;
@@ -53,28 +53,20 @@ struct lin {
 	}
 };
 
-struct cir {
-	vec c; cood r;
-	cir () {} cir(vec v, cood d) : c(v), r(d) {}
-	cir (vec u, vec v, vec w) {
-		vec mv = (u+v)/2; lin s(mv, mv+(v-u).rot90());
-		vec mw = (u+w)/2; lin t(mw, mw+(w-u).rot90());
-		c = s.inter(t); r = c.nr(u);
-	}
-
-	inline bool contains (vec w) { return c.sq(w) <= sq(r) + eps; }
-	inline double arc_len(vec a, vec b) { return c.angle(a, b) * r; }
-};
-
 inline pair<vec,vec> furt (vec * p, int n, vec d) {
-	int s, t;
-	if (p[1]*d < p[0]*d) {
-		pair<vec,vec> res = furt(p, n, vec(0,0) - d);
-		swap(res.first, res.second);
-		return res;
-	}
-	// p[1]*d >= cur
 	vec mn = p[0], mx = p[0];
+	if (n <= 4) {
+		for (int k = 1; k < n; k++) {
+			if (p[k]*d > mx*d) mx = p[k];
+			if (p[k]*d < mn*d) mn = p[k];
+		}
+		return pair<vec,vec>(mn,mx);
+	}
+	bool sw = 0;
+	if (p[1]*d < p[0]*d) {
+		sw = 1;
+		d = vec(0,0) - d;
+	}
 
 	int lo = 1, hi = n;
 	while (lo < hi) {
@@ -101,10 +93,11 @@ inline pair<vec,vec> furt (vec * p, int n, vec d) {
 	}
 	if (lo < n && p[lo]*d <= mn*d) mn = p[lo];
 
+	if (sw) swap(mn,mx);
 	return pair<vec,vec>(mn,mx);
 }
 
-inline int convex_hull (vec * v, int n, int border_in) {
+int convex_hull (vec * v, int n, int border_in) {
 	swap(v[0], *max_element(v,v+n));
 	sort(v+1, v+n, [&v] (vec a, vec b) {
 		int o = b.ccw(v[0],a);
@@ -125,20 +118,11 @@ inline int convex_hull (vec * v, int n, int border_in) {
 	return s;
 }
 
-const int N = 1e5+6;
+const int N = 12007;
 
 int n, m;
 vec v[N];
 vec u[N];
-
-template<typename T>
-inline void rd(T &x) {
-	char c;
-	while(isspace(c = getchar()));
-	x = (c - '0');
-	while(!isspace(c = getchar()))
-		x = (x << 3) + (x << 1) + (c - '0');
-}
 
 int main () {
 	scanf("%d", &n);
@@ -148,17 +132,27 @@ int main () {
 		u[i] = v[i];
 	}
 	
-	n = convex_hull(v,n,0);
+	n = convex_hull(v,n,1);
+	for (int i = n; i < n+n; i++)
+		v[i] = v[i-n];
 
 	ll area = 0;
 	for (int i = 0; i < n; i++) {
-		for (int j = i+1; j < m; j++) {
-			vec l = lin(v[i], v[j]).nor();
-			pair<vec,vec> rs = furt(v,n,l);
-			vec a = rs.first, b = rs.second;
+		sort(u, u+m, [i] (const vec & a, const vec & b) {
+			return a.ccw(v[i],b) < 0;
+		});
 
-			if (v[i].cross(a,v[j]) == 0 || v[i].cross(v[j],b) == 0) continue;
-			area = max(area,v[i].cross(a,v[j]) + v[i].cross(v[j],b));
+		int bef = i, aft = i;
+
+		for (int j = 0; j < m; j++) {
+			while (bef + 1 < n+i && v[bef+1].ccw(v[i],u[j]) <= 0 && v[i].cross(v[bef+1],u[j]) >= v[i].cross(v[bef],u[j]))
+				bef++;
+			while (aft + 1 < n+i && (v[aft].ccw(v[i],u[j]) <= 0 || v[i].cross(u[j],v[aft+1]) >= v[i].cross(u[j],v[aft])))
+				aft++;
+
+			//cout << v[i] << " and " << u[j] << " with " << v[bef] << " and " << v[aft] << " for " << v[i].cross(v[bef],u[j]) + v[i].cross(u[j],v[aft]) << endl;
+			if (v[i].ccw(v[bef],u[j])*v[i].ccw(u[j],v[aft]))
+				area = max(area, v[i].cross(v[bef],u[j]) + v[i].cross(u[j],v[aft]));
 		}
 	}
 
