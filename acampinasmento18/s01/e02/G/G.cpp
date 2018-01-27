@@ -128,7 +128,7 @@ int convex_hull (vec * v, int n, int border_in) {
 	for (int i = 0; i < n; i++) {
 		if (s && v[s-1].x == v[i].x && v[s-1].y == v[i].y) continue;
 		while (s >= 2 && v[s-1].ccw(v[s-2],v[i]) >= border_in) s--;
-		v[s++] = v[i];
+		swap(v[s++],v[i]);
 	} 
 	return s;
 }
@@ -147,42 +147,28 @@ int main () {
 
 	ll res = 0;
 	if (n == 3) {
-		for (int j = 0; j < m; j++) {
-			for (int i = 0; i < 3; i++) {
-				ll area = 0;
-				for (int k = 0; k < 2; k++)
-					area += v[j].cross(v[(i+k)%3],v[(i+k+1)%3]);
-				res = max(res, abs(area));
-			}
-		}
+		ll base = v[0].cross(v[1],v[2]);
+		for (int j = 3; j < m; j++)
+			for (int i = 0; i < 3; i++)
+				res = max(res, base - v[j].cross(v[i],v[(i+1)%3]));
 	} else {
 		for (int i = n; i < n+n; i++)
 			v[i] = v[i-n];
 
 		for (int i = 0; i < n; i++){
-			int bef = i, aft = i;
+			int bef = i+1, aft = i+1;
 			for (int j = i+2; j < i+n-1; j++) {
-				int lo = i+1, hi = j-1;
-				while (lo < hi) {
-					int md = (lo+hi)/2;
-					if (v[md].cross(v[j],v[i]) >= v[md+1].cross(v[j],v[i])) hi = md;
-					else lo = md + 1;
-				}
-				int bef = lo;
-				lo = j+1; hi = i+n-1;
-				while (lo < hi) {
-					int md = (lo+hi)/2;
-					if (v[md].cross(v[i],v[j]) >= v[md+1].cross(v[i],v[j])) hi = md;
-					else lo = md + 1;
-				}
-				int aft = lo;
-				cout << v[i] << " " << v[j] << " to " << v[bef] << " " << v[aft] << endl;
+				while (bef + 1 < j && v[bef+1].cross(v[j],v[i]) >= v[bef].cross(v[j],v[i]))
+					bef++;
+				aft = max(aft, j+1);
+				while (aft + 1 < i+n && v[aft+1].cross(v[i],v[j]) >= v[aft].cross(v[i],v[j]))
+					aft++;
 				ll loc = v[bef].cross(v[j],v[i]) + v[aft].cross(v[i],v[j]);
 				cout << loc << endl;
 				res = max(res, loc);
 			}
 		}
 	}
-
+	assert(res > 0);
 	printf("%lld.%lld\n", res/2, 5*(res%2));
 }
