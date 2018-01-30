@@ -34,7 +34,7 @@ int cp (int u, int close, int cur, int p) {
 		// escolher todo mundo vazio
 		int loc = 0;
 		for (int c : v[u]) if (c != p) {
-			loc += min(cp(c,0,3,u)+1,cp(c,0,2-close,u));
+			loc += min(cp(c,3,0,u)+1,cp(c,0,2-close,u));
 		}
 		if (!cur) me = min(me,loc);
 
@@ -44,15 +44,14 @@ int cp (int u, int close, int cur, int p) {
 		for (int c : v[u]) if (c != p) {
 			int vc = cp(c,3,0,u) - cp(c,0,max(1-close,0),u);
 			if (a == -1 || va > vc) {
-				a = c;
-				va = vc;
+				a = c; va = vc;
 			}
 		}
 		for (int c : v[u]) if (c != p) {
 			if (c == a) loc += cp(c,3,0,u) + 1;
 			else loc += min(cp(c,3,0,u)+1, cp(c,0,max(1-close,0),u));
 		}
-		if (a != -1) me = min(me,loc);
+		if (cur <= 1 && a != -1) me = min(me,loc);
 
 		loc = 0;
 		// escolher 2 no mesmo
@@ -60,8 +59,7 @@ int cp (int u, int close, int cur, int p) {
 		for (int c : v[u]) if (c != p) {
 			int vc = cp(c,4,0,u) - cp(c,0,0,u);
 			if (a == -1 || va > vc) {
-				a = c;
-				va = vc;
+				a = c; va = vc;
 			}
 		}
 		for (int c : v[u]) if (c != p) {
@@ -78,7 +76,7 @@ int cp (int u, int close, int cur, int p) {
 			if (a == -1 || va > vc) {
 				b = a; vb = va; a = c; va = vc;
 			} else if (b == -1 || vb > vc) {
-				a = c; va = vc;
+				b = c; vb = vc;
 			}
 		}
 		for (int c : v[u]) if (c != p) {
@@ -100,5 +98,5 @@ int main () {
 		v[a].pb(b); v[b].pb(a);
 	}
 	v[0].pb(0);
-	printf("%d\n", min(cp(0,0,0,0), cp(0,2,0,0) + 1));
+	printf("%d\n", min(cp(0,0,0,0), cp(0,3,0,0) + 1));
 }
