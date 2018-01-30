@@ -18,10 +18,11 @@ int es[2];
 int cnt[M], fis[M], qt[M], siz[M], las[M], occ[M];
 bool bad[M];
 
-void add (int k, int & u, int v) {
+int add (int k, int u, int v) {
 	if (!trie[k][u][v])
-		v = trie[k][u][v];
-	v = trie[k][u][v] = es[k]++;
+		return trie[k][u][v];
+	else
+		return trie[k][u][v] = es[k]++;
 }
 
 int main () {
@@ -57,8 +58,8 @@ int main () {
 		int sizz = 0;
 		for (int j = i; j < tt; j++) {
 			sizz += text[j].size();
-			add(0,seq,text[j][0]);
-			add(1,abr,mp[text[j]]);
+			abr = add(0,abr,text[j][0]);
+			seq = add(1,seq,mp[text[j]]);
 			if (cnt[abr] == 0) { fis[abr] = i; qt[abr] = j - i + 1; siz[abr] = sizz; }
 			cnt[seq]++; cnt[abr]++;
 			if (cnt[seq] != cnt[abr]) {
@@ -72,7 +73,7 @@ int main () {
 
 	int best = 0;
 	int ba = 0;
-	for (int i = 1; i < es[1]; i++) {
+	for (int i = 1; i <= es[0]; i++) {
 		int ef = (siz[i]*occ[i]) - (siz[i] + qt[i]*occ[i]);
 		if (!bad[i] && ef > best) {
 			best = ef;
