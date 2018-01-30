@@ -10,25 +10,31 @@ const int N = 200007;
 
 int n;
 vector<int> v[N];
-int memo[N][5][5];
+int memo[N][7][5];
 
 int cp (int u, int close, int cur, int p) {
-// close: 0 none, 1 one, 2 this vertex
+// close: 0 none, 1 one, 2 two, 3 one here, 4 two here
 // cur: how many children will I select at least? (0,1,2)
 	int & me = memo[u][close][cur];
 	if (me != -1) return me;
 
-	if (close == 2) {
+	if (close == 4) {
 		me = 0;
 		for (int c : v[u]) if (c != p) {
-			me += min(cp(c,2,0,u) + 1, cp(c,1,0,u));
+			me += min(cp(c,3,0,u) + 1, cp(c,2,0,u));
 		}
-	} else if (close <= 1) {
+	} else if (close == 3) {
+		me = 0;
+		for (int c : v[u]) if (c != p) {
+			me += min(cp(c,3,0,u) + 1, cp(c,1,0,u));
+		}
+		me = min(me, cp(u,4,0,p) + 1);
+	} else if (close <= 2) {
 		me = n+3;
 		// escolher todo mundo vazio
 		int loc = 0;
 		for (int c : v[u]) if (c != p) {
-			loc += cp(c,0,2-close,u);
+			loc += min(cp(c,0,3,u)+1,cp(c,0,2-close,u));
 		}
 		if (!cur) me = min(me,loc);
 
@@ -36,15 +42,31 @@ int cp (int u, int close, int cur, int p) {
 		// escolher pelo menos 1
 		int a = -1, va;
 		for (int c : v[u]) if (c != p) {
-			int vc = cp(c,2,0,u) - cp(c,0,1-close,u);
+			int vc = cp(c,3,0,u) - cp(c,0,max(1-close,0),u);
 			if (a == -1 || va > vc) {
 				a = c;
 				va = vc;
 			}
 		}
 		for (int c : v[u]) if (c != p) {
-			if (c == a) loc += cp(c,2,0,u) + 1;
-			else loc += min(cp(c,2,0,u)+1, cp(c,0,1-close,u));
+			if (c == a) loc += cp(c,3,0,u) + 1;
+			else loc += min(cp(c,3,0,u)+1, cp(c,0,max(1-close,0),u));
+		}
+		if (a != -1) me = min(me,loc);
+
+		loc = 0;
+		// escolher 2 no mesmo
+		a = -1, va;
+		for (int c : v[u]) if (c != p) {
+			int vc = cp(c,4,0,u) - cp(c,0,0,u);
+			if (a == -1 || va > vc) {
+				a = c;
+				va = vc;
+			}
+		}
+		for (int c : v[u]) if (c != p) {
+			if (c == a) loc += cp(c,4,0,u) + 2;
+			else loc += min(cp(c,3,0,u)+1, cp(c,0,0,u));
 		}
 		if (a != -1) me = min(me,loc);
 
@@ -52,7 +74,7 @@ int cp (int u, int close, int cur, int p) {
 		// escolher pelo menos 2
 		a = -1, va; int b = -1, vb;
 		for (int c : v[u]) if (c != p) {
-			int vc = cp(c,2,0,u) - cp(c,0,0,u);
+			int vc = cp(c,3,0,u) - cp(c,0,0,u);
 			if (a == -1 || va > vc) {
 				b = a; vb = va; a = c; va = vc;
 			} else if (b == -1 || vb > vc) {
@@ -60,8 +82,8 @@ int cp (int u, int close, int cur, int p) {
 			}
 		}
 		for (int c : v[u]) if (c != p) {
-			if (c == a || c == b) loc += cp(c,2,0,u) + 1;
-			else loc += min(cp(c,2,0,u)+1, cp(c,0,0,u));
+			if (c == a || c == b) loc += cp(c,3,0,u) + 1;
+			else loc += min(cp(c,3,0,u)+1, cp(c,0,0,u));
 		}
 		if (b != -1) me = min(me,loc);
 	}

@@ -74,7 +74,7 @@ int main () {
 		}
 		res = max(res, cur*cur);
 		cur = cur - v[i];
-		res = max(res, cur*cur);
+		//res = max(res, cur*cur);
 	}
 
 	printf("%lld\n", res);
