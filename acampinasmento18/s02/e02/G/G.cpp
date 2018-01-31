@@ -24,10 +24,13 @@ struct vec {
 
 	inline bool operator < (const vec & o) const { return (x != o.x)?(x < o.x):(y > o.y); }
 };
+ostream & operator << (ostream & os, vec o) {
+	return os << "(" << o.x << "," << o.y << ")";
+}
 
 int convex_hull (vec * v, int n) {
 	if (n <= 1) return n;
-	swap(v[0], *max_element(v,v+n));
+	swap(v[0], *min_element(v,v+n));
 	sort(v+1, v+n, [&v] (vec a, vec b) {
 		int o = b.ccw(v[0],a);
 		if (o) return (o == 1);
@@ -47,65 +50,106 @@ const int N = 250007;
 int n;
 vector<vec> v[N];
 
-ll calc (int s, int t, int l, int r, int lo, int hi, int w) {
-	if (l > r) return 0;
-	int md = (l+r)/2;
-
-	int b = lo;
-	for (int k = lo+1; k <= hi; k++) {
-		if (v[s][md].sq(v[t][k]) > v[s][md].sq(v[t][b]))
-			b = k;
-	}
-
-	if (w)
-		return max({
-			calc(s,t,l,md-1,lo,b,w),
-			calc(s,t,md+1,r,b,hi,w),
-			v[s][md].sq(v[t][b])
-		});
-	else
-		return max({
-			calc(s,t,l,md-1,b,hi,w),
-			calc(s,t,md+1,r,lo,b,w),
-			v[s][md].sq(v[t][b])
-		});
-}
-
 ll go (int l, int r) {
-	if (l == r) return 0;
+	if (l == r) {
+		//cout << l << ".." << r << endl;
+		v[l].resize(convex_hull(&v[l][0], v[l].size()));
+		//for (vec a : v[l]) { cout << a << " "; } cout << endl;
+		return 0;
+	}
 	int md = (l+r)/2;
 	ll res = max(go(l,md),go(md+1,r));
 
 	int n = v[l].size();
 	int m = v[md+1].size();
-	v[l].reserve(n+n);
-	v[md+1].reserve(m+m);
-	for (int i = 0; i < n; i++)
-		v[l].pb(v[l][i]);
-	for (int i = 0; i < m; i++)
-		v[md+1].pb(v[md+1][i]);
 
+	//cout << l << ".." << r << endl;
+	//for (vec a : v[l]) { cout << a << " "; } cout << endl;
+	//for (vec a : v[md+1]) { cout << a << " "; } cout << endl;
+	
 	if (v[l].size() && v[md+1].size()) {
-		int a = 0;
-		while (v[l][a].x < v[l][a+1].x) a++;
-		int b = a;
-		while (v[l][b].x > v[l][b+1].x) b++;
+	/*
+		vector<vec> p; p.reserve(n+m);
+		p.pb(v[l][0]-v[md+1][0]);
+		int j = 1;
+		for (int i = 1; i < n; i++) {
+			while (j < m && p.back().ccw(v[l][i]-v[md+1][j-1],v[l][i-1]-v[md+1][j]) > 0)
+				p.pb(v[l][i-1]-v[md+1][j++]);
+			p.pb(v[l][i]-v[md+1][j-1]);
+		}
+		while (j < m)
+			p.pb(v[l][n-1]-v[md+1][j++]);
 
-		int c = 0;
-		while (v[md+1][c].x < v[md+1][c+1].x) c++;
-		int d = c;
-		while (v[md+1][d].x > v[md+1][d+1].x) d++;
-		for (int k = 0; k < 2; k++)
-		res = max({
-			res,
-			calc(l,md+1,a,b,c,d,k),
-			calc(l,md+1,b,a+n,c,d,k),
-			calc(l,md+1,a,b,d,c+m,k),
-			calc(l,md+1,b,a+n,d,c+m,k)
-				});
+		for (vec x : p)
+			res = max(res, x.sq());
+
+		//for (vec a : p) { cout << a << " "; } cout << endl;
+	*/
+	/*
+		int j = 0;
+		for (int i = 0; i < n+n; i++) {
+			while (j < m+m && ((v[md+1][(j+1)%m]-v[md+1][j%m])*(v[l][(i+1)%n]-v[l][i%n]) >= 0 || ((v[md+1][(j+1)%m]-v[md+1][j%m])^(v[l][(i+1)%n]-v[l][i%n])) >= 0)) {
+				for (int x = 0; x <= 1; x++) for (int y = 0; y <= 1; y++)
+					res = max(res, v[l][(i+x)%n].sq(v[md+1][(j+y)%m]));
+				j++;
+			}
+			for (int x = 0; x <= 1; x++) for (int y = 0; y <= 1; y++)
+				res = max(res, v[l][(i+x)%n].sq(v[md+1][(j+y)%m]));
+		}
+	*/
+	/*
+		vector<vec> & p = v[l];
+		vector<vec> & q = v[md+1];
+		for (int i = 0; i < n; i++) {
+			vec a = p[i], b = p[(i+1)%n];
+			
+			if (q[0].cross(a,b) < q[1].cross(a,b)) {
+				int lo = 0, hi = m-1;
+				while (lo < hi) {
+					int md = (lo+hi+1)/2;
+					if (q[0].cross(a,b) >= q[md].cross(a,b) || q[md-1].cross(a,b) > q[md].cross(a,b))
+						hi = md-1;
+					else
+						lo = md;
+				}
+				for (int k = m-1; k <= m+1; k++)
+					res = max({ res, a.sq(q[(lo+k)%m]), b.sq(q[(lo+k)%m]) });
+				lo = 0; hi = m-1;
+				while (lo < hi) {
+					int md = (lo+hi)/2;
+					if (q[0].cross(a,b) < q[md].cross(a,b) || q[md+1].cross(a,b) > q[md].cross(a,b))
+						lo = md+1;
+					else
+						hi = md;
+				}
+				for (int k = m-1; k <= m+1; k++)
+					res = max({ res, a.sq(q[(lo+k)%m]), b.sq(q[(lo+k)%m]) });
+			} else {
+				int lo = 0, hi = m-1;
+				while (lo < hi) {
+					int md = (lo+hi+1)/2;
+					if (q[0].cross(a,b) < q[md].cross(a,b) || q[md-1].cross(a,b) > q[md].cross(a,b))
+						hi = md-1;
+					else
+						lo = md;
+				}
+				for (int k = m-1; k <= m+1; k++)
+					res = max({ res, a.sq(q[(lo+k)%m]), b.sq(q[(lo+k)%m]) });
+				lo = 0; hi = m-1;
+				while (lo < hi) {
+					int md = (lo+hi)/2;
+					if (q[0].cross(a,b) >= q[md].cross(a,b) || q[md+1].cross(a,b) > q[md].cross(a,b))
+						lo = md+1;
+					else
+						hi = md;
+				}
+				for (int k = m-1; k <= m+1; k++)
+					res = max({ res, a.sq(q[(lo+k)%m]), b.sq(q[(lo+k)%m]) });
+			}
+		}
+	*/
 	}
 
-	v[l].resize(n);
 	v[l].reserve(n + m);
 	for (int i = 0; i < m; i++)
 		v[l].pb(v[md+1][i]);
