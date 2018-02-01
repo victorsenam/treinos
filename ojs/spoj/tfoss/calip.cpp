@@ -151,7 +151,7 @@ int main () {
 		int j = max_element(v,v+n,[](vec a, vec b) { return a.sq(v[0]) < b.sq(v[0]); }) - v;
 		for (int i = 0; i < n; i++) {
 			res = max({ res, v[i].sq(v[j%n]), v[i].sq(v[(j+1)%n]) });
-			for (; j < i+n && ((v[(i+1)%n]-v[i])^(v[(j+1)%n]-v[j%n])) > 0; j++)
+			for (; j < n+n && ((v[(i+1)%n]-v[i])^(v[(j+1)%n]-v[j%n])) > 0; j++)
 				res = max({ res, v[i].sq(v[j%n]), v[i].sq(v[(j+1)%n]) });
 		}
 		printf("%lld\n", res);
