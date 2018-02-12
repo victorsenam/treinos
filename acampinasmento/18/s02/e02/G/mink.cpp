@@ -11,6 +11,7 @@ typedef ll cood; cood eps = 0;
 struct vec {
 	cood x, y;
 	inline vec operator - (vec o) { return {x-o.x,y-o.y}; }
+	inline vec operator + (vec o) { return {x+o.x,y+o.y}; }
 	inline cood operator ^ (vec o) { return x*o.y - y*o.x; }
 	inline cood operator * (vec o) { return x*o.x + y*o.y; }
 
@@ -47,45 +48,45 @@ int convex_hull (vec * v, int n) {
 
 const int N = 250007;
 
-int n;
+int n, m;
 vector<vec> v[N];
 
-ll go (int l, int r) {
-	if (l == r) {
-		//cout << l << ".." << r << endl;
-		v[l].resize(convex_hull(&v[l][0], v[l].size()));
-		//for (vec a : v[l]) { cout << a << " "; } cout << endl;
-		return 0;
+void mink (vector<vec> & p, vector<vec> & q) {
+	for (vec a : p)
+		cout << a << " ";
+	cout << endl;
+	for (vec a : q)
+		cout << a << " ";
+	cout << endl;
+	int n = p.size(), m = q.size();
+	p.pb(p[0]); p.pb(p[1]); q.pb(q[0]); q.pb(q[1]);
+	vector<vec> mnk;
+	mnk.pb(p[0]+q[0]);
+	int j = 0;
+	for (int i = 0; i < n; i++) {
+		for (; j < m && mnk.back().ccw(p[i]+q[j+1],p[i+1]+q[j]) >= 0; j++)
+			mnk.pb(p[i]+q[j+1]);
+		mnk.pb(p[i+1]+q[j]);
 	}
-	int md = (l+r)/2;
-	ll res = max(go(l,md),go(md+1,r));
-
-	int n = v[l].size();
-	int m = v[md+1].size();
-
-	//cout << l << ".." << r << endl;
-	//for (vec a : v[l]) { cout << a << " "; } cout << endl;
-	//for (vec a : v[md+1]) { cout << a << " "; } cout << endl;
-	
-	if (v[l].size() && v[md+1].size()) {
+	for (; j < m; j++) mnk.pb(p[n-1]+q[j+1]);
+	ll res = 0;
+	cout << "sums " << endl;
+	for (vec a : mnk) {
+		cout << a << " ";
 	}
-
-	v[l].reserve(n + m);
-	for (int i = 0; i < m; i++)
-		v[l].pb(v[md+1][i]);
-	v[md+1].clear();
-	v[l].resize(convex_hull(&v[l][0], v[l].size()));
-	return res;
+	cout << endl;
 }
 
 int main () {
-	scanf("%d", &n);
+	scanf("%d %d", &n, &m);
 
+	vector<vec> p,q;
 	for (int i = 0; i < n; i++) {
-		vec u; int t;
-		scanf("%lld %lld %d", &u.x, &u.y, &t);
-		v[t-1].pb(u);
+		vec u; scanf("%lld %lld", &u.x, &u.y); p.pb(u);
+	}
+	for (int i = 0; i < m; i++) {
+		vec u; scanf("%lld %lld", &u.x, &u.y); q.pb(u);
 	}
 
-	printf("%lld\n", go(0,n-1));
+	mink(p,q);
 }
