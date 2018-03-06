@@ -1,158 +1,103 @@
 #include <bits/stdc++.h>
-#define ONLINE_JUDGE
-#ifndef ONLINE_JUDGE
-#define debug if(true)
-#else
-#define debug if(false)
-#endif
+#define cout if (1) cout
 
 using namespace std;
 typedef long long int ll;
 typedef pair<ll,ll> pii;
 #define pb push_back
 
-const int N = 3e2+3;
+const int N = 303;
 
-struct mtx {
-    int n, m;
-    int v[N][N];
+int n, m;
+char mat[5][N][N];
 
-    mtx () {}
-    mtx (mtx & o) {
-        n = o.n; m = o.m;
-        for (int i = 0; i < n; i++)
-            for (int j =0 ; j< m; j++)
-                v[i][j] = o.v[i][j];
-    }
+bool get (int a, int i, int j) {
+	bool r = 0;
+	for (int x = -1; x <= 1; x++) for (int y = -1; y <= 1; y++)
+		if (i + x >= 0 && i + x < n && j + y >= 0 && j + y < m && mat[a][i+x][j+y])
+			r = !r;
+	return r;
+}
 
-    void transpose () {
-        int k = max(n,m);
-        swap(n,m);
-        for (int i = 0; i < k; i++)
-            for (int j = i+1; j < k; j++)
-                swap(v[i][j], v[j][i]);
-    }
+int go1 (int a, int b) {
+	for (int i = 0; i < n; i++) for (int j = 0; j < m; j++) mat[b][i][j] = 0;
 
-    void tip () {
-        for (int i = 0; n - i - 1 > i; i++)
-            for (int j = 0; j < m; j++)
-                swap(v[i][j], v[n-i-1][j]);
-    }
+	for (int i = 1; i < n-1; i++) {
+		for (int j = 1; j < m-1; j++) {
+			mat[b][i][j] = 0;
+			mat[b][i][j] = (get(b,i-1,j-1) != mat[a][i-1][j-1]);
+		}
+	}
 
-    bool getcol (int i, int j) {
-        bool c = 0;
-        for (int mi = -1; mi <= 1; mi++) {
-            if (i + mi < 0 || i + mi >= n) continue;
-            for (int mj = -1; mj <= 1; mj++) {
-                if (j + mj < 0 || j + mj >= m) continue;
-                c ^= v[i+mi][j+mj];
-            }
-        }
-        return c;
-    }
+	for (int i = 0; i < n; i++) for (int j = 0; j < m; j++) if (get(b,i,j) != mat[a][i][j]) return i;
+	return -1;
+}
 
-    int buildfrom (mtx & x) {
-        n = x.n; m = x.m;
-        for (int i = 0; i < m; i++)
-            v[0][i] = 0;
-        for (int i = 1; i < n; i++) {
-            v[i][0] = 0;
-            for (int j = 1; j < m; j++) {
-                v[i][j] = 0;
-                v[i][j] = (getcol(i-1, j-1) != x.v[i-1][j-1]);
-                if ((i == n-1 || j == m-1) && v[i][j])
-                    return i-1;
-            }
-            if (getcol(i-1,m-1) != x.v[i-1][m-1])
-                return i-1;
-        }
-        for (int i = 0; i < m; i++)
-            if (getcol(n-1,i) != x.v[n-1][i])
-                return n-1;
-        return -1;
-    }
+int go2 (int a, int b) {
+	for (int j = 0; j < m; j++) for (int i = 0; i < n; i++) mat[b][i][j] = 0;
+	for (int j = 1; j < m-1; j++) {
+		for (int i = 1; i < n-1; i++) {
+			mat[b][i][j] = 0;
+			mat[b][i][j] = (get(b,i-1,j-1) != mat[a][i-1][j-1]);
+		}
+	}
 
-    void resz () {
-        int r,c;
-        for (r = 0; r < n; r++) {
-            bool k = 0;
-            for (int j = 0; !k && j < m; j++)
-                k |= v[r][j];
-            if (k) break;
-        }
-        for (c = 0; c < m; c++) {
-            bool k = 0;
-            for (int i = 0; !k && i < n; i++)
-                k |= v[i][c];
-            if (k) break;
-        }
-        n -= r; m -= c;
-        for (int i = 0; i < n; i++)
-            for (int j = 0; j < m; j++)
-                v[i][j] = v[i+r][j+c];
-        while (n) {
-            bool k = 0;
-            for (int j = 0; !k && j < m; j++)
-                k |= v[n-1][j];
-            if (k) break;
-            n--;
-        }
-        while (m) {
-            bool k = 0;
-            for (int i = 0; !k && i < n; i++)
-                k |= v[i][m-1];
-            if (k) break;
-            m--;
-        }
-    }
-
-    void print () {
-        for (int i = 0; i < n; i++) {
-            for (int j = 0; j < m; j++)
-                cout << (v[i][j] ? '#' : '.');
-            cout << endl;
-        }
-    }
-};
-
-mtx x,a,b,c,d;
+	for (int j = 0; j < m; j++) for (int i = 0; i < n; i++) if (get(b,i,j) != mat[a][i][j]) return j;
+	return -1;
+}
 
 int main () {
-    ios::sync_with_stdio(0);
-    cin.tie(0);
+	scanf("%d %d", &m, &n);
 
-    cin >> x.m >> x.n;
-    for (int i = 0; i < x.n; i++) {
-        for (int j = 0; j < x.m; j++) {
-            char c;
-            cin >> c;
-            x.v[i][j] = (c == '#');
-        }
-    }
+	for (int i = 0; i < n; i++) {
+		scanf(" %s", mat[0][i]);
+		for (int j = 0; j < m; j++) mat[0][i][j] = (mat[0][i][j] == '#');
+	}
 
-    while (x.n > 2 && x.m > 2) {
-        debug {
-            x.print();
-            cout << endl;
-        }
-        int row[2], col[2];
-        row[0] = a.buildfrom(x);
-        x.transpose();
-        col[0] = c.buildfrom(x);
-        x.transpose();
+	while (n > 2 && m > 2) {
+		int l = go1(0,1);
+		int c = go2(0,2);
 
-        if (row[0] != -1) {
-            assert(col[0] != -1);
-            x.v[row[0]][col[0]] ^= 1;
-            if (a.buildfrom(x) != -1) {
-                x.v[row[0]][col[0]] ^= 1;
-                break;
-            }
-        }
+		if (c != -1) {
+			mat[0][l][c] ^= 1;
+			int r = go1(0,1);
+			if (r != -1) { mat[0][l][c] ^= 1; break; }
+		}
 
-        x = a;
-        x.resz();
-    }
+		for (; n > 0; n--) {
+			bool ok = 1;
+			for (int j = 0; j < m && ok; j++) if (mat[1][n-1][j]) ok = 0;
+			if (!ok) break;
+		}
+		for (; m > 0; m--) {
+			bool ok = 1;
+			for (int i = 0; i < n && ok; i++) if (mat[1][i][m-1]) ok = 0;
+			if (!ok) break;
+		}
 
-    x.print();
+		for (l = 0; l < n; l++) {
+			bool ok = 1;
+			for (int j = 0; j < m; j++) if (mat[1][l][j]) ok = 0;
+			if (!ok) break;
+		}
+
+		for (c = 0; c < m; c++) {
+			bool ok = 1;
+			for (int i = 0; i < n; i++) if (mat[1][i][c]) ok = 0;
+			if (!ok) break;
+		}
+
+		for (int i = 0; i < n - l; i++) {
+			for (int j = 0; j < m - c; j++) {
+				mat[0][i][j] = mat[1][i+l][j+c];
+			}
+		}
+		n-=l; m -= c;
+	}
+
+	for (int i = 0; i < n; i++) {
+		for (int j = 0; j < m; j++) 
+			printf("%c", mat[0][i][j]?'#':'.');
+		printf("\n");
+	}
 }

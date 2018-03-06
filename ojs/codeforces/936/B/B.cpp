@@ -56,7 +56,7 @@ int main () {
 	if (v != -1) {
 		stack<int> res;
 		bool t = 1;
-		while (v != st) { res.push(v); v = fr[v][t]; t = !t; }
+		while (v != st || t) { res.push(v); v = fr[v][t]; t = !t; }
 		res.push(st);
 
 		printf("Win\n");
