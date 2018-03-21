@@ -148,5 +148,5 @@ int main () {
 	for (int i = 0; i < n; i++) {
 		scanf("%lf %lf %lf", &v[i].c.x, &v[i].c.y, &v[i].r);
 	}
-	printf("%.5f\n", union_area(&v[0], n));
+	printf("%.3f\n", union_area(&v[0], n));
 }
