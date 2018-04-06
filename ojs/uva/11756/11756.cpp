@@ -6,7 +6,7 @@ typedef long long int ll;
 typedef pair<ll,ll> pii;
 #define pb push_back
 
-typedef double cood; cood eps = 1e-8; cood inf = 1./0.; // risky: XXX, untested: TODO
+typedef double cood; cood eps = 1e-8; // risky: XXX, untested: TODO
 const double pi = acos(-1.);
 template<typename T> inline T sq(T x) { return x*x; }
 struct vec {
@@ -43,122 +43,151 @@ struct vec {
 }; //$
 struct lin { // line
 	vec p; cood c; // p*(x,y) = c
+	int i;
 	lin () {} lin (vec a, cood b) : p(a), c(b) {}
-	lin (vec s, vec t) : p((s-t).rot90()), c(p*s) {}
+	lin (vec s, vec t, int _i) : p((s-t).rot90()), c(p*s), i(_i) {}
 	inline lin parll (vec v) { return lin(p,v*p); }
 	inline lin perp () { return lin(p.rot90(),c); }
-	vec inter (lin o) { if (vec(0,0).ccw(p,o.p) == 0) throw 1; cood d = (p^o.p); return vec((c*o.p.y - p.y*o.c)/d,(o.c*p.x - o.p.x*c)/d); }
+	inline double inter (lin o) {  cood d = (p^o.p); return double(c*o.p.y - p.y*o.c)/d; }
 	bool contains (vec v) { return abs(p*v - c) <= eps; }
-	vec at_x (cood x) { return vec(x,(c-p.x*x)/p.y); }
-	vec at_y (cood y) { return vec((c-y*p.y)/p.x,y); }
+	inline double at_x (cood x) { return double(c-p.x*x)/p.y; }
 	double sign_dist (vec v) { return double(p*v - c)/p.nr(); }
 }; //$
+struct cir { // circle
+	vec c; cood r;
+	cir () {} cir (vec v, cood d) : c(v), r(d) {}
+	inline bool contains (vec w) { return c.sq(w) <= sq(r) + eps; } // border included
+	inline bool border (vec w) { return abs(c.sq(w) - sq(r)) <= eps; }
+	inline bool has_inter (cir o) { return c.sq(o.c) <= sq(r + o.r) + eps; } // borders included
+	inline bool has_border_inter (cir o) { return has_inter(o) && c.sq(o.c) + eps >= sq(r - o.r); }
+	inline bool has_inter_lin (vec a, vec b) { return a.sq(b) <= eps ? contains(a) : sq(c.cross(a,b)) <= sq(r)*a.sq(b) + eps; } // borders included XXX overflow
+	inline bool has_inter_seg (vec a, vec b) { return has_inter_lin(a,b) && (contains(a) || contains(b) || a.dir(c,b)*b.dir(c,a) != -1); } // borders and tips included XXX overflow
+	inline double arc_area (vec a, vec b) { return c.angle(a,b)*r*r/2; } // smallest arc, ccw positive
+	inline double arc_len (vec a, vec b) { return c.angle(a,b)*r; } // smallest arc, ccw positive
+	pair<vec,vec> tan (vec v) { // XXX low precision
+		if (contains(v) && !border(v)) throw 0;
+		cood d2 = c.sq(v); double s = sqrt(d2 - r*r); s = (s==s)?s:0;
+		double al = atan2(r,s); vec t = (~(c-v));
+		return pair<vec,vec>(v + t.rotate(al)*s, v + t.rotate(-al)*s);
+	}
+	pair<vec,vec> border_inter (cir o) {
+		if (!has_border_inter(o) || o.c == (*this).c) throw 0;
+		double a = (sq(r) + o.c.sq(c) - sq(o.r))/(2*o.c.nr(c));
+		vec v = (o.c - c)/o.c.nr(c); vec m = c + v * a;
+		double h = sqrt(sq(r) - sq(a)); h = h!=h?0:h;
+		return pair<vec,vec>(m + v.rot90()*h, m - v.rot90()*h);
+	}
+	pair<vec,vec> border_inter_lin (vec a, vec b) { // first is closest to a than second
+		if (a.sq(b) <= eps) { if (border(a)) return pair<vec,vec>(a,a); throw 0; }
+		if (a.dir(b,c) == -1) swap(a,b);
+		if (!has_inter_lin(a,b)) throw 0;
+		double d2 = c.dist2_lin(a,b); vec p = (b-a)/a.nr(b);
+		double h = sqrt(r*r - d2); h = h!=h?0:h; 
+		double y = sqrt(c.sq(a) - d2); y = y!=y?0:y;
+		return pair<vec,vec>(a + p*(y-h), a + p*(y+h));
+	}
+	double triang_inter (vec a, vec b) { // ccw oriented, this with (c,a,b)
+		if (c.sq(a) > c.sq(b)) return -triang_inter(b,a);
+		if (contains(b)) return c.cross(a,b)/2;
+		if (!has_inter_seg(a,b)) return arc_area(a,b);
+		pair<vec,vec> itr = border_inter_lin(b,a); // order important
+		if (contains(a)) return c.cross(a,itr.first)/2 + arc_area(itr.first,b);
+		return arc_area(a,itr.second) + c.cross(itr.second,itr.first)/2 + arc_area(itr.first,b);
+	}
+}; //$
+bool inter_seg (vec a, vec b, vec c, vec d) {
+	if (a.in_seg(c, d) || b.in_seg(c, d) || c.in_seg(a, b) || d.in_seg(a, b)) return true;
+	return (c.ccw(a, b) * d.ccw(a, b) == -1 && a.ccw(c, d) * b.ccw(c, d) == -1);
+}
+double dist2_seg (vec a, vec b, vec c, vec d){return inter_seg(a,b,c,d)?0.:min({ a.dist2_seg(c,d), b.dist2_seg(c,d), c.dist2_seg(a,b), d.dist2_seg(a,b) });}
 
-typedef double num; num INF = 1./0.;
-// XXX double: indicates operations specific to integers (+1,lo<hi,...), non precision-related
-template<typename line> struct envelope { // if line is used, the template tag can be simply removed
-	deque<line> q; num lo,hi; envelope (num _lo, num _hi) : lo(_lo), hi(_hi) {} envelope () {}
-	void push_front (line l) { assert(q.empty() || !(q.front()<l)); // l is best at lo or never
-		if (!q.empty() && q.front()(lo) < l(lo)) return;
-		for (num x; q.size(); q.pop_front()) {
-			x = (q.size()<=1?hi:min(max(lo,q.front().inter(*next(q.begin()))-1),hi+1));
-			if (l(x) > q.front()(x)) break;
-		}
-		q.push_front(l);
-	}
-	void push_back (line l) { assert(q.empty() || !(l<q.back())); // l is best at hi or never
-		if (!q.empty() && q.back()(hi) <= l(hi)) return;
-		for (num x; q.size(); q.pop_back()) {
-			x = (q.size()<=1?lo:min(max(lo,next(q.rbegin())->inter(q.back())),hi+1));
-			if (l(x) >= q.back()(x)) break;
-		}
-		q.push_back(l);
-	}
-	void pop_front (num _lo) { assert(lo<=_lo+eps); for(lo=_lo;q.size()>1&&q.front()(lo)>(*next(q.begin()))(lo);q.pop_front()); } // always amort. O(1)
-	void pop_back (num _hi) { assert(hi>=_hi-eps); for(hi=_hi;q.size()>1&&(*next(q.rbegin()))(hi)<=q.back()(hi);q.pop_back()); } // always amort. O(1)
-	line get (num x) {
-		int lo = 0, hi = q.size()-1;
-		while (lo < hi) { int md = (lo+hi)/2;
-			if (q[md](x) > q[md+1](x)) lo = md+1;
-			else hi = md;
-		}
-		return q[lo];
-	}
-};
-struct generic_line { // change only parameters and () for any viable functions, env operations in amort. O(lg(hi-lo))
-	lin l; int i; envelope<generic_line> * env; num operator () (num x) const { return lin(l).at_x(x).y; }
-	bool operator < (const generic_line & ot) const { return i < ot.i; } // first element is best at lo
-	num inter (generic_line o) { assert(!(o<(*this)));
-		if (vec(0,0).ccw(l.p,o.l.p) == 0) return (*this)(env->lo) - eps <= o(env->lo)?env->hi+1:env->lo;
-		return l.inter(o.l).x;
-	}
-};
+typedef double num;
 
 const int N = 100123;
 
+template<typename T> struct DQ {
+	T * q; int qi, qf; DQ () { }
+	int size() { return qf - qi; }
+	T operator [] (int i) { return q[qi+i]; }
+	void push_back (T x) { q[qf++] = x; }
+	void pop_back () { qf--; }
+};
+
+template<typename line> struct envelope {
+	DQ<line> q; num lo,hi; envelope (num _lo, num _hi, line * _q) : lo(_lo), hi(_hi) {q.q = _q; q.qi = q.qf = 0; }
+	void push_back (line l) { // amort. O(inter) | l is best at hi or never
+		if (q.size() && q[q.size()-1](hi) <= l(hi)) return;
+		for (num x; q.size(); q.pop_back()) {
+			x = (q.size()<=1?lo:q[q.size()-2].inter(q[q.size()-1],lo,hi));
+			if (l(x) >= q[q.size()-1](x)) break;
+		}
+		q.push_back(l);
+	}
+};
+struct line { // inter = O(lg(R))
+	lin ln, rev; int cache_i; double cache_r; inline num operator () (num x) const { return lin(ln).at_x(x); }
+	inline num inter (line o, num lo, num hi) { // first point where o strictly beats this
+		//if (cache_i == o.ln.i) return cache_r;
+		//cache_i = o.ln.i;
+		if (vec(0,0).ccw(ln.p,o.ln.p) == 0) return cache_r = ((*this)(lo)<=o(lo)?hi+1:lo);
+		return cache_r = ln.inter(o.ln);
+	}
+};
+
+
+line G_Q[N+N+8];
 int ts;
 int n;
-generic_line ln[N];
-vector<vec> v[N];
-envelope<generic_line> env;
+line l[N];
 
 ostream & operator << (ostream & os, vec o) { return os << "(" << o.x << " " << o.y << ")"; }
-ostream & operator << (ostream & os, lin o) { return os << "[" << o.p.x << "x + " << o.p.y << "y = " << o.c << "]"; }
+
+ll rd () {
+	char c; ll x = 0; bool neg = 0;
+	while (isspace(c = getchar()));
+	if (c == '-') neg = 1;
+	else x = c-'0';
+	while (isdigit(c = getchar())) x = (x << 3) + (x << 1) + c - '0';
+	return neg?-x:x;
+}
 
 int main () {
 	scanf("%d", &ts);
 	while (ts--) {
 		scanf("%d", &n);
-
 		for (int i = 0; i < n; i++) {
-			v[i] = vector<vec>(2);
-			for (int k = 0; k < 2; k++)
-				scanf("%lf %lf", &v[i][k].x, &v[i][k].y);
-			if (abs(v[i][0].x-v[i][1].x) <= eps) {
-				i--; n--;
-				continue;
-			} else if (v[i][0].x > v[i][1].x) swap(v[i][0],v[i][1]);
+			vec a, b;
+			scanf("%lf %lf", &a.x, &a.y);
+			scanf("%lf %lf", &b.x, &b.y);
+			if (abs(a.x - b.x) <= 1e-4) { i--; n--; continue; }
+			l[i].ln = lin(a,b,i);
+			a.y *= -1; b.y *= -1;
+			l[i].rev = lin(a,b,i);
 		}
-		sort(v, v+n, [] (vector<vec> a, vector<vec> b) { return ((a[1]-a[0])^(b[1]-b[0])) < -eps; });
-		for (int i = 0; i < n; i++) {
-			ln[i].env = &env;
-			ln[i].l = lin(v[i][0],v[i][1]);
-			//cout << ln[i].l << ": " << v[i][0] << " " << v[i][1] << endl;
-			ln[i].i = i;
-		}
-		if (n == 0) {
-			printf("0\n");
-			continue;
-		}
-		scanf("%lf %lf", &env.lo, &env.hi);
-		double lm[2], rr[2];
+		double lo,hi;
+		scanf("%lf %lf", &lo, &hi);
+		if (n == 0) { printf("0\n"); continue; }
+		double lm[2], rs[2];
 		for (int k = 0; k < 2; k++) {
-			lm[k] = rr[k] = 0;
-			env.q.clear();
-			sort(ln, ln+n);
-			for (int i = 0; i < n; i++) env.push_back(ln[i]);
-
-			lm[k] = min(env.q.front()(env.lo),env.q.back()(env.hi));
-			//cout << "boundary: " << lm[k] << endl;
-			double ls = env.lo;
-			for (int i = 0; i < env.q.size(); i++) {
-				double x = env.hi;
-				if (i + 1 < env.q.size())
-					x = env.q[i].inter(env.q[i+1]);
-				double h = env.q[i]((x+ls)/2) - lm[k];
-				//cout << env.q[i].l << "[" << ls << "," << x << "] height " << h << endl;
-				rr[k] += h*(x-ls);
-				ls = x;
+			lm[k] = rs[k] = 0;
+			if (k) {
+				reverse(l, l+n);
+				for (int i = 0; i < n; i++) swap(l[i].ln,l[i].rev);
+			} else {
+				sort(l, l+n, [lo] (line & a, line & b) { return a(lo) < b(lo); });
 			}
-			
-			for (int i = 0; i < n; i++) {
-				for (int k = 0; k < 2; k++)
-					v[i][k].y = -v[i][k].y;
-				ln[i].l = lin(v[i][0],v[i][1]);
-				ln[i].i = -ln[i].i;
+			envelope<line> env(lo,hi,G_Q);
+			for (int i = 0; i < n; i++) { l[i].cache_i = -1; env.push_back(l[i]); }
+			lm[k] = min(env.q[0](lo), env.q[env.q.size()-1](hi));
+			double ls = lo;
+			for (int i = 0; i < env.q.size(); i++) {
+				//cout << env.v[0].q[i].ln.i << endl;
+				double nx = (i == env.q.size()-1)?hi:env.q[i].inter(env.q[i+1],lo,hi);
+				double h = env.q[i]((ls+nx)/2) - lm[k];
+				rs[k] += h*(nx-ls);
+				ls = nx;
 			}
 		}
-		
-		printf("%.20f\n", -(lm[0]+lm[1])*(env.hi-env.lo) - rr[0] - rr[1]);
+		printf("%.20f\n", (hi-lo)*abs(lm[0]+lm[1]) - rs[0] - rs[1]);
 	}
 }
