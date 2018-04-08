@@ -6,7 +6,7 @@ typedef long long int ll;
 typedef pair<ll,ll> pii;
 #define pb push_back
 
-typedef double cood; cood eps = 1e-8; // risky: XXX, untested: TODO
+typedef double cood; cood eps = 1e-6; // risky: XXX, untested: TODO
 const double pi = acos(-1.);
 template<typename T> inline T sq(T x) { return x*x; }
 struct vec {
@@ -103,7 +103,7 @@ double dist2_seg (vec a, vec b, vec c, vec d){return inter_seg(a,b,c,d)?0.:min({
 
 typedef double num;
 
-const int N = 100123;
+const int N = 200123;
 
 template<typename T> struct DQ {
 	T * q; int qi, qf; DQ () { }
@@ -114,58 +114,53 @@ template<typename T> struct DQ {
 };
 
 template<typename line> struct envelope {
-	DQ<line> q; num lo,hi; envelope (num _lo, num _hi, line * _q) : lo(_lo), hi(_hi) {q.q = _q; q.qi = q.qf = 0; }
+	deque<line> q; num lo,hi; envelope (num _lo, num _hi) : lo(_lo), hi(_hi) { }
 	void push_back (line l) { // amort. O(inter) | l is best at hi or never
-		if (q.size() && q[q.size()-1](hi) <= l(hi)) return;
+		if (q.size() && q[q.size()-1](hi - eps) < l(hi - eps) + eps) return;
 		for (num x; q.size(); q.pop_back()) {
 			x = (q.size()<=1?lo:q[q.size()-2].inter(q[q.size()-1],lo,hi));
-			if (l(x) >= q[q.size()-1](x)) break;
+			if (l(x - eps) > q[q.size()-1](x - eps) + eps) break;
 		}
 		q.push_back(l);
 	}
 };
 struct line { // inter = O(lg(R))
-	lin ln, rev; int cache_i; double cache_r; inline num operator () (num x) const { return lin(ln).at_x(x); }
+	vec a, b; lin ln, rev; inline num operator () (num x) const { return lin(ln).at_x(x); }
 	inline num inter (line o, num lo, num hi) { // first point where o strictly beats this
-		//if (cache_i == o.ln.i) return cache_r;
-		//cache_i = o.ln.i;
-		if (vec(0,0).ccw(ln.p,o.ln.p) == 0) return cache_r = ((*this)(lo)<=o(lo)?hi+1:lo);
-		return cache_r = ln.inter(o.ln);
+		if (vec(0,0).ccw(ln.p,o.ln.p) == 0) return ((*this)(lo)<=o(lo)?hi+1:lo);
+		return ln.inter(o.ln);
 	}
 };
 
 
-line G_Q[N+N+8];
 int ts;
 int n;
 line l[N];
 
 ostream & operator << (ostream & os, vec o) { return os << "(" << o.x << " " << o.y << ")"; }
 
-ll rd () {
-	char c; ll x = 0; bool neg = 0;
-	while (isspace(c = getchar()));
-	if (c == '-') neg = 1;
-	else x = c-'0';
-	while (isdigit(c = getchar())) x = (x << 3) + (x << 1) + c - '0';
-	return neg?-x:x;
-}
-
 int main () {
 	scanf("%d", &ts);
 	while (ts--) {
 		scanf("%d", &n);
 		for (int i = 0; i < n; i++) {
-			vec a, b;
-			scanf("%lf %lf", &a.x, &a.y);
-			scanf("%lf %lf", &b.x, &b.y);
-			if (abs(a.x - b.x) <= 1e-4) { i--; n--; continue; }
-			l[i].ln = lin(a,b,i);
-			a.y *= -1; b.y *= -1;
-			l[i].rev = lin(a,b,i);
+			scanf("%lf %lf", &l[i].a.x, &l[i].a.y);
+			scanf("%lf %lf", &l[i].b.x, &l[i].b.y);
+			if (l[i].a.x > l[i].b.x) swap(l[i].a, l[i].b);
+			l[i].ln = lin(l[i].a,l[i].b,i);
+			l[i].a.y *= -1; l[i].b.y *= -1;
+			l[i].rev = lin(l[i].a,l[i].b,i);
+			l[i].a.y *= -1; l[i].b.y *= -1;
 		}
 		double lo,hi;
 		scanf("%lf %lf", &lo, &hi);
+		if (hi < lo) swap(lo,hi);
+		for (int nn = n, i = n = 0; i < nn; i++) {
+			double val = l[i](lo) + l[i](hi);
+			if (!isnan(val) && !isinf(val))
+				l[n++] = l[i];
+		}
+		sort(l, l+n, [] (line & a, line & b) { return ((a.b-a.a)^(b.b-b.a)) < -eps; });
 		if (n == 0) { printf("0\n"); continue; }
 		double lm[2], rs[2];
 		for (int k = 0; k < 2; k++) {
@@ -173,11 +168,9 @@ int main () {
 			if (k) {
 				reverse(l, l+n);
 				for (int i = 0; i < n; i++) swap(l[i].ln,l[i].rev);
-			} else {
-				sort(l, l+n, [lo] (line & a, line & b) { return a(lo) < b(lo); });
 			}
-			envelope<line> env(lo,hi,G_Q);
-			for (int i = 0; i < n; i++) { l[i].cache_i = -1; env.push_back(l[i]); }
+			envelope<line> env(lo,hi);
+			for (int i = 0; i < n; i++) { env.push_back(l[i]); }
 			lm[k] = min(env.q[0](lo), env.q[env.q.size()-1](hi));
 			double ls = lo;
 			for (int i = 0; i < env.q.size(); i++) {
