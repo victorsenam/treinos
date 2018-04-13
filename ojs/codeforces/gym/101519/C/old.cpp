@@ -48,84 +48,95 @@ struct lin { // line
 	inline lin parll (vec v) { return lin(p,v*p); }
 	inline lin perp () { return lin(p.rot90(),c); }
 	vec inter (lin o) { if (vec(0,0).ccw(p,o.p) == 0) throw 1; cood d = (p^o.p); return vec((c*o.p.y - p.y*o.c)/d,(o.c*p.x - o.p.x*c)/d); }
+	double x_inter (lin o) { cood d = (p^o.p); return double(c*o.p.y - p.y*o.c)/d; }
+	double y_at_x (double x) { return double(c-p.x*x)/p.y; }
 	bool contains (vec v) { return abs(p*v - c) <= eps; }
 	vec at_x (cood x) { return vec(x,(c-p.x*x)/p.y); }
 	vec at_y (cood y) { return vec((c-y*p.y)/p.x,y); }
 	double sign_dist (vec v) { return double(p*v - c)/p.nr(); }
 }; //$
+struct segm {
+	vec s, t; lin l;
+	double inter (segm o) { return l.x_inter(o.l); } // first point where o.l is greater than l
+};
 
 typedef double num;
 // XXX double: indicates operations specific to integers, not precision related
 template<typename line> struct envelope {
 	deque<line> q; num lo,hi; envelope (num _lo, num _hi) : lo(_lo), hi(_hi) {}
 	void push_back (line l) { // amort. O(inter) | l is best at hi or never
-		//if (q.size() && q[q.size()-1].inter(l,lo,hi) > hi + 1e-8) return; // MUDEI
-		if (q.size() && q[q.size()-1](hi) <= l(hi)) return;
-		for (num x; q.size(); q.pop_back()) {
-			x = (q.size()<=1?lo:q[q.size()-2].inter(q[q.size()-1],lo,hi));
-			if (x < q[q.size()-1].inter(l,lo,hi)) break;
-		}
+		if (q.size() && l.a == q.back().a) { l.b = min(l.b,q.back().b); q.pop_back(); }
+		while (q.size() > 1 && q.back().inter(l) <= q[q.size()-2].inter(q.back()))
+			q.pop_back();
 		q.push_back(l);
 	}
 	line get (num x) { // O(lg(R))
-		int l, h, md; for (l = 0, h = q.size()-1, md = (l+h)/2; l < h; md = (l+h)/2)
-			if (q[md].inter(q[md+1],lo,hi) < x) { l = md+1; } // MUDEI
-			//if (q[md](x) > q[md+1](x)) { lo = md+1; }
-			else { h = md; }
+		int l, r, md; for (l = 0, r = q.size()-1, md = (l+r)/2; l < r; md = (l+r)/2)
+			if (q[md].inter(q[md+1]) < x) { l = md+1; }
+			else { r = md; }
 		return q[l];
 	}
 };
 struct line { // inter = O(1)
 	num a,b; num operator () (num x) const { return a*x+b; }
-	line () {} line (vec s, vec t) { lin l(s,t); a = num(-l.p.x)/l.p.y; b = num(l.c)/l.p.y; }
-	num inter (line o, num lo, num hi) { return min(hi+1,max(lo,floor(num(o.b-b)/num(a-o.a) + 1e-8) + 1)); }
+	num inter (line o) { return double(o.b-b)/(a-o.a); }
 	bool operator < (const line & o) const { return a > o.a; }
 };
 
 const int N = 125123;
+int n, k, m;
 
-int n, m, k, ts;
 vec v[N];
-int seen[N], turn;
-line low[N], hig[N];
+bool b[N];
+
+ostream & operator << (ostream & os, vec o) { return os << "(" << o.x << " " << o.y << ")"; }
+ostream & operator << (ostream & os, segm o) { return os << o.s << o.t; }
 
 int main () {
+//	segm ta({ vec(0,0), vec(1,0) }), tb({ vec(0,1), vec(1,1) });
+//	ta.l = lin(ta.s,ta.t); tb.l = lin(tb.s,tb.t);
+//	cout << ta.inter(tb) << endl;
+	int ts;
 	scanf("%d", &ts);
 	while (ts--) {
 		scanf("%d", &n);
-		for (int i = 0; i < n; i++)  {
-			for (ll * p : {&v[i].x, &v[i].y})
-				scanf("%lld", p);
-			assert(v[i].y >= 0);
+		for (int i = 0; i < n; i++) {
+			scanf("%lld %lld", &v[i].x, &v[i].y);
 		}
 		scanf("%d", &k);
 		while (k--) {
 			scanf("%d", &m);
-			int ls = 0, hs = 0;
-			++turn;
-			while (m--) {
+			vector<line> s_lo, s_hi;
+			s_lo.reserve(m), s_hi.reserve(m);
+			memset(b, 0, sizeof b);
+			for (int i = 0; i < m; i++) {
 				int a, b;
 				scanf("%d %d", &a, &b);
 				a--; b--;
-				if (v[a].x < v[b].x) // upper
-					hig[hs++] = line(v[a],v[b]);
-				else
-				{ low[ls++] = line(v[a],v[b]); low[ls-1].a *= -1; low[ls-1].b *= -1; }
+				::b[a] = ::b[b] = true;
+				segm cur; cur.s = v[a]; cur.t = v[b]; cur.l = lin(cur.s,cur.t);
+				if (cur.s.x < cur.t.x)
+					s_hi.pb({ double(cur.l.p.x)/-cur.l.p.y, double(cur.l.c)/cur.l.p.y }); // upper limits
+				else if (cur.s.x > cur.t.x) { // aqui quero maximo
+					s_lo.pb({ -double(cur.l.p.x)/-cur.l.p.y, -double(cur.l.c)/cur.l.p.y }); // upper limits
+				}
 			}
-
-			sort(low, low+ls); sort(hig, hig+hs);
-			envelope<line> e_low(0, 2e9), e_hig(0, 2e9);
-			for (int i = 0; i < ls; i++) e_low.push_back(low[i]);
-			for (int i = 0; i < hs; i++) e_hig.push_back(hig[i]);
+			envelope<line> e_lo(-1./0.,1./0.), e_hi(-1./0.,1./0.);
+			sort(s_lo.begin(), s_lo.end());
+			for (line l : s_lo) e_lo.push_back(l);
+			sort(s_hi.begin(), s_hi.end());
+			for (line l : s_hi) e_hi.push_back(l);
 
 			for (int i = 0; i < n; i++) {
-				double lw = ls?-e_low.get(v[i].x)(v[i].x):-1./0.;
-				double hg = hs?e_hig.get(v[i].x)(v[i].x):1./0.;
-				//cout << ls << "[" << v[i].y << "]" << hg << ": ";
-				if (lw + 1e-6 < v[i].y && v[i].y + 1e-6 < hg)
-					printf("%d\n", i+1);
+				if (b[i]) continue;
+				double lw = -1./0., hg = 1./0.;
+				if (e_lo.q.size()) lw = max(lw, -e_lo.get(v[i].x)(v[i].x));
+				if (e_hi.q.size()) hg = min(hg, e_hi.get(v[i].x)(v[i].x));
+				//cout << "at " << v[i].x << ": " << lw << " " << hg << endl;
+				if (lw + 1e-8 < v[i].y && v[i].y + 1e-8 < hg) printf("%d\n", i+1);
 			}
 			printf("0\n");
 		}
+		//printf("\n");
 	}
 }

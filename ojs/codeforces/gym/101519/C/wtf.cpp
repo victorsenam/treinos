@@ -48,24 +48,19 @@ struct lin { // line
 	inline lin parll (vec v) { return lin(p,v*p); }
 	inline lin perp () { return lin(p.rot90(),c); }
 	vec inter (lin o) { if (vec(0,0).ccw(p,o.p) == 0) throw 1; cood d = (p^o.p); return vec((c*o.p.y - p.y*o.c)/d,(o.c*p.x - o.p.x*c)/d); }
-	double x_inter (lin o) { cood d = (p^o.p); return double(c*o.p.y - p.y*o.c)/d; }
-	double y_at_x (double x) { return double(c-p.x*x)/p.y; }
 	bool contains (vec v) { return abs(p*v - c) <= eps; }
 	vec at_x (cood x) { return vec(x,(c-p.x*x)/p.y); }
 	vec at_y (cood y) { return vec((c-y*p.y)/p.x,y); }
 	double sign_dist (vec v) { return double(p*v - c)/p.nr(); }
 }; //$
-struct segm {
-	vec s, t; lin l;
-	double inter (segm o) { return l.x_inter(o.l); } // first point where o.l is greater than l
-};
 
 typedef double num;
 // XXX double: indicates operations specific to integers, not precision related
 template<typename line> struct envelope {
 	deque<line> q; num lo,hi; envelope (num _lo, num _hi) : lo(_lo), hi(_hi) {}
 	void push_back (line l) { // amort. O(inter) | l is best at hi or never
-		if (q.size() && q[q.size()-1](hi) < l(hi)) return;
+		if (q.size() && q[q.size()-1].inter(l,lo,hi) > hi + 1e-8) return; // MUDEI
+		//if (q.size() && q[q.size()-1](hi) < l(hi)) return;
 		for (num x; q.size(); q.pop_back()) {
 			x = (q.size()<=1?lo:q[q.size()-2].inter(q[q.size()-1],lo,hi));
 			if (x < q[q.size()-1].inter(l,lo,hi)) break;
@@ -81,7 +76,8 @@ template<typename line> struct envelope {
 };
 struct line { // inter = O(1)
 	num a,b; num operator () (num x) const { return a*x+b; }
-	num inter (line o, num lo, num hi) { return (o.b-b-(o.b-b<0)*(a-o.a-1))/(a-o.a) + 1; }
+	line () {} line (vec s, vec t) { lin l(s,t); a = num(-l.p.x)/l.p.y; b = num(l.c)/l.p.y; }
+	num inter (line o, num lo, num hi) { return min(hi+1,max(lo,floor(num(o.b-b)/num(a-o.a) + 1e-8) + 1)); }
 	bool operator < (const line & o) const { return a > o.a; }
 };
 
@@ -92,7 +88,6 @@ vec v[N];
 ll usd[N], turn;
 
 ostream & operator << (ostream & os, vec o) { return os << "(" << o.x << " " << o.y << ")"; }
-ostream & operator << (ostream & os, segm o) { return os << o.s << o.t; }
 
 int main () {
 //	segm ta({ vec(0,0), vec(1,0) }), tb({ vec(0,1), vec(1,1) });
@@ -115,14 +110,16 @@ int main () {
 				scanf("%d %d", &a, &b);
 				a--; b--;
 				usd[a] = usd[b] = turn;
-				segm cur; cur.s = v[a]; cur.t = v[b]; cur.l = lin(cur.s,cur.t);
-				if (cur.s.x < cur.t.x)
-					s_hi.pb({ double(cur.l.p.x)/-cur.l.p.y, double(cur.l.c)/cur.l.p.y }); // upper limits
-				else if (cur.s.x > cur.t.x) { // aqui quero maximo
-					s_lo.pb({ -double(cur.l.p.x)/-cur.l.p.y, -double(cur.l.c)/cur.l.p.y }); // upper limits
+				if (v[a].x < v[b].x)
+					s_hi.pb(line(v[a],v[b]));
+				else if (v[a].x > v[b].x) { // aqui quero maximo
+					line l(v[a],v[b]);
+					l.a *= -1; l.b *= -1;
+					s_lo.pb(l);
 				}
 			}
-			envelope<line> e_lo(-1./0.,1./0.), e_hi(-1./0.,1./0.);
+			envelope<line> e_lo(0,2e9), e_hi(0,2e9);
+			//envelope<line> e_lo(-1./0.,1./0.), e_hi(-1./0.,1./0.);
 			sort(s_lo.begin(), s_lo.end());
 			for (line l : s_lo) e_lo.push_back(l);
 			sort(s_hi.begin(), s_hi.end());
@@ -130,9 +127,11 @@ int main () {
 
 			for (int i = 0; i < n; i++) {
 				if (usd[i] == turn) continue;
-				double lw = -1./0., hg = 1./0.;
-				if (e_lo.q.size()) lw = max(lw, -e_lo.get(v[i].x)(v[i].x));
-				if (e_hi.q.size()) hg = min(hg, e_hi.get(v[i].x)(v[i].x));
+				double lw = e_lo.q.size()?-e_lo.get(v[i].x)(v[i].x):-1./0.;
+				double hg = e_hi.q.size()?e_hi.get(v[i].x)(v[i].x):1./0.;
+				//double lw = -1./0., hg = 1./0.;
+				//if (e_lo.q.size()) lw = max(lw, -e_lo.get(v[i].x)(v[i].x));
+				//if (e_hi.q.size()) hg = min(hg, e_hi.get(v[i].x)(v[i].x));
 				//cout << "at " << v[i].x << ": " << lw << " " << hg << endl;
 				if (lw + 1e-8 < v[i].y && v[i].y + 1e-8 < hg) printf("%d\n", i+1);
 			}
