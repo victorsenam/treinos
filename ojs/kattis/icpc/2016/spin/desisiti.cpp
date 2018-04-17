@@ -6,11 +6,11 @@ typedef long long int ll;
 typedef pair<ll,ll> pii;
 #define pb push_back
 
- typedef ll cood; cood eps = 0; // risky: XXX, untested: TODO
+typedef double cood; cood eps = 1e-8; // risky: XXX, untested: TODO
 const double pi = acos(-1.);
 template<typename T> inline T sq(T x) { return x*x; }
 struct vec {
-	cood x, y; int i;
+	cood x, y;
 	vec () : x(0), y(0) {} vec (cood a, cood b) : x(a), y(b) {}
 	inline vec operator - (vec o) { return {x - o.x, y - o.y}; }
 	inline vec operator + (vec o) { return {x + o.x, y + o.y}; }
@@ -106,152 +106,55 @@ bool inter_seg (vec a, vec b, vec c, vec d) {
 }
 double dist2_seg (vec a, vec b, vec c, vec d){return inter_seg(a,b,c,d)?0.:min({ a.dist2_seg(c,d), b.dist2_seg(c,d), c.dist2_seg(a,b), d.dist2_seg(a,b) });}
 
-int convex_hull (vec * v, int n, int border_in) { // nlg | border_in (should border points stay?)
-	swap(v[0], *min_element(v,v+n)); int s, i;
-	sort(v+1, v+n, [&v] (vec a, vec b) { int o = b.ccw(v[0], a); return (o?o==1:v[0].sq(a)<v[0].sq(b)); });
-	if (border_in) {
-		for (s = n-1; s > 1 && v[s].ccw(v[s-1],v[0]) == 0; s--);
-		reverse(v+s, v+n);
-	}
-	for (i = s = 0; i < n; i++) if (!s || !(v[s-1] == v[i])) {
-		for (; s >= 2 && v[s-1].ccw(v[s-2],v[i]) >= border_in; s--);
-		swap(v[s++],v[i]);
-	}
-	return s;
+bool monotone_chain (vec * v, int n, int border_in, vector<vec> & low, vector<vec> & hig) { // nlg | border_in (should border points stay?)
+	sort(v, v+n); n = unique(v, v+n) - v;
+	if (n <= 1) return false;
+	for (int i = 0; i < n; low.pb(v[i++])) while (low.size() >= 2 && low[low.size()-2].ccw(low[low.size()-1],v[i]) <= -border_in) low.pop_back();
+	for (int i = n-1; i >= 0; hig.pb(v[i--])) while (hig.size() >= 2 && hig[hig.size()-2].ccw(hig[hig.size()-1],v[i]) <= -border_in) hig.pop_back();
+	assert(low.size() >= 2 && hig.size() >= 2);
+	return true;
 }//$
-int polygon_pos_convex (vec * p, int n, vec v) { // lg(n) | (-1 out, 0 border, 1 in) TODO 
-	if (v.sq(p[0]) <= eps) return 0;
-	if (n <= 1) { return 0; } if (n == 2) { return v.in_seg(p[0],p[1])?0:-1; }
-	if (v.ccw(p[0],p[1]) < 0 || v.ccw(p[0],p[n-1]) > 0) return -1;
-	int di = lower_bound(p+1,p+n-1,v, [&p](vec a,vec v) { return v.ccw(p[0],a) > 0; }) - p;
-	if (di == 1) return v.ccw(p[1],p[2]) >= 0?0:-1;
-	return v.ccw(p[di-1],p[di]);
-}//$
-bool in_conv (vec * p, int n, vec v, int ex[]) { // p duplicado
-	ex[0] = 0; ex[1] = n-1;
-	if (n == 1) return ex[0] = ex[1] = (p[0] == v);
-	if (n <= 2) { return ex[0] = 1; return ex[0] = v.in_seg(p[0],p[n-1]); }
 
-	int dir, esq;
-	if (v.ccw(p[0],p[1]) < 0) { // estou fora por aqui
-		dir = 0;
-		esq = upper_bound(p+1, p+n, v, [p] (vec t, vec & v) { return t.ccw(p[0],v) >= 0; }) - p - 1; // != 1
-	} else {
-		esq = 0;
-		dir = upper_bound(p+1, p+n, v, [p] (vec t, vec & v) { return t.ccw(p[0],v) <= 0; }) - p - 1; // != 1
-		if (v.ccw(p[dir],p[dir+1]) >= 0) return true;
-	}
+const int N = 250123;
 
-	assert(v.ccw(p[esq],p[esq+1]) >= 0);
-	ex[0] = upper_bound(p+esq, p+dir+n*(dir<esq), v, [p] (vec t, vec & v) { return t.ccw(v,*((&v)+1)) < 0; }) - p;
-	assert(v.ccw(p[dir],p[dir+1]) < 0);
-	ex[1] = upper_bound(p+dir, p+esq+n*(esq<dir), v, [p] (vec t, vec & v) { return t.ccw(v,*((&v)+1)) >= 0; }) - p;
-	return false;
-}
-
-const int N = 125123;
-
-vec p[2*N];
-vec v[N];
-int n, m, k;
-
-void fin (int u) {
-	printf("%d\n", u);
-	exit(0);
-}
-
-ostream & operator << (ostream & os, vec o) { return os << "(" << o.x << " " << o.y << ")"; }
-
-void upd (int x, int a, int b, vec d, set<int> & s) {
-	if (x < 0 || x >= k) return;
-	int oa = v[x].ccw(p[a],p[a]+d);
-	int ob = v[x].ccw(p[b],p[b]-d);
-	bool in = (oa >= 0 && ob >= 0);
-
-	if (in) {
-		s.insert(x);
-	} else {
-		s.erase(x);
-	}
-}
+int n;
+vector<vec> v[2];
 
 int main () {
 	scanf("%d", &n);
+
 	for (int i = 0; i < n; i++) {
-		vec c; bool t;
-		scanf("%lld %lld %d", &c.x, &c.y, &t);
-		if (t) p[m++] = c;
-		else v[k++] = c;
+		vec cur; bool t;
+		scanf("%lld %lld %d", &cur.x, &cur.y, &t);
+		v[t].pb(cur);
 	}
 
-	n = convex_hull(p, m, 0);
-	for (int i = 0; i < n; i++) {  p[i+n] = p[i]; }
-	
-	if (n == 1) {
-		if (m == 1) fin(1);
-		for (int i = 0; i < k; i++) m += (p[0] == v[i]);
-		fin(m);
+	vector<vec> low, hig;
+	if (!monotone_chain(&v[1], v[1].size(), 0, low, hig)) {
+		int res = n;
+		for (vec p : v[0]) if (p == v[1][0]) res++;
+		printf("%d\n", res);
+		return 0;
 	}
 
-	set<int> s;
-	vector<int> last;
-	vector<vec> ev;
-	int res = k;
-	for (int i = 0; i < k; i++) {
-		int ex[2];
-		last.pb(i);
-		//cout << v[i] << endl;
-		if (in_conv(p, n, v[i], ex)) continue;
-		for (int k = 0; k < 2; k++) {
-			//cout << "tang " << p[ex[k]] << endl;
-			ev.pb(v[i]-p[ex[k]]);
-			if (ev.back() < vec(0,0)) ev.back() = vec(0,0) - ev.back();
-			ev.back().i = i;
+	vector<pair<vec,int> > evt; // (vector, isremove?)
+	int cur = n;
+	for (vec p : v[0]) {
+		vector<vec> ft;
+		// lower_bound returns first where lambda is false
+		if (p.x < low[0].x) { // esquerda
+			ft.pb(p-(*lower_bound(low.begin(), low.end(), p, [&v] (vec & t, vec p) { return p.ccw(t, *((&t)+1)) < 0; })));
+			ft.pb(p-(*lower_bound(hig.begin(), hig.end(), p, [&v] (vec & t, vec p) { return p.ccw(t, *((&t)+1)) > 0; })));
+		} else if (p.x > hig[0].x) { // direita
+			ft.pb(p-(*lower_bound(low.begin(), low.end(), p, [&v] (vec & t, vec p) { return p.ccw(t, *((&t)+1)) > 0; })));
+			ft.pb(p-(*lower_bound(hig.begin(), hig.end(), p, [&v] (vec & t, vec p) { return p.ccw(t, *((&t)+1)) < 0; })));
+		} else if (p.ccw(low.front(),low.back()) >= 0) { // baixo
+			int diag = lower_bound(low.begin() + 1, low.end(), p, [&v] (vec t, vec p) { return p.ccw(v[0],t) < 0; }) - low.begin();
+			if (diag > 1 && p.ccw(low[diag-1],low[diag]) >= 0) { cur++; continue; } // dentro
+			ft.pb(p-(*lower_bound(low.begin(), low.begin() + diag - 1, p, [&v] (vec & t, vec p) { return p.ccw(t, *((&t)+1)) > 0; })));
+			ft.pb(p-(*lower_bound(low.begin() + diag, low.end(), p, [&v] (vec & t, vec p) { return p.ccw(t, *((&t)+1)) < 0; })));
+		} else {
+			int diag = lower_bound(hig.begin() + 1, hig.end(), p, [&v], (vec t, vec p) { return p.ccw(v[0],t)
 		}
 	}
-
-	ev.pb(vec(0,-1));
-	ev.pb(vec(1,0));
-	sort(ev.begin(), ev.end(), [] (vec a, vec b) { return (a^b) > 0; });
-
-	for (int i = 0, s = ev.size(); i < s - 1; i++)
-		ev.pb(ev[i] + ev[i+1]);
-
-	sort(ev.begin(), ev.end(), [] (vec a, vec b) { return (a^b) > 0; });
-	
-	if (ev.back()^vec(0,1))
-		ev.pb(ev.back() + vec(0,1));
-	ev.pb(vec(0, 1));
-
-	//for (vec v : ev) cout << v << endl;
-
-	int a = 0, b = 0, j = 0;
-	for (int i = 0; i < ev.size(); ) {
-		vec ref = ev[i];
-		while (j < ev.size() && (ev[j]^ref) == 0) j++;
-		
-		if (n > 2) {
-			while (((p[a+1]-p[a])^ref) >= 0) { a++; }
-			assert(a < n+n);
-			b = max(b,a);
-			while (((p[b+1]-p[b])^ref) <= 0) { b++; }
-			assert(b < n+n);
-		} else { 
-			a = 0; b = 1;
-		}
-
-		for (int x : last) upd(x, a, b, ref, s);
-		last.clear();
-		for (int l = i; l < j; l++) {
-			upd(ev[l].i, a, b, ref, s);
-			last.pb(ev[l].i);
-		}
-
-
-		res = min(res, int(s.size()));
-
-		i = j;
-	}
-
-	printf("%d\n", res + m);
 }
